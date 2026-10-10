@@ -2,74 +2,104 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Arena · Juegos de habilidad — Soy Pro LLC</title>
-<meta name="description" content="Arena es una app de juegos de habilidad en tiempo real de Soy Pro LLC (New Jersey). Juega gratis o compite por premios contra jugadores reales de tu nivel.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Soy Pro Arena · Juegos de habilidad en tiempo real</title>
+<meta name="description" content="Seis juegos rápidos de reflejos y estrategia. Juega gratis o compite por premios contra jugadores reales de tu nivel. Por Soy Pro LLC.">
+<meta property="og:title" content="Soy Pro Arena · Juegos de habilidad en tiempo real"><meta property="og:description" content="Seis juegos rápidos de reflejos y estrategia. Juega gratis o compite por premios contra jugadores reales de tu nivel. Por Soy Pro LLC."><meta property="og:type" content="website">
+<meta name="theme-color" content="#0b0e0c">
 <link rel="icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
 </head>
 <body>
-<header class="bar"><a class="brand" href="./"><img src="icon.svg" alt="" width="28" height="28"> Arena</a><nav><a href="en.html" lang="en">English</a></nav></header>
+<header class="bar"><div class="wrap bar-in">
+  <a class="brand" href="./"><img src="icon.svg" alt="" width="30" height="30"><span>SOY PRO <b>ARENA</b></span></a>
+  <nav class="links"><a href="#juegos">Juegos</a><a href="#como">Cómo funciona</a><a href="#limpio">Juego limpio</a><a href="#faq">Preguntas</a></nav>
+  <div class="bar-r"><a class="lang" href="en.html">English</a><a class="btn btn-s" href="https://juego.soyproarena.com">Jugar gratis</a></div>
+</div></header>
+
 <main>
-  <section class="hero">
-    <p class="kicker">Juegos de habilidad · en tiempo real</p>
-    <h1>Gana por cómo juegas,<br>no por suerte.</h1>
-    <p class="lead">Arena es una app para iPhone y Android con 6 juegos rápidos de reflejos y estrategia. Juega gratis cuando quieras, o paga una entrada (1 $, 5 $ o 10 $) y compite por premios en efectivo contra jugadores reales de tu mismo nivel.</p>
-    <p class="soon">Muy pronto en App Store y Google Play</p>
-  </section>
-
-  <section>
-    <h2>Los juegos</h2>
-    <div class="grid">
-      <article><b>🎯 Punto ciego</b><p>Toca los blancos antes de que desaparezcan y esquiva las bombas. Puro reflejo. <em>Solo modo gratis.</em></p></article>
-      <article><b>🐍 Arena de gusanos</b><p>Come para crecer, esquiva a los demás y haz que choquen contra ti.</p></article>
-      <article><b>🟩 Territorio</b><p>Sal de tu zona, traza un lazo y conquista terreno sin que te corten la línea.</p></article>
-      <article><b>🏰 Conquista</b><p>Bases que producen tropas. Ataca, defiende y domina el mapa.</p></article>
-      <article><b>🛡️ Zona</b><p>Tanques en una zona que se cierra. El último en pie gana.</p></article>
-      <article><b>🫧 Absorción</b><p>Come células más pequeñas, divídete para cazar y huye de las grandes.</p></article>
+<section class="hero"><div class="glow g1"></div><div class="glow g2"></div>
+  <div class="wrap hero-in">
+    <div class="hero-txt">
+      <p class="kicker">6 juegos · partidas de 1 a 3 minutos · rivales reales</p>
+      <h1>Gana por cómo juegas.<br><span>No por suerte.</span></h1>
+      <p class="lead">Reflejos, estrategia y nervios de acero. Juega gratis cuando quieras o entra en partidas con premio contra jugadores de tu mismo nivel.</p>
+      <div class="ctas"><a class="btn" href="https://juego.soyproarena.com">JUGAR GRATIS AHORA <i>→</i></a><a class="btn btn-ghost" href="#juegos">Ver los juegos</a></div>
+      <p class="small">Sin descargas: juega desde el navegador. Apps para iPhone y Android muy pronto.</p>
+      <div class="stores"><span class="store"> Muy pronto en App Store</span><span class="store">▶ Muy pronto en Google Play</span></div>
     </div>
-  </section>
+    <div class="hero-phone">
+      <div class="phone"><div class="notch"></div><span class="live"><i></i>EN VIVO</span><canvas id="heroGame" data-game="worms" data-life="60"></canvas></div>
+      <div class="chips"><button type="button" data-hero="worms" class="on">Arena de Gusanos</button><button type="button" data-hero="zone">Zona</button><button type="button" data-hero="cells">Absorción</button><button type="button" data-hero="territory">Territorio</button><button type="button" data-hero="conquest">Conquista</button><button type="button" data-hero="blind">Punto Ciego</button></div>
+      <p class="note">Partida real del motor del juego, jugando ahora en tu navegador.</p>
+    </div>
+  </div>
+</section>
 
-  <section>
-    <h2>Cómo funciona</h2>
-    <ol class="steps">
-      <li><b>Gratis:</b> juega sin pagar, sube de nivel, desbloquea mapas y aspectos.</li>
-      <li><b>Con capital:</b> pagas una entrada de 1 $, 5 $ o 10 $ y te emparejamos solo con jugadores reales de nivel parecido, en el mismo tipo de dispositivo y con buena conexión. Sin bots.</li>
-      <li><b>Premios:</b> el bote es la suma de las entradas menos una comisión del 10 % de la plataforma. Antes de empezar eliges cómo se reparte: entre los 3 primeros (o los 2 primeros si sois 3 o 4) o todo para el ganador. Los premios siempre son en dólares enteros y se ven antes de pagar.</li>
-      <li><b>Retiros:</b> tus ganancias se transfieren a tu cuenta bancaria a través de Stripe.</li>
-    </ol>
-  </section>
+<section class="stats"><div class="wrap stats-in"><div><b>6</b><span>juegos únicos</span></div><div><b>10</b><span>jugadores por partida</span></div><div><b>1–3</b><span>minutos por partida</span></div><div><b>26</b><span>mapas con terreno</span></div></div></section>
 
-  <section>
-    <h2>Juego limpio y responsable</h2>
-    <ul class="checks">
-      <li>Solo habilidad: sin azar, sin casino, sin lotería.</li>
-      <li>Para jugar con dinero: mayor de 18 años, correo verificado, teléfono de confianza y región permitida.</li>
-      <li>Emparejamiento justo por nivel y antitrampas en el servidor.</li>
-      <li>Límites de depósito, pausas y autoexclusión cuando lo necesites.</li>
-      <li>Pagos procesados de forma segura con Stripe. Nunca guardamos los datos de tu tarjeta.</li>
-    </ul>
-    <p class="note">Las partidas con dinero no están disponibles en Arizona, Arkansas, Connecticut, Delaware, Luisiana, Montana, Carolina del Sur, Dakota del Sur y Tennessee, ni en ningún lugar donde la ley local no lo permita. En esos lugares puedes jugar siempre en modo gratis.</p>
-  </section>
+<section id="juegos" class="sec"><div class="wrap">
+  <h2>Seis formas de ganar.</h2><p class="sec-p">Cada juego pone a prueba algo distinto. Elige el tuyo y demuestra lo que vales.</p>
+  <div class="games">
+    <article class="game"><div class="screen"><canvas data-game="worms" data-life="40"></canvas><span class="tag">Habilidad</span><span class="badge p">💰 Con premio</span></div>
+      <h3>Arena de Gusanos</h3><p>Come, crece y haz que los demás choquen contra tu cuerpo. Turbo de 5 segundos cuando más lo necesitas.</p></article>
+    <article class="game"><div class="screen"><canvas data-game="zone" data-life="40"></canvas><span class="tag">Battle royale</span><span class="badge p">💰 Con premio</span></div>
+      <h3>Zona</h3><p>Elige tanque —pesado, veloz o tirador— y sobrevive mientras la zona se cierra. Escóndete en los arbustos.</p></article>
+    <article class="game"><div class="screen"><canvas data-game="cells" data-life="40"></canvas><span class="tag">Masivo</span><span class="badge p">💰 Con premio</span></div>
+      <h3>Absorción</h3><p>Come células más pequeñas, divídete para cazar y huye de las grandes. Los virus revientan a los gigantes.</p></article>
+    <article class="game"><div class="screen"><canvas data-game="territory" data-life="40"></canvas><span class="tag">Estrategia</span><span class="badge p">💰 Con premio</span></div>
+      <h3>Territorio</h3><p>Sal de tu zona, dibuja un lazo y conquista. Si alguien corta tu línea, lo pierdes todo.</p></article>
+    <article class="game"><div class="screen tall"><canvas data-game="conquest" data-life="40"></canvas><span class="tag">Estrategia</span><span class="badge p">💰 Con premio</span></div>
+      <h3>Conquista</h3><p>Bases que producen tropas. Arrastra para atacar, defiende tus fortalezas y domina el mapa.</p></article>
+    <article class="game"><div class="screen tall"><canvas data-game="blind" data-life="40"></canvas><span class="tag">Reflejos</span><span class="badge f">Solo gratis</span></div>
+      <h3>Punto Ciego</h3><p>Blancos fugaces y bombas trampa. Gana el más rápido y el más preciso.</p></article>
+  </div>
+</div></section>
 
-  <section>
-    <h2>Preguntas frecuentes</h2>
-    <details><summary>¿Es una apuesta o un casino?</summary><p>No. Son competiciones de habilidad: el resultado depende de cómo juegas (reflejos, estrategia, decisiones), no del azar. No hay tragamonedas, ruleta, cartas ni lotería. Las condiciones de cada partida son iguales para todos los jugadores.</p></details>
-    <details><summary>¿Contra quién juego cuando pago una entrada?</summary><p>Solo contra personas reales de un nivel parecido al tuyo. En las partidas con dinero no hay bots ni ayudas automáticas.</p></details>
-    <details><summary>¿Qué necesito para jugar con dinero?</summary><p>Tener 18 años o más, verificar tu correo, usar tu teléfono de confianza y estar en una región permitida. Cada cuenta es personal y solo puede usarse desde un teléfono.</p></details>
-    <details><summary>¿Cómo deposito y retiro?</summary><p>Desde la cartera de la app, con tarjeta, Apple Pay, Google Pay u otros métodos que ofrece Stripe. Los retiros van a tu cuenta bancaria.</p></details>
-    <details><summary>¿Puedo poner límites?</summary><p>Sí. Puedes fijar límites de depósito, tomar pausas o autoexcluirte durante el tiempo que quieras desde la app.</p></details>
-  </section>
+<section id="como" class="sec sec-alt"><div class="wrap">
+  <h2>Así de simple.</h2>
+  <div class="steps"><div class="step"><b>1</b><h3>Elige tu arena</h3><p>Juego, mapa y tu estilo: color y aspecto. Practica gratis todo lo que quieras.</p></div><div class="step"><b>2</b><h3>Compite con tu nivel</h3><p>Te emparejamos con jugadores reales de nivel parecido. En las partidas con premio no hay bots.</p></div><div class="step"><b>3</b><h3>Cobra tus premios</h3><p>Premios en dólares enteros que ves antes de jugar. Lo que no jugaste vuelve a tu tarjeta con un toque.</p></div></div>
+</div></section>
 
-  <section>
-    <h2>Quiénes somos</h2>
-    <p>Arena es un producto de <b>Soy Pro LLC</b>, una sociedad de responsabilidad limitada constituida en New Jersey (EE. UU.) en 2020. Para cualquier duda, soporte o reclamación escríbenos a <a href="mailto:soyprollc1@gmail.com">soyprollc1@gmail.com</a>.</p>
-  </section>
+<section class="sec"><div class="wrap">
+  <h2>Siempre hay algo nuevo por ganar.</h2>
+  <div class="feats"><div class="feat"><i>🗺️</i><h3>26 mapas que cambian el juego</h3><p>Ríos de lava, hielo que resbala, arbustos para emboscar, ciudades en ruinas.</p></div><div class="feat"><i>🏆</i><h3>Rangos por temporada</h3><p>Sube de Bronce a Diamante en cada juego. Cada temporada, una nueva oportunidad.</p></div><div class="feat"><i>🎨</i><h3>Aspectos para desbloquear</h3><p>Colores y estilos para tu gusano, tu tanque o tus células. Solo estética: nadie compra ventaja.</p></div><div class="feat"><i>🎃</i><h3>Eventos y misiones</h3><p>Desafíos de temporada con experiencia doble e insignias exclusivas.</p></div><div class="feat"><i>👥</i><h3>Salas con amigos</h3><p>Crea una sala, invita por WhatsApp o cualquier red y jugad juntos.</p></div><div class="feat"><i>⚔️</i><h3>Equipos 5 contra 5</h3><p>Coordina con tu equipo y ganad juntos.</p></div></div>
+  <div class="tiers"><span style="--c:#c98a5a">Bronce</span><span style="--c:#c9d3dc">Plata</span><span style="--c:#facc15">Oro</span><span style="--c:#5ee6d3">Platino</span><span style="--c:#8fb8ff">Diamante</span></div>
+</div></section>
+
+<section id="limpio" class="sec sec-alt"><div class="wrap fair">
+  <div><h2>Juego limpio. Siempre.</h2><p class="sec-p">Si hay dinero de por medio, la confianza lo es todo. Por eso la Arena está construida así:</p></div>
+  <ul><li>Solo habilidad: sin azar, sin casino, sin lotería.</li><li>Sin bots ni ayudas en las partidas con premio.</li><li>Emparejamiento por nivel, mismo tipo de dispositivo y buena conexión.</li><li>Antitrampas en el servidor: el juego se decide allí, no en tu teléfono.</li><li>Una cuenta por persona y por teléfono, con aviso si alguien entra desde otro.</li><li>Límites de depósito, pausas y autoexclusión cuando quieras.</li><li>Pagos seguros con Stripe. Nunca vemos tu tarjeta.</li></ul>
+  <p class="note-l">Las partidas con premio son solo para mayores de 18 años y no están disponibles en Arizona, Arkansas, Connecticut, Delaware, Luisiana, Montana, Carolina del Sur, Dakota del Sur ni Tennessee. Allí siempre puedes jugar gratis.</p>
+</div></section>
+
+<section class="final"><div class="glow g3"></div><div class="wrap final-in">
+  <h2>¿Listo para demostrar lo que vales?</h2><p>Tu primera partida empieza en segundos. Sin descargar nada.</p><a class="btn btn-xl" href="https://juego.soyproarena.com">JUGAR GRATIS AHORA <i>→</i></a>
+</div></section>
+
+<section id="faq" class="sec"><div class="wrap narrow">
+  <h2>Preguntas frecuentes</h2>
+  <details><summary>¿Es una apuesta o un casino?</summary><p>No. Son competiciones de habilidad: gana quien mejor juega (reflejos, estrategia, decisiones). No hay tragamonedas, ruleta, cartas ni lotería, y las condiciones de cada partida son iguales para todos.</p></details>
+  <details><summary>¿Contra quién juego cuando hay premio?</summary><p>Solo contra personas reales de un nivel parecido al tuyo. En las partidas con premio no hay bots ni ayudas automáticas.</p></details>
+  <details><summary>¿Cuánto cuesta jugar?</summary><p>Jugar gratis no cuesta nada. Las partidas con premio tienen una entrada de 1 $, 5 $ o 10 $; el bote se reparte entre los mejores, menos una comisión del 10 %.</p></details>
+  <details><summary>¿Cómo deposito y retiro?</summary><p>Desde la cartera de la app: tarjeta, Apple Pay, Google Pay y más, con Stripe. Lo no jugado vuelve a tu mismo método de pago; los premios van a tu banco o tarjeta de débito.</p></details>
+  <details><summary>¿Puedo poner límites?</summary><p>Sí: límites de depósito, pausas y autoexclusión desde la app, cuando quieras.</p></details>
+</div></section>
 </main>
-<footer>
-  <p><b>Soy Pro LLC</b> · Sociedad de responsabilidad limitada de New Jersey (EE. UU.)<br><a href="mailto:soyprollc1@gmail.com">soyprollc1@gmail.com</a></p>
-  <p class="links"><a href="legal/terminos.html">Términos</a> · <a href="legal/privacidad.html">Privacidad</a> · <a href="legal/juego-responsable.html">Juego responsable</a></p>
-  <p class="muted">Solo mayores de 18 años para partidas con dinero. Juega con responsabilidad.</p>
-</footer>
+
+<footer><div class="wrap foot">
+  <p>Soy Pro Arena es un producto de <b>Soy Pro LLC</b>, sociedad de responsabilidad limitada constituida en New Jersey (EE. UU.).<br>Contacto: <a href="mailto:soyprollc1@gmail.com">soyprollc1@gmail.com</a></p>
+  <p class="links2"><a href="legal/terminos.html">Términos</a> · <a href="legal/privacidad.html">Privacidad</a> · <a href="legal/juego-responsable.html">Juego responsable</a></p>
+  <p class="muted">Solo mayores de 18 años para partidas con premio. Juega con responsabilidad. © 2026 Soy Pro LLC</p>
+</div></footer>
+
+<script>try{localStorage.setItem('arena.lang','es')}catch(e){}</script>
+<script src="engine/i18n.js"></script>
+<script src="engine/terrain.js"></script><script src="engine/maps.js"></script>
+<script src="engine/worms.js"></script><script src="engine/zone.js"></script><script src="engine/cells.js"></script>
+<script src="engine/territory.js"></script><script src="engine/conquest.js"></script><script src="engine/blind.js"></script>
+<script src="engine/render.js"></script><script src="engine/demo.js"></script>
 </body>
 </html>

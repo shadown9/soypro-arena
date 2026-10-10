@@ -2,74 +2,104 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Arena · Skill games — Soy Pro LLC</title>
-<meta name="description" content="Arena is a real-time skill gaming app by Soy Pro LLC (New Jersey). Play for free or compete for prizes against real players of your level.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Soy Pro Arena · Real-time skill games</title>
+<meta name="description" content="Six fast reflex and strategy games. Play for free or compete for prizes against real players of your level. By Soy Pro LLC.">
+<meta property="og:title" content="Soy Pro Arena · Real-time skill games"><meta property="og:description" content="Six fast reflex and strategy games. Play for free or compete for prizes against real players of your level. By Soy Pro LLC."><meta property="og:type" content="website">
+<meta name="theme-color" content="#0b0e0c">
 <link rel="icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
 </head>
 <body>
-<header class="bar"><a class="brand" href="en.html"><img src="icon.svg" alt="" width="28" height="28"> Arena</a><nav><a href="./" lang="es">Español</a></nav></header>
+<header class="bar"><div class="wrap bar-in">
+  <a class="brand" href="en.html"><img src="icon.svg" alt="" width="30" height="30"><span>SOY PRO <b>ARENA</b></span></a>
+  <nav class="links"><a href="#juegos">Games</a><a href="#como">How it works</a><a href="#limpio">Fair play</a><a href="#faq">FAQ</a></nav>
+  <div class="bar-r"><a class="lang" href="./">Español</a><a class="btn btn-s" href="https://juego.soyproarena.com">Play free</a></div>
+</div></header>
+
 <main>
-  <section class="hero">
-    <p class="kicker">Real-time skill games</p>
-    <h1>Win by how you play,<br>not by luck.</h1>
-    <p class="lead">Arena is an iPhone and Android app with 6 fast reflex and strategy games. Play for free anytime, or pay an entry ($1, $5 or $10) and compete for cash prizes against real players of your own level.</p>
-    <p class="soon">Coming soon to the App Store and Google Play</p>
-  </section>
-
-  <section>
-    <h2>The games</h2>
-    <div class="grid">
-      <article><b>🎯 Blind Spot</b><p>Tap the targets before they vanish and dodge the bombs. Pure reflex. <em>Free play only.</em></p></article>
-      <article><b>🐍 Worm Arena</b><p>Eat to grow, dodge the others and make them crash into you.</p></article>
-      <article><b>🟩 Territory</b><p>Leave your zone, draw a loop and claim ground before someone cuts your line.</p></article>
-      <article><b>🏰 Conquest</b><p>Bases that produce troops. Attack, defend and rule the map.</p></article>
-      <article><b>🛡️ Zone</b><p>Tanks in a closing zone. Last one standing wins.</p></article>
-      <article><b>🫧 Absorption</b><p>Eat smaller cells, split to hunt and run from the big ones.</p></article>
+<section class="hero"><div class="glow g1"></div><div class="glow g2"></div>
+  <div class="wrap hero-in">
+    <div class="hero-txt">
+      <p class="kicker">6 games · 1 to 3 minute matches · real rivals</p>
+      <h1>Win by how you play.<br><span>Not by luck.</span></h1>
+      <p class="lead">Reflexes, strategy and nerves of steel. Play for free anytime, or join prize matches against players of your own level.</p>
+      <div class="ctas"><a class="btn" href="https://juego.soyproarena.com">PLAY FREE NOW <i>→</i></a><a class="btn btn-ghost" href="#juegos">See the games</a></div>
+      <p class="small">No download: play in your browser. iPhone and Android apps coming soon.</p>
+      <div class="stores"><span class="store"> Coming soon to App Store</span><span class="store">▶ Coming soon to Google Play</span></div>
     </div>
-  </section>
+    <div class="hero-phone">
+      <div class="phone"><div class="notch"></div><span class="live"><i></i>LIVE</span><canvas id="heroGame" data-game="worms" data-life="60"></canvas></div>
+      <div class="chips"><button type="button" data-hero="worms" class="on">Worm Arena</button><button type="button" data-hero="zone">Zone</button><button type="button" data-hero="cells">Absorption</button><button type="button" data-hero="territory">Territory</button><button type="button" data-hero="conquest">Conquest</button><button type="button" data-hero="blind">Blind Spot</button></div>
+      <p class="note">A real match from the game engine, playing right now in your browser.</p>
+    </div>
+  </div>
+</section>
 
-  <section>
-    <h2>How it works</h2>
-    <ol class="steps">
-      <li><b>Free:</b> play without paying, level up, unlock maps and skins.</li>
-      <li><b>Real money:</b> pay a $1, $5 or $10 entry and get matched only with real players of a similar level, on the same kind of device and with a good connection. No bots.</li>
-      <li><b>Prizes:</b> the pool is the sum of the entries minus a 10% platform fee. Before the match you choose how it is split: among the top 3 (top 2 with 3 or 4 players) or winner takes all. Prizes are always whole dollars and are shown before you pay.</li>
-      <li><b>Withdrawals:</b> your winnings are transferred to your bank account through Stripe.</li>
-    </ol>
-  </section>
+<section class="stats"><div class="wrap stats-in"><div><b>6</b><span>unique games</span></div><div><b>10</b><span>players per match</span></div><div><b>1–3</b><span>minutes per match</span></div><div><b>26</b><span>maps with terrain</span></div></div></section>
 
-  <section>
-    <h2>Fair and responsible play</h2>
-    <ul class="checks">
-      <li>Skill only: no chance, no casino, no lottery.</li>
-      <li>To play for money: 18+, verified email, trusted phone and an allowed region.</li>
-      <li>Fair skill-based matchmaking and server-side anti-cheat.</li>
-      <li>Deposit limits, breaks and self-exclusion whenever you need them.</li>
-      <li>Payments securely processed by Stripe. We never store your card details.</li>
-    </ul>
-    <p class="note">Real-money matches are not available in Arizona, Arkansas, Connecticut, Delaware, Louisiana, Montana, South Carolina, South Dakota and Tennessee, or anywhere local law does not allow them. You can always play for free there.</p>
-  </section>
+<section id="juegos" class="sec"><div class="wrap">
+  <h2>Six ways to win.</h2><p class="sec-p">Each game tests something different. Pick yours and show what you are made of.</p>
+  <div class="games">
+    <article class="game"><div class="screen"><canvas data-game="worms" data-life="40"></canvas><span class="tag">Skill</span><span class="badge p">💰 Prizes</span></div>
+      <h3>Worm Arena</h3><p>Eat, grow and make the others crash into your body. A 5-second boost when you need it most.</p></article>
+    <article class="game"><div class="screen"><canvas data-game="zone" data-life="40"></canvas><span class="tag">Battle royale</span><span class="badge p">💰 Prizes</span></div>
+      <h3>Zone</h3><p>Pick a tank —heavy, fast or sniper— and survive while the zone closes in. Hide in the bushes.</p></article>
+    <article class="game"><div class="screen"><canvas data-game="cells" data-life="40"></canvas><span class="tag">Massive</span><span class="badge p">💰 Prizes</span></div>
+      <h3>Absorption</h3><p>Eat smaller cells, split to hunt and run from the big ones. Viruses pop the giants.</p></article>
+    <article class="game"><div class="screen"><canvas data-game="territory" data-life="40"></canvas><span class="tag">Strategy</span><span class="badge p">💰 Prizes</span></div>
+      <h3>Territory</h3><p>Leave your zone, draw a loop and claim ground. If someone cuts your line, you lose it all.</p></article>
+    <article class="game"><div class="screen tall"><canvas data-game="conquest" data-life="40"></canvas><span class="tag">Strategy</span><span class="badge p">💰 Prizes</span></div>
+      <h3>Conquest</h3><p>Bases that produce troops. Drag to attack, defend your fortresses and rule the map.</p></article>
+    <article class="game"><div class="screen tall"><canvas data-game="blind" data-life="40"></canvas><span class="tag">Reflexes</span><span class="badge f">Free only</span></div>
+      <h3>Blind Spot</h3><p>Fleeting targets and decoy bombs. The fastest and most precise wins.</p></article>
+  </div>
+</div></section>
 
-  <section>
-    <h2>FAQ</h2>
-    <details><summary>Is this gambling or a casino?</summary><p>No. These are skill competitions: the outcome depends on how you play (reflexes, strategy, decisions), not on chance. There are no slots, roulette, cards or lotteries. Match conditions are the same for every player.</p></details>
-    <details><summary>Who do I play against when I pay an entry?</summary><p>Only real people of a similar level. Real-money matches have no bots and no automatic assistance.</p></details>
-    <details><summary>What do I need to play for money?</summary><p>Be 18 or older, verify your email, use your trusted phone and be in an allowed region. Each account is personal and can only be used from one phone.</p></details>
-    <details><summary>How do I deposit and withdraw?</summary><p>From the wallet in the app, with card, Apple Pay, Google Pay or other methods offered by Stripe. Withdrawals go to your bank account.</p></details>
-    <details><summary>Can I set limits?</summary><p>Yes. You can set deposit limits, take breaks or self-exclude for as long as you want from the app.</p></details>
-  </section>
+<section id="como" class="sec sec-alt"><div class="wrap">
+  <h2>That simple.</h2>
+  <div class="steps"><div class="step"><b>1</b><h3>Pick your arena</h3><p>Game, map and your style: color and skin. Practice for free as much as you want.</p></div><div class="step"><b>2</b><h3>Play your level</h3><p>We match you with real players of a similar level. Prize matches have no bots.</p></div><div class="step"><b>3</b><h3>Cash out</h3><p>Prizes in whole dollars you see before you play. What you did not play goes back to your card in one tap.</p></div></div>
+</div></section>
 
-  <section>
-    <h2>About us</h2>
-    <p>Arena is a product of <b>Soy Pro LLC</b>, a limited liability company formed in New Jersey (USA) in 2020. For questions, support or complaints, email us at <a href="mailto:soyprollc1@gmail.com">soyprollc1@gmail.com</a>.</p>
-  </section>
+<section class="sec"><div class="wrap">
+  <h2>There is always something new to win.</h2>
+  <div class="feats"><div class="feat"><i>🗺️</i><h3>26 maps that change the game</h3><p>Lava rivers, slippery ice, bushes for ambushes, ruined cities.</p></div><div class="feat"><i>🏆</i><h3>Season ranks</h3><p>Climb from Bronze to Diamond in every game. Every season, a new chance.</p></div><div class="feat"><i>🎨</i><h3>Skins to unlock</h3><p>Colors and styles for your worm, tank or cells. Cosmetic only: nobody buys an advantage.</p></div><div class="feat"><i>🎃</i><h3>Events and missions</h3><p>Seasonal challenges with double XP and exclusive badges.</p></div><div class="feat"><i>👥</i><h3>Rooms with friends</h3><p>Create a room, invite through WhatsApp or any app and play together.</p></div><div class="feat"><i>⚔️</i><h3>Teams 5 vs 5</h3><p>Coordinate with your team and win together.</p></div></div>
+  <div class="tiers"><span style="--c:#c98a5a">Bronze</span><span style="--c:#c9d3dc">Silver</span><span style="--c:#facc15">Gold</span><span style="--c:#5ee6d3">Platinum</span><span style="--c:#8fb8ff">Diamond</span></div>
+</div></section>
+
+<section id="limpio" class="sec sec-alt"><div class="wrap fair">
+  <div><h2>Fair play. Always.</h2><p class="sec-p">When money is involved, trust is everything. That is why the Arena is built like this:</p></div>
+  <ul><li>Skill only: no chance, no casino, no lottery.</li><li>No bots or assistance in prize matches.</li><li>Skill-based matchmaking, same kind of device and a good connection.</li><li>Server-side anti-cheat: the game is decided on the server, not on your phone.</li><li>One account per person and per phone, with an alert if someone logs in from another.</li><li>Deposit limits, breaks and self-exclusion whenever you want.</li><li>Secure payments with Stripe. We never see your card.</li></ul>
+  <p class="note-l">Prize matches are 18+ only and are not available in Arizona, Arkansas, Connecticut, Delaware, Louisiana, Montana, South Carolina, South Dakota or Tennessee. You can always play for free there.</p>
+</div></section>
+
+<section class="final"><div class="glow g3"></div><div class="wrap final-in">
+  <h2>Ready to show what you have got?</h2><p>Your first match starts in seconds. Nothing to download.</p><a class="btn btn-xl" href="https://juego.soyproarena.com">PLAY FREE NOW <i>→</i></a>
+</div></section>
+
+<section id="faq" class="sec"><div class="wrap narrow">
+  <h2>FAQ</h2>
+  <details><summary>Is this gambling or a casino?</summary><p>No. These are skill competitions: the best player wins (reflexes, strategy, decisions). No slots, roulette, cards or lotteries, and match conditions are the same for everyone.</p></details>
+  <details><summary>Who do I play against in prize matches?</summary><p>Only real people of a similar level. Prize matches have no bots and no automatic assistance.</p></details>
+  <details><summary>How much does it cost?</summary><p>Free play costs nothing. Prize matches have a $1, $5 or $10 entry; the pool goes to the top players, minus a 10% fee.</p></details>
+  <details><summary>How do I deposit and withdraw?</summary><p>From the wallet in the app: card, Apple Pay, Google Pay and more, through Stripe. Unplayed money goes back to the same payment method; prizes go to your bank or debit card.</p></details>
+  <details><summary>Can I set limits?</summary><p>Yes: deposit limits, breaks and self-exclusion from the app, whenever you want.</p></details>
+</div></section>
 </main>
-<footer>
-  <p><b>Soy Pro LLC</b> · New Jersey limited liability company (USA)<br><a href="mailto:soyprollc1@gmail.com">soyprollc1@gmail.com</a></p>
-  <p class="links"><a href="legal/terms.html">Terms</a> · <a href="legal/privacy.html">Privacy</a> · <a href="legal/responsible-gaming.html">Responsible gaming</a></p>
-  <p class="muted">18+ only for real-money matches. Please play responsibly.</p>
-</footer>
+
+<footer><div class="wrap foot">
+  <p>Soy Pro Arena is a product of <b>Soy Pro LLC</b>, a limited liability company formed in New Jersey (USA).<br>Contact: <a href="mailto:soyprollc1@gmail.com">soyprollc1@gmail.com</a></p>
+  <p class="links2"><a href="legal/terms.html">Terms</a> · <a href="legal/privacy.html">Privacy</a> · <a href="legal/responsible-gaming.html">Responsible gaming</a></p>
+  <p class="muted">18+ only for prize matches. Please play responsibly. © 2026 Soy Pro LLC</p>
+</div></footer>
+
+<script>try{localStorage.setItem('arena.lang','en')}catch(e){}</script>
+<script src="engine/i18n.js"></script>
+<script src="engine/terrain.js"></script><script src="engine/maps.js"></script>
+<script src="engine/worms.js"></script><script src="engine/zone.js"></script><script src="engine/cells.js"></script>
+<script src="engine/territory.js"></script><script src="engine/conquest.js"></script><script src="engine/blind.js"></script>
+<script src="engine/render.js"></script><script src="engine/demo.js"></script>
 </body>
 </html>
