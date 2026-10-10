@@ -72,7 +72,7 @@
   // Arranca/para cada demo según se vea en pantalla (ahorra batería en móviles)
   function boot() {
     var demos = [];
-    document.querySelectorAll('canvas[data-game]').forEach(function (cv) { var d = new Demo(cv, cv.dataset.game, { map: cv.dataset.map || null, life: +cv.dataset.life || 45 }); cv._demo = d; demos.push(d); });
+    document.querySelectorAll('canvas[data-game]').forEach(function (cv) { var d = new Demo(cv, cv.dataset.game, { map: cv.dataset.map || null, life: +cv.dataset.life || 45, warm: cv.dataset.warm ? +cv.dataset.warm : null }); cv._demo = d; demos.push(d); });
     if ('IntersectionObserver' in window) {
       var io = new IntersectionObserver(function (es) { es.forEach(function (e) { var d = e.target._demo; if (e.isIntersecting) d.start(); else d.stop(); }); }, { threshold: .15 });
       demos.forEach(function (d) { io.observe(d.cv); });

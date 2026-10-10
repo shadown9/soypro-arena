@@ -7,9 +7,9 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   const CELL = 16, GW = 130, GH = 130, N = GW * GH, WW = GW * CELL, WH = GH * CELL, SPEED = 120;
   const LEVELS = {
-    calma: { risk: [.65, 1.1], aggr: [0, .4], spd: .97, scan: 4, focus: 0 },
+    calma: { risk: [.65, 1.1], aggr: [0, .3], spd: .86, scan: 4, focus: 0 },
     pulso: { risk: [.7, 1.4], aggr: [0, .8], spd: 1, scan: 6, focus: 0 },
-    caos: { risk: [.85, 1.3], aggr: [.7, 1], spd: 1.1, scan: 10, focus: 1 }
+    caos: { risk: [.85, 1.3], aggr: [.8, 1], spd: 1.18, scan: 10, focus: 1 }
   };
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
   const aDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };

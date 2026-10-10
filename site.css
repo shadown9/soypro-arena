@@ -93,8 +93,10 @@ h2{font-size:clamp(2.4rem,5vw,4rem);line-height:.95;margin-bottom:12px}
 .tiers span::before{content:"◆";color:var(--c);text-shadow:0 0 12px var(--c)}
 
 /* Juego limpio */
-.fair{display:grid;grid-template-columns:1fr 1.2fr;gap:30px;align-items:start}
-.fair ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.fair{display:grid;grid-template-columns:1fr;gap:22px}
+.fair>div{text-align:center;max-width:720px;margin:0 auto}
+.fair ul{grid-template-columns:repeat(2,minmax(0,1fr))}
+.fair ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
 .fair li{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px 14px 48px;position:relative;color:#dfe6dc;font-weight:500}
 .fair li::before{content:"✓";position:absolute;left:16px;top:12px;width:22px;height:22px;border-radius:50%;background:rgba(215,255,56,.15);color:var(--acid);display:grid;place-items:center;font-weight:800;font-size:.85rem}
 .note-l{grid-column:1/-1;color:var(--muted);font-size:.92rem;border-left:3px solid var(--orange);padding-left:14px;margin:6px 0 0}
@@ -115,7 +117,7 @@ footer{border-top:1px solid var(--line);background:#050706}
 .foot{padding:34px 20px 50px;color:var(--muted);font-size:.92rem}.foot b{color:var(--text)}.links2 a{margin:0 2px}.muted{font-size:.85rem}
 
 /* Teléfonos y tabletas */
-@media(max-width:980px){.hero-in{grid-template-columns:1fr;text-align:center}.lead{margin-left:auto;margin-right:auto}.ctas,.stores{justify-content:center}.games,.feats,.steps{grid-template-columns:1fr 1fr}.fair{grid-template-columns:1fr}}
+@media(max-width:980px){.hero-in{grid-template-columns:1fr;text-align:center}.lead{margin-left:auto;margin-right:auto}.ctas,.stores{justify-content:center}.games,.feats,.steps{grid-template-columns:1fr 1fr}.fair ul{grid-template-columns:1fr}}
 @media(max-width:640px){.links{display:none}.bar-in{gap:10px}.brand span{font-size:1.1rem}.hero{padding:34px 0 50px}.games,.feats,.steps{grid-template-columns:1fr}.stats-in{grid-template-columns:1fr 1fr}.stats-in div:nth-child(3){border-left:0}.stats-in div{border-top:1px solid var(--line)}.sec{padding:64px 0}.btn{width:100%;justify-content:center}.ctas{flex-direction:column}.btn-s{width:auto}.phone{width:min(290px,78vw)}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .links a,.btn,.lang{white-space:nowrap}

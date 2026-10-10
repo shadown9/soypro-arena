@@ -9,9 +9,11 @@
   const BOOST_TIME = 5, BOOST_NEED = 10, BOOST_STEP = 5, WW = 3200, WH = 3200, SEG_R = 9, SPACING = 13, KILL_PTS = 10, RESPAWN = 3, SHIELD = 2, FOOD_MIN = 195, FOOD_MAX = 560, SPEED = 150, BOOST = 320;
   const LEVELS = {
     // gain: puntos por bocado de los bots (solo existe en modo gratis; con capital no hay bots)
-    calma: { sp: [128, 142], sense: [28, 55], stride: [6, 7], hunt: 0, gain: .75 },
-    pulso: { sp: [136, 156], sense: [60, 110], stride: [3, 3], hunt: .15, gain: 1.08 },
-    caos: { sp: [140, 156], sense: [90, 140], stride: [1, 1], hunt: .35, gain: 1.6 }
+    // sp: velocidad (tú vas a 150) · sense: cuánto ven por delante · turn: agilidad · delay: segundos que tardan en ver un peligro
+    // wob: cuánto se distraen · hunt: cuántos cazan · hsize/hrange/lead: cómo cazan · boost: usan turbo para cazarte
+    calma: { sp: [98, 112], sense: [26, 45], stride: [8, 9], hunt: 0, gain: .6, turn: .62, delay: .4, wob: .95, boost: false, hsize: 9, hrange: 0, lead: 0 },
+    pulso: { sp: [136, 150], sense: [70, 110], stride: [3, 3], hunt: .2, gain: 1.08, turn: 1, delay: .12, wob: .35, boost: false, hsize: 1.1, hrange: 340, lead: .6 },
+    caos: { sp: [152, 166], sense: [120, 170], stride: [1, 1], hunt: .6, gain: 1.6, turn: 1.35, delay: 0, wob: .1, boost: true, hsize: .8, hrange: 560, lead: .9 }
   };
   const aDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
   const d2 = (a, b) => { const dx = a.x - b.x, dy = a.y - b.y; return dx * dx + dy * dy; };
@@ -73,12 +75,15 @@
       const h = w.segs[0]; w.wob += dt; let best = null, bd = 1e12;
       // Comida: cerca Y por delante (si solo mira la distancia, persigue bolitas que tiene detrás y se queda dando vueltas)
       for (let i = (w.owner.id % w.stride); i < foods.length; i += w.stride) { const f = foods[i], d = Math.sqrt(d2(h, f)), turn = 1 - Math.cos(aDiff(Math.atan2(f.y - h.y, f.x - h.x), w.angle)), cost = d * (1 + .9 * turn); if (cost < bd) { bd = cost; best = f; } }
-      let want = w.angle + Math.sin(w.wob * 1.7) * 0.9;
-      if (best) want = Math.atan2(best.y - h.y, best.x - h.x) + Math.sin(w.wob * 2.3) * 0.35;
+      const L = w.owner.bot ? LV : LEVELS.pulso, o = w.owner; if (o.bt > 0) o.bt = Math.max(0, o.bt - dt);
+      let want = w.angle + Math.sin(w.wob * 1.7) * 0.9, hunting = false;
+      if (best) want = Math.atan2(best.y - h.y, best.x - h.x) + Math.sin(w.wob * 2.3) * L.wob;
       if (w.hunter) {
         // Cazador: si es más grande que algún humano cercano, apunta delante de su cabeza para cortarle el paso
         for (const p of P) { if (!p.human || !p.w || !p.w.alive || p.w === w || ally(p.id, w.owner.id)) continue; const t = p.w, pp = t.segs[0], pd = Math.sqrt(d2(h, pp));
-          if (pd < 340 && w.segs.length > t.segs.length * 1.1) { const lead = Math.min(140, pd * .6); want = Math.atan2(pp.y + Math.sin(t.angle) * lead - h.y, pp.x + Math.cos(t.angle) * lead - h.x); break; } }
+          if (pd < L.hrange && w.segs.length > t.segs.length * L.hsize) { const lead = Math.min(200, pd * L.lead); want = Math.atan2(pp.y + Math.sin(t.angle) * lead - h.y, pp.x + Math.cos(t.angle) * lead - h.x); hunting = pd; break; } }
+        // Depredador: con el turbo cargado acelera para cortarte el paso
+        if (hunting && L.boost && hunting < 300 && !(o.bt > 0) && o.charge >= boostNeed(o)) { o.bt = BOOST_TIME * .6; o.charge = 0; o.uses++; events.push({ k: 'turbo', p: o.id }); }
       }
       let danger = null, dd = 1e12, near = false; const lim = (SEG_R * 3) * (SEG_R * 3);
       [Math.min(38, w.sense), w.sense].forEach((look, ix) => {
@@ -87,12 +92,14 @@
       });
       // Obstáculos del mapa: mirar un poco más lejos que a los gusanos
       if (!danger || !near) for (const look of [35, 80, 130]) { const q = TR.near(TER, h.x + Math.cos(w.angle) * look, h.y + Math.sin(w.angle) * look, SEG_R * 2.5 * w.girth); if (q) { danger = q; near = look < 90; break; } }
+      // Reflejos: los fáciles tardan en ver el peligro (y a veces chocan); los difíciles reaccionan al instante
+      if (danger) { w.seen = (w.seen || 0) + dt; if (w.seen < L.delay) danger = null; } else w.seen = 0;
       if (danger) { const away = Math.atan2(h.y - danger.y, h.x - danger.x); want = w.angle + (aDiff(away, w.angle) > 0 ? 1 : -1) * (near ? 1.4 : .55); }
       const m = Math.min(h.x, h.y, WW - h.x, WH - h.y);
       if (m < 260 && !(danger && near)) { const home = Math.atan2(WH / 2 - h.y, WW / 2 - h.x), kw = Math.min(1, (260 - m) / 160); want = w.angle + aDiff(want, w.angle) * (1 - kw) + aDiff(home, w.angle) * kw; }
       const e = ef(h.x, h.y);
-      steer(w, want, dt, (danger || m < 200 ? 4.2 : 2.6) * (e.turn || 1), danger ? 5 : 3);
-      w.speed += ((danger ? w.base * 1.12 : w.base) * (e.spd || 1) - w.speed) * Math.min(1, dt * 2 * (e.grip || 1));
+      steer(w, want, dt, (danger || m < 200 ? 4.2 : 2.6) * L.turn * (e.turn || 1), danger ? 5 : 3);
+      w.speed += ((o.bt > 0 ? BOOST * .85 : danger ? w.base * 1.12 : w.base) * (e.spd || 1) - w.speed) * Math.min(1, dt * 2 * (e.grip || 1));
       h.x += Math.cos(w.angle) * w.speed * dt; h.y += Math.sin(w.angle) * w.speed * dt;
     }
     function humanMove(p, dt) {
