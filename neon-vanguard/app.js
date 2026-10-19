@@ -1170,6 +1170,26 @@ function estelaNave(x, y, len, color, pulse) {
   ctx.fill();
 }
 
+/* NAVES DE LOS PLANETAS: dibujos detallados (naves/<planeta>.png, mirando hacia +X) del diseño que eligió el Jefe.
+   Mientras cargan, o si fallan, se usa el dibujo vectorial de abajo. */
+const NAVE_IMG = {}, NAVE_LARGO = { venus: 2.9, marte: 3.3, jupiter: 3.0, saturno: 3.2, neptuno: 3.0 };
+const NAVE_ANCHO = { marte: 2.0 }; // la de Marte era muy fina (parecía un cohete): más ancha
+['venus', 'marte', 'jupiter', 'saturno', 'neptuno'].forEach(k => {
+  const im = new Image();
+  im.onload = () => {
+    const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+    const g = c.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    NAVE_IMG[k] = { im, blanco: c }; // la silueta blanca es el destello al recibir un disparo
+  };
+  im.src = 'naves/' + k + '.png?v=1';
+});
+function naveSprite(k, e, flash) {
+  const N = NAVE_IMG[k]; if (!N) return false;
+  const L = e.r * NAVE_LARGO[k], h = N.im.height * L / N.im.width * (NAVE_ANCHO[k] || 1);
+  ctx.drawImage(flash ? N.blanco : N.im, -L * 0.6, -h / 2, L, h); // las llamas van detrás: el casco queda centrado
+  return true;
+}
+
 /* Cada planeta es otra civilización y fabrica naves a su manera (máquinas, nada de animales):
    VENUS   = MEDIALUNA · casco dorado en media luna, núcleo de plasma solar delante, rejillas de calor y motores en las puntas
    MARTE   = TRIDENTE  · nave de guerra carmesí: tres cañones hacia delante, bloque de motores y placas de blindaje
@@ -1179,6 +1199,7 @@ function estelaNave(x, y, len, color, pulse) {
 
 /* VENUS — MEDIALUNA */
 function dibujarAvispa(e, col, flash) {
+  if (naveSprite('venus', e, flash)) return;
   const r = e.r, t = G.time + (e.enginePulse || 0);
   const pulse = 0.75 + Math.sin(t * 24) * 0.25;
   // motores en las dos puntas traseras
@@ -1218,6 +1239,7 @@ function dibujarAvispa(e, col, flash) {
 
 /* MARTE — TRIDENTE */
 function dibujarFilo(e, col, flash) {
+  if (naveSprite('marte', e, flash)) return;
   const r = e.r, t = G.time + (e.enginePulse || 0);
   const pulse = 0.75 + Math.sin(t * 34) * 0.25;
   estelaNave(-r * 0.95, -r * 0.3, r * 1.6, 'rgba(255,46,77,0.95)', pulse);
@@ -1251,6 +1273,7 @@ function dibujarFilo(e, col, flash) {
 
 /* JÚPITER — COLOSO */
 function dibujarColoso(e, col, flash) {
+  if (naveSprite('jupiter', e, flash)) return;
   const r = e.r, t = G.time + (e.enginePulse || 0);
   const pulse = 0.7 + Math.sin(t * 14) * 0.3;
   for (const oy of [-r * 0.45, 0, r * 0.45]) estelaNave(-r * 0.85, oy, r * 1.3, 'rgba(255,138,30,0.9)', pulse);
@@ -1277,6 +1300,7 @@ function dibujarColoso(e, col, flash) {
 
 /* SATURNO — PLATILLO */
 function dibujarAnillada(e, col, flash) {
+  if (naveSprite('saturno', e, flash)) return;
   const r = e.r, t = G.time + (e.enginePulse || 0);
   const giro = t * 2.2;
   // mitad trasera del anillo
@@ -1315,6 +1339,7 @@ function dibujarAnillada(e, col, flash) {
 
 /* NEPTUNO — CRISTAL */
 function dibujarEspectral(e, col, flash) {
+  if (naveSprite('neptuno', e, flash)) return;
   const r = e.r, t = G.time + (e.enginePulse || 0);
   // motor frío: anillo de plasma azul
   ctx.save(); ctx.shadowBlur = 14; ctx.shadowColor = '#7fb2ff';
