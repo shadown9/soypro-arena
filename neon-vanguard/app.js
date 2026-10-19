@@ -1898,13 +1898,18 @@ function gameOver() {
       }
       const p = (typeof leerPiloto === 'function') ? leerPiloto() : {};
       if (typeof mostrarTarjeta === 'function') {
+        // la tarjeta muestra SIEMPRE el récord más alto (para que otros intenten superarlo): si esta partida
+        // quedó por debajo, no cambia. El del servidor manda; sin conexión, el guardado en el teléfono.
+        const rec = (res && res.piloto) || (typeof leerRecordLocal === 'function' && leerRecordLocal()) || {};
+        const record = Math.max(rec.score || 0, scoreFinal), esta = record > scoreFinal;
         mostrarTarjeta({
           nombre: (p && p.nombre) || t('piloto'),
           codigo: (p && p.codigo) || '',
           bando: (p && p.bando) || '',
-          score: scoreFinal,
-          wave: waveFinal,
-          kills: killsFinal
+          score: record,
+          wave: esta ? (rec.wave || waveFinal) : Math.max(waveFinal, rec.wave || 0),
+          kills: esta ? (rec.kills || killsFinal) : Math.max(killsFinal, rec.kills || 0),
+          puesto: res && res.puesto, total: res && res.total
         });
       }
     });

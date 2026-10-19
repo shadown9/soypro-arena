@@ -60,8 +60,8 @@ const I18N = {
     // final y tarjeta
     go_t1: 'SISTEMA', go_t2: 'CAÍDO', go_puntaje: 'PUNTAJE', go_oleada: 'OLEADA', go_bajas: 'BAJAS', go_record: '¡NUEVO RÉCORD PERSONAL!',
     go_puesto: 'PUESTO #{p} DE {t} EN EL MUNDO', go_puesto_solo: 'PUESTO #{p} EN EL MUNDO', compartir: '📤 COMPARTIR', descargar: '⬇ DESCARGAR', reintentar: 'REINTENTAR',
-    tj_alt: 'Tarjeta de récord', tj_record: 'RÉCORD DE PILOTO', tj_bando: 'BANDO {b}', tj_puntos: 'PUNTOS', tj_oleada: 'OLEADA {n}', tj_bajas: '{n} BAJAS', tj_reto: '¿ME SUPERÁS? ESCANEÁ Y JUGÁ',
-    sh_piloto: 'Piloto', sh_bando: 'Bando', sh_record: 'Récord', sh_reto: '¿Me superás?', piloto: 'PILOTO',
+    tj_alt: 'Tarjeta de récord', tj_record: 'RÉCORD DE PILOTO', tj_bando: 'BANDO {b}', tj_puntos: 'PUNTOS', tj_oleada: 'OLEADA {n}', tj_bajas: '{n} BAJAS', tj_puesto: '#{p} DEL MUNDO', tj_reto: '¿ME SUPERÁS? ESCANEÁ Y JUGÁ',
+    sh_piloto: 'Piloto', sh_bando: 'Bando', sh_record: 'Récord', sh_oleada: 'oleada {n}', sh_puesto: '🏆 Puesto #{p} del mundo', sh_reto: '¿Me superás?', piloto: 'PILOTO',
     // en partida
     f_jefe: 'JEFE', f_oleada: 'OLEADA {n}', f_nv: 'NV.', f_maximo: 'MÁXIMO · +15 HP', f_escudo6: '◈ ESCUDO 6 s',
     m_venus: 'DAÑO', m_marte: 'CADENCIA', m_jupiter: 'BLINDAJE', m_saturno: 'ANILLO', m_neptuno: 'MULTIDISPARO',
@@ -154,8 +154,8 @@ const I18N = {
     pz_juga_hoy: "You haven't played today: play a match to get in", pz_juga_sem: "You haven't played this week: play a match to get in",
     go_t1: 'SYSTEM', go_t2: 'DOWN', go_puntaje: 'SCORE', go_oleada: 'WAVE', go_bajas: 'KILLS', go_record: 'NEW PERSONAL BEST!',
     go_puesto: 'WORLD RANK #{p} OF {t}', go_puesto_solo: 'WORLD RANK #{p}', compartir: '📤 SHARE', descargar: '⬇ DOWNLOAD', reintentar: 'RETRY',
-    tj_alt: 'Record card', tj_record: 'PILOT RECORD', tj_bando: 'FACTION {b}', tj_puntos: 'POINTS', tj_oleada: 'WAVE {n}', tj_bajas: '{n} KILLS', tj_reto: 'CAN YOU BEAT ME? SCAN & PLAY',
-    sh_piloto: 'Pilot', sh_bando: 'Faction', sh_record: 'Record', sh_reto: 'Can you beat me?', piloto: 'PILOT',
+    tj_alt: 'Record card', tj_record: 'PILOT RECORD', tj_bando: 'FACTION {b}', tj_puntos: 'POINTS', tj_oleada: 'WAVE {n}', tj_bajas: '{n} KILLS', tj_puesto: '#{p} IN THE WORLD', tj_reto: 'CAN YOU BEAT ME? SCAN & PLAY',
+    sh_piloto: 'Pilot', sh_bando: 'Faction', sh_record: 'Record', sh_oleada: 'wave {n}', sh_puesto: '🏆 World rank #{p}', sh_reto: 'Can you beat me?', piloto: 'PILOT',
     f_jefe: 'BOSS', f_oleada: 'WAVE {n}', f_nv: 'LV.', f_maximo: 'MAX · +15 HP', f_escudo6: '◈ SHIELD 6 s',
     m_venus: 'DAMAGE', m_marte: 'FIRE RATE', m_jupiter: 'ARMOR', m_saturno: 'RING', m_neptuno: 'MULTISHOT',
     a_2: 'SHOTGUN', a_3: 'LASER x3', a_4: 'BEAM', a_5: 'MISSILES', a_6: 'PLASMA',

@@ -323,7 +323,7 @@ function generarTarjeta(datos) {
 
   ctx.fillStyle = 'rgba(255,255,255,0.45)';
   ctx.font = '22px Arial, sans-serif';
-  ctx.fillText(t('tj_record'), W / 2, 195);
+  ctx.fillText(t('tj_record') + (datos.puesto && datos.puesto <= 100 ? '  ·  ' + t('tj_puesto', { p: datos.puesto }) : ''), W / 2, 195);
 
   // Nombre
   ctx.fillStyle = '#ffffff';
@@ -381,9 +381,11 @@ function generarTarjeta(datos) {
 }
 
 /* Muestra la tarjeta en el overlay de fin de partida */
+let datosTarjeta = null; // lo que muestra la tarjeta: el texto para compartir dice lo mismo
 function mostrarTarjeta(datos) {
   const img = document.getElementById('tarjeta-img');
   if (!img) return;
+  datosTarjeta = datos;
   img.src = generarTarjeta(datos);
   document.getElementById('tarjeta-box').classList.remove('hidden');
 }
@@ -401,12 +403,13 @@ function descargarTarjeta() {
 async function compartirTarjeta() {
   const img = document.getElementById('tarjeta-img');
   const p = (typeof leerPiloto === 'function') ? leerPiloto() : {};
-  const rec = leerRecordLocal() || {};
+  const rec = datosTarjeta || leerRecordLocal() || {};
   const texto =
     '🎮 NEON VANGUARD\n' +
     t('sh_piloto') + ': ' + ((p && p.nombre) || '?') + '\n' +
     t('sh_bando') + ': ' + nombrePlaneta(p && p.bando) + '\n' +
-    t('sh_record') + ': ' + fmt(rec.score) + ' pts\n' +
+    t('sh_record') + ': ' + fmt(rec.score) + ' pts' + (rec.wave ? ' · ' + t('sh_oleada', { n: rec.wave }) : '') + '\n' +
+    (rec.puesto && rec.puesto <= 100 ? t('sh_puesto', { p: rec.puesto }) + '\n' : '') +
     t('sh_reto') + ' ' + ARENA_URL_PUBLICA;
 
   // 0) Dentro de la app de ProArena el navegador interno no sabe compartir:
