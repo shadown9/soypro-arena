@@ -260,10 +260,11 @@ const RED = (function () {
       player.x = o.x + Math.cos(a) * 900; player.y = o.y + Math.sin(a) * 900; CAM.x = player.x; CAM.y = player.y; if (typeof despejarZona === 'function') despejarZona(player.x, player.y, 200); }
   }
   function disparo(k) { if (conectado && player) enviar({ t: 'd', a: Math.round(player.angle * 100) / 100, k }); }
+  function regreso() { if (conectado && player) enviar({ t: 'e', x: Math.round(player.x), y: Math.round(player.y), a: 0, hp: Math.round(player.hp), od: 0, v: 0 }); }
   function muerte() { if (conectado) { enviar({ t: 'e', x: Math.round(player.x), y: Math.round(player.y), a: 0, hp: 0, od: 0, v: 0 }); enviar({ t: 'm' }); } }
 
   window.addEventListener('pagehide', () => { cerrandoAdrede = true; try { ws && ws.close(); } catch (e) {} });
   function revancha() { enviar({ t: 'revancha' }); }
-  return { tick, dibujar, dibujarPantalla, inicio, disparo, muerte, privada, publica, revancha, get sala() { return sala; }, get miId() { return miId; },
+  return { tick, dibujar, dibujarPantalla, inicio, disparo, muerte, regreso, privada, publica, revancha, get sala() { return sala; }, get miId() { return miId; },
     get activo() { return activo; }, get bestia() { return bestia; }, get conectado() { return conectado; }, get remotos() { return remotos; } };
 })();

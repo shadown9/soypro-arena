@@ -853,3 +853,15 @@ html.nv-intro #hud .hud-sonido { pointer-events:none; }
   font:800 11px/1 system-ui, sans-serif; letter-spacing:1px; cursor:pointer; touch-action:manipulation; }
 .btn-idioma:hover { background:rgba(0,240,255,.18); color:#fff; }
 .title b { font-weight:inherit; }
+
+/* ===== Regresar a la base: aviso pequeño arriba; la partida no se detiene ===== */
+#confirmar-base { position:fixed; left:50%; top:calc(env(safe-area-inset-top, 0px) + 74px); transform:translateX(-50%); z-index:45;
+  padding:12px 16px; border-radius:14px; background:rgba(5,6,13,.9); border:1px solid rgba(0,240,255,.5); box-shadow:0 0 24px rgba(0,240,255,.25);
+  text-align:center; color:#cfe9ff; max-width:92vw; }
+#confirmar-base.hidden { display:none; }
+.cb-t { font:900 15px/1.2 system-ui, sans-serif; letter-spacing:2px; color:#fff; }
+.cb-s { font-size:11px; color:#8fb4d0; margin:4px 0 10px; }
+.cb-botones { display:flex; gap:8px; justify-content:center; }
+.cb-botones button { padding:9px 14px; border-radius:10px; font:800 11px/1 system-ui, sans-serif; letter-spacing:1px; cursor:pointer; touch-action:manipulation; }
+.cb-si { background:linear-gradient(90deg,#00f0ff,#4d7cff); border:0; color:#05060d; }
+.cb-no { background:rgba(255,43,214,.12); border:1px solid rgba(255,43,214,.5); color:#ffb3ef; }

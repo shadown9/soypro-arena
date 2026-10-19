@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" href="icono-180.png">
 <meta name="apple-mobile-web-app-title" content="Neon Vanguard">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="style.css?v=89">
+<link rel="stylesheet" href="style.css?v=93">
 </head>
 <body>
 <div id="game-wrap">
@@ -43,6 +43,7 @@
         <div class="bar"><div id="od-fill" class="bar-fill od"></div></div>
       </div>
       <div class="hud-sonido">
+        <button id="btn-base" class="btn-son btn-base" aria-label="Regresar a la base" data-i18n-aria="aria_base" onclick="pedirRegreso()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></button>
         <button id="btn-musica" class="btn-son" aria-label="Quitar música" onclick="Audio2.alternarMusica()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></button>
         <button id="btn-efectos" class="btn-son" aria-label="Quitar efectos" onclick="Audio2.alternarEfectos()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></button>
       </div>
@@ -226,6 +227,16 @@
   <div id="fps" class="fps">60</div>
 </div>
 
+<!-- Regresar a la base: aviso pequeño; la batalla sigue mientras decides -->
+<div id="confirmar-base" class="hidden">
+  <div class="cb-t">¿REGRESAR A LA BASE?</div>
+  <div class="cb-s"></div>
+  <div class="cb-botones">
+    <button class="cb-si" onclick="regresarBase()" data-i18n="base_si">🏠 REGRESAR</button>
+    <button class="cb-no" onclick="cancelarRegreso()" data-i18n="base_no">⚔ SEGUIR PELEANDO</button>
+  </div>
+</div>
+
 <!-- Aviso de la sala privada (abajo, entre los dos joysticks) -->
 <div id="sala-banner" class="hidden">
   <span class="sb-txt"><span data-i18n="sala">SALA</span> <b class="sb-cod">----</b> · <span class="sb-modo">DUELO</span></span>
@@ -253,15 +264,15 @@
   <button id="rotar-cerrar" aria-label="Cerrar aviso" data-i18n-aria="aria_cerrar" onclick="cerrarAvisoRotar()">✕</button>
 </div>
 
-<script src="i18n.js?v=91" charset="utf-8"></script>
+<script src="i18n.js?v=93" charset="utf-8"></script>
 <script src="sonido.js?v=89" charset="utf-8"></script>
 <script src="instalar.js?v=89" charset="utf-8"></script>
 <script src="pantallas.js?v=89" charset="utf-8"></script>
 <script src="ranking.js?v=90" charset="utf-8"></script>
-<script src="app.js?v=91" charset="utf-8"></script>
+<script src="app.js?v=93" charset="utf-8"></script>
 <script src="intro.js?v=89" charset="utf-8"></script>
 <script src="misiones.js?v=89" charset="utf-8"></script>
 <script src="amigos.js?v=89" charset="utf-8"></script>
-<script src="red.js?v=89" charset="utf-8"></script>
+<script src="red.js?v=93" charset="utf-8"></script>
 </body>
 </html>

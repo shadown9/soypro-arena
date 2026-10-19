@@ -41,6 +41,7 @@ const TAU = Math.PI * 2;
 const keys = {};
 const mouse = { x: 0, y: 0, down: false };
 window.addEventListener('keydown', e => {
+  if (e.code === 'Escape' && typeof pedirRegreso === 'function') { pedirRegreso(); e.preventDefault(); return; }
   keys[e.code] = true;
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
 });
@@ -1806,7 +1807,7 @@ function drawJoysticks() {
 function resetGame() {
   bullets = []; enemies = []; eBullets = []; particles = []; powerups = []; floaters = []; rings = [];
   G.score = 0; G.wave = 1; G.kills = 0; G.combo = 1; G.comboTimer = 0;
-  G.victorias = 0; G.intro = null; G.estilo = null;
+  G.victorias = 0; G.intro = null; G.estilo = null; G.retirada = false; G.regresando = false;
   G.shake = 0; G.flash = 0; G.slowmo = 1; G.time = 0;
   G.waveActive = false; G.bossActive = false; G.bossPending = false;
   player = createPlayer();
@@ -1833,6 +1834,10 @@ function startGame() {
 function gameOver() {
   if (NV_DEMO) { startGame(); return; } // la demo nunca termina ni toca el ranking
   G.running = false; G.over = true;
+  { const t1 = document.querySelector('#gameover .title b'), t2 = document.querySelector('#gameover .title span'); // retirada voluntaria o derribado
+    if (t1 && t2) { t1.dataset.i18n = G.retirada ? 'go_ret1' : 'go_t1'; t2.dataset.i18n = G.retirada ? 'go_ret2' : 'go_t2'; t1.textContent = t(t1.dataset.i18n); t2.textContent = t(t2.dataset.i18n);
+      document.querySelector('#gameover .title').classList.toggle('dead', !G.retirada); } }
+  G.retirada = false;
   Audio2.musica(0); Audio2.ajustar(false, 1); // vuelve la música tranquila del menú
   el.finalScore.textContent = fmt(G.score);
   el.finalWave.textContent = G.wave;
@@ -1888,6 +1893,31 @@ function actualizarAvisoRotar() {
 window.addEventListener('resize', actualizarAvisoRotar);
 window.addEventListener('orientationchange', () => setTimeout(actualizarAvisoRotar, 120));
 actualizarAvisoRotar();
+
+/* ---------- REGRESAR A LA BASE (botón 🏠, o Esc en la computadora) ----------
+   Es un juego en línea: el mundo NUNCA se detiene. Al tocarlo sale un aviso pequeño mientras la batalla sigue;
+   al confirmar, la nave salta al hiperespacio, desaparece para los demás pilotos y la partida termina
+   guardando puntaje, récord, ranking y misiones. En una sala privada, regresar = salir de la sala. */
+function pedirRegreso() {
+  if (!G.running || G.over || G.intro || NV_DEMO || !player || !player.alive || G.regresando) return;
+  const c = document.getElementById('confirmar-base');
+  c.querySelector('.cb-t').textContent = t(G.privada ? 'base_t_sala' : 'base_t');
+  c.querySelector('.cb-s').textContent = G.privada ? '' : t('base_s');
+  c.classList.remove('hidden');
+  clearTimeout(pedirRegreso.t); pedirRegreso.t = setTimeout(cancelarRegreso, 6000); // si no contestas, sigues peleando
+}
+function cancelarRegreso() { clearTimeout(pedirRegreso.t); document.getElementById('confirmar-base').classList.add('hidden'); }
+function regresarBase() {
+  cancelarRegreso();
+  if (!G.running || !player || !player.alive || G.regresando) return;
+  if (G.privada && typeof salirPrivada === 'function') { salirPrivada(); return; }
+  G.regresando = true; G.retirada = true; player.invuln = 99;
+  spawnRing(player.x, player.y, '#00f0ff', 160, 700, 5); spawnParticles(player.x, player.y, 50, { color: '#9fe8ff', speed: 420, life: 0.7, size: 3 });
+  Audio2.salto && Audio2.salto(); G.flash = 0.5; G.flashColor = '200,250,255';
+  if (typeof RED !== 'undefined') RED.regreso(); // los demás ven cómo tu nave se va (sin «derribado»)
+  player.alive = false;
+  setTimeout(() => { G.regresando = false; gameOver(); }, 900);
+}
 
 /* ---------- pausa automática al salir de la pestaña ---------- */
 let pausadoPorFoco = false;
