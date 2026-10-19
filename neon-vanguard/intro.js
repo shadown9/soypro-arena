@@ -168,7 +168,7 @@ function terminarIntro() {
   document.documentElement.classList.remove('nv-intro');
   G.flash = 0.9; G.flashColor = '200,250,255';
   if (typeof RED !== 'undefined') RED.inicio();
-  addFloater(player.x, player.y - 60, '¡A LA BATALLA!', '#00f0ff', 30);
+  addFloater(CAM.x, CAM.y - H * 0.29, '¡A LA BATALLA!', '#ff2bd6', 26);
   startWave(1);
 }
 // un toque o una tecla salta la presentación
