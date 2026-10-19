@@ -1,6 +1,6 @@
 /* Neon Vanguard instalada: siempre pide la versión nueva a la red; la copia guardada solo se usa sin conexión.
    No toca el ranking ni el multijugador (otro dominio). */
-const CACHE = 'nv-89';
+const CACHE = 'nv-90';
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.add('./')).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));

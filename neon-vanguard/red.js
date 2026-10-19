@@ -71,11 +71,11 @@ const RED = (function () {
       bestia = { tipo: m.tipo, type: m.tipo, nombre: nomBestia(m), x: m.x, y: m.y, hp: m.hp, max: m.max, r: m.r, angle: 0, phase: 0, wobble: 0, vx: 0, vy: 0,
         color: COLOR_BESTIA[m.tipo], buf: [{ t: performance.now(), x: m.x, y: m.y, hp: m.hp, a: 0 }], hitFlash: 0, laser: 0 };
       if (typeof Toast !== 'undefined') Toast.mostrar(t('rd_aparecio', { n: nomBestia(m) }), bestia.color);
-      if (typeof Audio2 !== 'undefined') Audio2.boss();
+      if (typeof Audio2 !== 'undefined') { Audio2.boss(); Audio2.bestia(m.tipo, 'aparece', m.x, m.y, true); } // la gigante con su voz, más grave
     }
     else if (m.t === 'bf' && bestia) fuegoBestia(m);
     else if (m.t === 'bestiaMuere') {
-      if (bestia) { spawnParticles(bestia.x, bestia.y, 120, { color: bestia.color, speed: 560, life: 1.5, size: 6 }); spawnRing(bestia.x, bestia.y, bestia.color, 500, 900, 8); shake(24); Audio2.explode(true); }
+      if (bestia) { spawnParticles(bestia.x, bestia.y, 120, { color: bestia.color, speed: 560, life: 1.5, size: 6 }); spawnRing(bestia.x, bestia.y, bestia.color, 500, 900, 8); shake(24); Audio2.explode(true); Audio2.bestia(bestia.tipo, 'muere', bestia.x, bestia.y, true); }
       avisoFeed(t('rd_bestia_derribo', { a: m.de, b: nomBestia(m) }), m.deId === miId ? '#00f0ff' : '#ffd23f'); bestia = null;
     }
     else if (m.t === 'bestiaSe') { bestia = null; avisoFeed(t('rd_bestia_se', { n: nomBestia(m) }), '#8fb4d0'); }
@@ -109,9 +109,10 @@ const RED = (function () {
   // la bestia dispara (lo decide el servidor; cada teléfono pone las balas, que solo dañan a su piloto)
   function fuegoBestia(m) {
     const b = (ang, v, r, dmg, col) => eBullets.push({ x: m.x + Math.cos(ang) * 50, y: m.y + Math.sin(ang) * 50, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, r, dmg, life: 3, color: col });
-    if (m.tipo === 'medusa') for (let k = 0; k < 16; k++) b(k / 16 * TAU + m.a, 230, 6, 10, '#bfffea');
+    if (typeof Audio2 !== 'undefined') Audio2.bestia(m.tipo, 'ataque', m.x, m.y, true);
+    if (m.tipo === 'medusa') for (let k = 0; k < 16; k++) b(k / 16 * TAU + m.a, 230, 6, 10, '#ffd99a');
     else if (m.tipo === 'ojo') for (let k = -3; k <= 3; k++) b(m.a + k * 0.13, 330, 6, 12, '#ff6a85');
-    else for (let k = 0; k < 6; k++) setTimeout(() => { if (bestia) b(m.a + (Math.random() - 0.5) * 0.3, 380, 5, 9, '#ff9be8'); }, k * 90);
+    else for (let k = 0; k < 6; k++) setTimeout(() => { if (bestia) b(m.a + (Math.random() - 0.5) * 0.3, 380, 5, 9, '#8fe8ff'); }, k * 90);
   }
 
   const BESTIA_POR_NOMBRE = { 'MEDUSA REINA': 'medusa', 'OJO DEL VACÍO': 'ojo', 'LEVIATÁN': 'serpiente' };

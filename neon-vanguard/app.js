@@ -400,7 +400,8 @@ function firePlayer() {
       vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
       r: size, dmg: dmg * (p.dmgMult || 1), life: 1.6, color, pierce: od ? 1 : 0, hitSet: new Set()
     };
-    bullets.push(b); return b;
+    bullets.push(b); p._fog = { x: muzzleX, y: muzzleY, t: G.time, c: color }; // destello en la boca del cañón
+    return b;
   };
 
   if (p.weapon === 4) {
@@ -482,6 +483,7 @@ function spawnEnemy(type, x, y) {
   };
   enemies.push(e);
   spawnRing(x, y, t.color, 50, 300, 2);
+  if (t.bando === 'bestia') Audio2.bestia(type, 'aparece', x, y); // cada criatura con su sonido
   return e;
 }
 
@@ -743,7 +745,7 @@ function killEnemy(index, byPlayer = true) {
     color: e.color, speed: isBoss ? 520 : 300, life: isBoss ? 1.4 : 0.7, size: isBoss ? 7 : 4
   });
   spawnRing(e.x, e.y, e.color, isBoss ? 400 : 90, isBoss ? 900 : 500, isBoss ? 8 : 3);
-  Audio2.explode(isBoss);
+  if (ENEMY_TYPES[e.type] && ENEMY_TYPES[e.type].bando === 'bestia') Audio2.bestia(e.type, 'muere', e.x, e.y); else Audio2.explode(isBoss);
   shake(isBoss ? 30 : 6);
 
   if (byPlayer) {
@@ -962,13 +964,14 @@ function updateBullets(dt) {
       if (dist2(b, e) < (b.r + e.r) * (b.r + e.r)) {
         if (e.type === 'coraza' && e.escudo != null) { // de frente rebota: hay que rodearla
           const llega = Math.atan2(b.y - e.y, b.x - e.x), dif = Math.atan2(Math.sin(llega - e.escudo), Math.cos(llega - e.escudo));
-          if (Math.abs(dif) < 1.05) { spawnParticles(b.x, b.y, 5, { color: '#9fe8ff', speed: 200, life: 0.25, size: 2.5 }); b.hitSet.add(e);
+          if (Math.abs(dif) < 1.05) { spawnParticles(b.x, b.y, 5, { color: '#9fe8ff', speed: 200, life: 0.25, size: 2.5 }); b.hitSet.add(e); Audio2.bestia('coraza', 'bloqueo', e.x, e.y);
             if (!b.explota) { bullets.splice(i, 1); } break; }
         }
         e.hp -= b.dmg;
         e.hitFlash = 0.12;
         b.hitSet.add(e);
         spawnParticles(b.x, b.y, 4, { color: b.color, speed: 150, life: 0.25, size: 2.5 });
+        spawnParticles(b.x, b.y, 1, { color: '#ffffff', speed: 0, life: 0.07, size: 6 }); spawnRing(b.x, b.y, b.color, 16, 260, 1.5); // chispazo
         Audio2.hit();
         if (e.hp <= 0) { killEnemy(j, true); }
         if (b.explota) { explotarPlasma(b); bullets.splice(i, 1); }
@@ -1632,9 +1635,26 @@ function puntoBrillo(color, r, blur) {
 }
 function dibujarPunto(x, y, r, color, blur) { const c = puntoBrillo(color, r, blur); ctx.drawImage(c, x - c.mitad, y - c.mitad, c.mitad * 2, c.mitad * 2); }
 
+// estela de trazador: una línea que se apaga hacia atrás (sin sombras: barata para el teléfono)
+function estelaBala(b, largo, ancho, alfa) {
+  const v = Math.hypot(b.vx, b.vy) || 1, L = Math.min(largo, v * 0.035), ux = b.vx / v, uy = b.vy / v;
+  ctx.strokeStyle = b.color; ctx.lineWidth = ancho;
+  ctx.globalAlpha = alfa; ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - ux * L * 0.5, b.y - uy * L * 0.5); ctx.stroke();
+  ctx.globalAlpha = alfa * 0.4; ctx.lineWidth = ancho * 0.7; ctx.beginPath(); ctx.moveTo(b.x - ux * L * 0.5, b.y - uy * L * 0.5); ctx.lineTo(b.x - ux * L, b.y - uy * L); ctx.stroke();
+}
 function drawBullets() {
+  ctx.save(); ctx.lineCap = 'round';
+  for (const b of bullets) estelaBala(b, b.rayo ? 70 : 34, b.r * 1.5, 0.55);
+  for (const b of eBullets) estelaBala(b, 22, b.r * 1.2, 0.4);
+  ctx.restore();
   for (const b of bullets) dibujarPunto(b.x, b.y, b.r, b.color, 14);
-  for (const b of eBullets) dibujarPunto(b.x, b.y, b.r, b.color, 12);
+  // balas enemigas: núcleo blanco que late (se leen como peligro)
+  const late = 0.55 + Math.sin(G.time * 18) * 0.25;
+  for (const b of eBullets) { dibujarPunto(b.x, b.y, b.r, b.color, 12); ctx.globalAlpha = late; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.45, 0, TAU); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  // destello del cañón (dura un instante)
+  const f = player && player._fog;
+  if (f && G.time - f.t < 0.05) { ctx.globalAlpha = 1 - (G.time - f.t) / 0.05; dibujarPunto(f.x, f.y, 7, f.c, 18); ctx.globalAlpha = 1; }
 }
 
 function drawOrbes() {
@@ -1794,6 +1814,9 @@ function loop(now) {
   if (!NV_DEMO) { // la música sigue a la partida: combate, o jefe si hay uno vivo
     Audio2.musica(enemies.some(e => e.type === 'boss') ? 2 : 1);
     Audio2.ajustar(player.odActive > 0, player.hp / player.maxHp);
+    // latido del corazón con poca vida: más rápido cuanto menos vida
+    const vida = player.hp / player.maxHp;
+    if (player.alive && G.running && vida < 0.3) { G.latidoP = 0.45 + vida * 2.2; if (!(G.latidoT > G.time)) { G.latidoT = G.time + G.latidoP; Audio2.latido(); } }
   }
 
   // timers globales
@@ -1848,6 +1871,15 @@ function loop(now) {
   vg.addColorStop(1, 'rgba(0,0,0,0.55)');
   ctx.fillStyle = vg;
   ctx.fillRect(0, 0, W, H);
+  // poca vida (menos del 30 %): los bordes laten en rojo al ritmo del corazón
+  const vida = player && player.alive && G.running ? player.hp / player.maxHp : 1;
+  if (vida < 0.3) {
+    const fase = (G.time % (G.latidoP || 1)) / (G.latidoP || 1), golpe = Math.max(Math.exp(-fase * 14), 0.7 * Math.exp(-Math.max(0, fase - 0.18) * 14) * (fase > 0.18 ? 1 : 0));
+    const fuerza = (0.3 - vida) / 0.3 * (0.35 + golpe * 0.45);
+    const rg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.72);
+    rg.addColorStop(0, 'rgba(255,30,60,0)'); rg.addColorStop(1, 'rgba(255,30,60,' + fuerza.toFixed(3) + ')');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  }
 
   // joysticks táctiles
   if (touch.activo) drawJoysticks();
@@ -2212,9 +2244,9 @@ function iaBestia(e, i, dt, d, nx, ny) {
     e.vx = lerp(e.vx, (nx + -ny * meceo) * e.speed, dt * 1.5);
     e.vy = lerp(e.vy, (ny + nx * meceo) * e.speed, dt * 1.5);
     if (e.carga > 0) { e.carga -= dt; e.vx *= 0.9; e.vy *= 0.9;
-      if (e.carga <= 0) { spawnRing(e.x, e.y, '#7affd6', 210, 520, 6); spawnParticles(e.x, e.y, 24, { color: '#c8fff0', speed: 300, life: 0.4, size: 2.5 });
-        if (p.alive && d < 210 + p.r) damagePlayer(e.dmg); e.fireCd = e.fireRate; } }
-    else if (e.fireCd <= 0 && d < 240) e.carga = 0.7; // aviso: se ilumina antes de descargar
+      if (e.carga <= 0) { spawnRing(e.x, e.y, '#c48cff', 210, 520, 6); spawnParticles(e.x, e.y, 24, { color: '#e6ccff', speed: 300, life: 0.4, size: 2.5 });
+        if (p.alive && d < 210 + p.r) damagePlayer(e.dmg); e.fireCd = e.fireRate; Audio2.bestia('medusa', 'ataque', e.x, e.y); } }
+    else if (e.fireCd <= 0 && d < 240) { e.carga = 0.7; Audio2.bestia('medusa', 'carga', e.x, e.y); } // aviso: se ilumina antes de descargar
   } else if (e.type === 'larva') {
     // enjambre: corren hacia ti con temblor, rodeándote
     const giro = Math.sin(e.wobble * 2.3 + e.orbitR) * 1.1;
@@ -2226,6 +2258,7 @@ function iaBestia(e, i, dt, d, nx, ny) {
     e.vx = lerp(e.vx, (nx * Math.cos(ond) - ny * Math.sin(ond)) * e.speed, dt * 3);
     e.vy = lerp(e.vy, (nx * Math.sin(ond) + ny * Math.cos(ond)) * e.speed, dt * 3);
     e.angle = Math.atan2(e.vy, e.vx);
+    if (d < 220 && !(e._sis > G.time)) { e._sis = G.time + 2.5; Audio2.bestia('serpiente', 'ataque', e.x, e.y); } // sisea al lanzarse
     if (!e.cuerpo) { e.cuerpo = []; for (let k = 0; k < 16; k++) e.cuerpo.push({ x: e.x, y: e.y, r: Math.max(6, 14 - k * 0.5) }); }
     let prev = { x: e.x, y: e.y };
     for (const c of e.cuerpo) { const dx = c.x - prev.x, dy = c.y - prev.y, dd = Math.hypot(dx, dy) || 1;
@@ -2236,12 +2269,12 @@ function iaBestia(e, i, dt, d, nx, ny) {
     const quiere = d > 430 ? 1 : d < 330 ? -1 : 0;
     e.vx = lerp(e.vx, nx * quiere * e.speed, dt * 2); e.vy = lerp(e.vy, ny * quiere * e.speed, dt * 2);
     if (e.laser > 0) { e.laser -= dt;
-      if (e.laser <= 0.35 && !e.disparado) { e.disparado = true; shake(10); Audio2.tone(140, 0.4, 'sawtooth', 0.25, 60); }
+      if (e.laser <= 0.35 && !e.disparado) { e.disparado = true; shake(10); Audio2.bestia('ojo', 'ataque', e.x, e.y); }
       if (e.disparado && p.alive && p.invuln <= 0) { // ¿estás dentro del rayo?
         const ux = Math.cos(e.laserAng), uy = Math.sin(e.laserAng), px = p.x - e.x, py = p.y - e.y, t = px * ux + py * uy;
         if (t > 0 && t < rayoHasta(e.x, e.y, e.laserAng, 1500) && Math.abs(px * uy - py * ux) < 18 + p.r) damagePlayer(e.dmg); }
       if (e.laser <= 0) { e.fireCd = e.fireRate; e.disparado = false; }
-    } else if (e.fireCd <= 0 && d < 800) { e.laser = 1.45; e.laserAng = Math.atan2(p.y - e.y, p.x - e.x); } // 1,1 s de aviso + 0,35 s de rayo
+    } else if (e.fireCd <= 0 && d < 800) { e.laser = 1.45; e.laserAng = Math.atan2(p.y - e.y, p.x - e.x); Audio2.bestia('ojo', 'carga', e.x, e.y); } // 1,1 s de aviso + 0,35 s de rayo
   }
   else if (e.type === 'coraza') {
     // avanza firme y gira despacio: su escudo frontal mira hacia ti, pero se le puede rodear
@@ -2249,7 +2282,7 @@ function iaBestia(e, i, dt, d, nx, ny) {
     const quiere = Math.atan2(ny, nx), dif = Math.atan2(Math.sin(quiere - e.escudo), Math.cos(quiere - e.escudo));
     e.escudo += Math.max(-1.1 * dt, Math.min(1.1 * dt, dif));
     e.vx = lerp(e.vx, nx * e.speed, dt * 1.5); e.vy = lerp(e.vy, ny * e.speed, dt * 1.5);
-    if (e.fireCd <= 0 && d < 650) { e.fireCd = e.fireRate;
+    if (e.fireCd <= 0 && d < 650) { e.fireCd = e.fireRate; Audio2.bestia('coraza', 'ataque', e.x, e.y);
       for (let k = -2; k <= 2; k++) { const a = e.escudo + k * 0.16; eBullets.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r, vx: Math.cos(a) * 280, vy: Math.sin(a) * 280, r: 5, dmg: 9, life: 2.6, color: '#9fe8ff' }); } }
   } else if (e.type === 'acechador') {
     // adivina hacia dónde vas (apunta a donde estarás) y, si te alejas, se teletransporta cerca
@@ -2258,16 +2291,16 @@ function iaBestia(e, i, dt, d, nx, ny) {
     if (e.salto > 0) { e.salto -= dt; e.vx *= 0.85; e.vy *= 0.85;
       if (e.salto <= 0) { spawnParticles(e.x, e.y, 16, { color: '#d9c2ff', speed: 220, life: 0.4, size: 3 });
         const a = Math.atan2(p.vy, p.vx) + (Math.random() - 0.5) * 1.2, r = 210;
-        e.x = p.x + Math.cos(a) * r; e.y = p.y + Math.sin(a) * r; spawnRing(e.x, e.y, '#d9c2ff', 70, 400, 3); e.fireCd = e.fireRate; } }
-    else if (e.fireCd <= 0 && d > 420) e.salto = 0.45; // aviso: tiembla antes de saltar
+        e.x = p.x + Math.cos(a) * r; e.y = p.y + Math.sin(a) * r; spawnRing(e.x, e.y, '#d9c2ff', 70, 400, 3); e.fireCd = e.fireRate; Audio2.bestia('acechador', 'ataque', e.x, e.y); } }
+    else if (e.fireCd <= 0 && d > 420) { e.salto = 0.45; Audio2.bestia('acechador', 'carga', e.x, e.y); } // aviso: tiembla antes de saltar
   } else if (e.type === 'espino') {
     // se acerca hasta media distancia; si te pegas, carga y explota en púas
     const quiere = d > 150 ? 1 : 0.15;
     e.vx = lerp(e.vx, nx * e.speed * quiere, dt * 2); e.vy = lerp(e.vy, ny * e.speed * quiere, dt * 2);
     if (e.carga > 0) { e.carga -= dt; e.vx *= 0.85; e.vy *= 0.85;
-      if (e.carga <= 0) { e.fireCd = e.fireRate; spawnRing(e.x, e.y, '#ff6bd6', 120, 500, 4);
+      if (e.carga <= 0) { e.fireCd = e.fireRate; spawnRing(e.x, e.y, '#ff6bd6', 120, 500, 4); Audio2.bestia('espino', 'ataque', e.x, e.y);
         for (let k = 0; k < 16; k++) { const a = k / 16 * TAU + e.phase; eBullets.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r, vx: Math.cos(a) * 340, vy: Math.sin(a) * 340, r: 4, dmg: 10, life: 0.9, color: '#ff9be6' }); } } }
-    else if (e.fireCd <= 0 && d < 190) e.carga = 0.5;
+    else if (e.fireCd <= 0 && d < 190) { e.carga = 0.5; Audio2.bestia('espino', 'carga', e.x, e.y); }
   }
   return false;
 }

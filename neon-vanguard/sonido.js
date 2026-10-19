@@ -106,6 +106,65 @@ const Audio2 = {
     this.osc('sawtooth', 220, 55, 0.28, 0.16);
     this.ruidoF(0.18, 0.2, 'lowpass', 900, 200);
   },
+  /* ---------- SONIDO DE CADA CRIATURA (con dirección: izquierda/derecha y más bajo si está lejos) ---------- */
+  lugar(x, y) {
+    const c = this.ctx, g = c.createGain();
+    if (x == null || typeof CAM === 'undefined') { g.connect(this.sfx); return g; }
+    const dx = x - CAM.x, dy = y - CAM.y, d = Math.hypot(dx, dy);
+    g.gain.value = Math.max(0.12, Math.min(1, 1.15 - d / 1000));
+    if (c.createStereoPanner) { const p = c.createStereoPanner(); p.pan.value = Math.max(-0.85, Math.min(0.85, dx / 520)); g.connect(p); p.connect(this.sfx); }
+    else g.connect(this.sfx);
+    return g;
+  },
+  // tipo: medusa · larva · serpiente · ojo · espino · coraza · acechador ; ev: aparece · ataque · carga · muere · bloqueo
+  bestia(tipo, ev, x, y, gigante) {
+    if (!this.listo() || !this.libre(tipo + ev, ev === 'muere' ? 70 : tipo === 'larva' ? 260 : 120)) return;
+    const c = this.ctx, t = c.currentTime, D = this.lugar(x, y), k = gigante ? 0.55 : 1; // los gigantes suenan más graves
+    const o = (tp, f0, f1, dur, v, dt) => this.osc(tp, f0 * k, f1 * k, dur, v, D, t + (dt || 0));
+    const r = (dur, v, tp, f0, f1, dt) => this.ruidoF(dur, v, tp, f0 * k, f1 * k, D, t + (dt || 0));
+    const S = {
+      medusa: { // burbujas y zumbido eléctrico
+        aparece: () => { o('sine', 300, 520, 0.18, 0.12); o('sine', 420, 700, 0.16, 0.08, 0.12); r(0.3, 0.05, 'bandpass', 900, 1600); },
+        carga: () => { o('sine', 180, 900, 0.7, 0.07); r(0.7, 0.04, 'highpass', 3000, 6000); },
+        ataque: () => { r(0.35, 0.22, 'highpass', 2500, 5000); o('square', 60, 45, 0.3, 0.08); o('sawtooth', 1200, 300, 0.2, 0.04); },
+        muere: () => { o('sine', 620, 80, 0.3, 0.2); r(0.25, 0.1, 'bandpass', 1400, 400); o('sine', 900, 1300, 0.08, 0.06, 0.12); } },
+      larva: { // zumbido de alas, chillido corto
+        aparece: () => { for (let i = 0; i < 6; i++) o('sawtooth', 210 + i * 6, 200, 0.04, 0.035, i * 0.035); },
+        muere: () => { o('triangle', 1500, 320, 0.09, 0.09); r(0.06, 0.06, 'highpass', 4000, 4000); } },
+      serpiente: { // siseo y gruñido
+        aparece: () => { r(0.7, 0.16, 'highpass', 3000, 6500); o('sawtooth', 75, 52, 0.7, 0.1); },
+        ataque: () => { r(0.25, 0.14, 'highpass', 4000, 7000); },
+        muere: () => { r(0.9, 0.18, 'highpass', 5000, 1800); o('sawtooth', 90, 35, 0.8, 0.14); o('sine', 70, 30, 0.6, 0.25); } },
+      ojo: { // zumbido inquietante, carga que sube, rayo
+        aparece: () => { o('sine', 220, 220, 0.9, 0.08); o('sine', 233, 233, 0.9, 0.08); },
+        carga: () => { o('sine', 200, 1100, 1.1, 0.07); o('triangle', 400, 2200, 1.1, 0.03); },
+        ataque: () => { o('sawtooth', 160, 60, 0.45, 0.2); r(0.4, 0.2, 'bandpass', 900, 300); o('square', 80, 40, 0.4, 0.06); },
+        muere: () => { o('sine', 140, 40, 0.7, 0.25); o('sine', 1800, 2600, 0.25, 0.05, 0.1); r(0.4, 0.12, 'lowpass', 1600, 200); } },
+      espino: { // tintineo de cristal, traqueteo que acelera, estallido de púas
+        aparece: () => { [2400, 3100, 2700].forEach((f, i) => o('triangle', f, f * 0.9, 0.06, 0.04, i * 0.05)); },
+        carga: () => { for (let i = 0; i < 8; i++) r(0.03, 0.07, 'highpass', 3500, 3500, i * (0.06 - i * 0.005)); o('sawtooth', 300, 900, 0.5, 0.05); },
+        ataque: () => { r(0.3, 0.3, 'highpass', 2500, 900); for (let i = 0; i < 5; i++) o('sawtooth', 1800 - i * 200, 500, 0.08, 0.05, i * 0.015); },
+        muere: () => { [3200, 2600, 3900, 2100].forEach((f, i) => o('triangle', f, f * 0.7, 0.12, 0.05, i * 0.03)); r(0.3, 0.12, 'highpass', 3000, 1500); } },
+      coraza: { // metal pesado
+        aparece: () => { o('square', 150, 140, 0.25, 0.06); o('square', 213, 205, 0.25, 0.05); r(0.2, 0.1, 'bandpass', 700, 500); },
+        ataque: () => { o('square', 330, 120, 0.12, 0.06); r(0.1, 0.08, 'bandpass', 1800, 900); },
+        bloqueo: () => { o('sine', 1900, 1700, 0.12, 0.06); o('sine', 2850, 2600, 0.1, 0.03); },
+        muere: () => { r(0.6, 0.3, 'lowpass', 1200, 120); o('square', 120, 40, 0.5, 0.1); o('sine', 60, 30, 0.6, 0.3); } },
+      acechador: { // chillido y zarpazo
+        aparece: () => { o('sawtooth', 900, 1900, 0.18, 0.06); o('sawtooth', 950, 2000, 0.18, 0.04, 0.02); },
+        carga: () => { o('sawtooth', 500, 2400, 0.4, 0.05); },
+        ataque: () => { r(0.25, 0.2, 'bandpass', 600, 4200); o('sawtooth', 1600, 400, 0.15, 0.06); },
+        muere: () => { o('sawtooth', 2200, 300, 0.35, 0.1); r(0.2, 0.1, 'highpass', 3000, 1000); } }
+    };
+    const f = S[tipo] && S[tipo][ev]; if (f) f();
+  },
+
+  latido() { // corazón con poca vida: dos golpes graves
+    if (!this.listo()) return;
+    const t = this.ctx.currentTime;
+    this.osc('sine', 62, 40, 0.16, 0.5, null, t); this.osc('sine', 55, 36, 0.14, 0.38, null, t + 0.17);
+  },
+
   despegue() { // motores que arrancan y rugen
     if (!this.listo()) return;
     const t = this.ctx.currentTime;
