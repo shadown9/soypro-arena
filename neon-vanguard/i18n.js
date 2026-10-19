@@ -101,7 +101,9 @@ const I18N = {
     rd_duelo: 'DUELO', rd_equipos: 'EQUIPOS', rd_tu: 'TÚ', rd_gana: 'gana el primero a {n}', rd_sin_bajas: 'sin bajas',
     be_medusa: 'MEDUSA REINA', be_ojo: 'OJO DEL VACÍO', be_serpiente: 'LEVIATÁN', rd_aparecio: '👾 ¡APARECIÓ {n}! Todos los pilotos contra ella',
     rd_bestia_derribo: '👾 {a} derribó a {b}', rd_bestia_se: '👾 {n} se perdió en el espacio', rd_remataste: '+{p} ¡REMATASTE A {n}!', rd_ayudaste: '+{p} · AYUDASTE CONTRA {n}',
-    t_remataste: '👾 ¡REMATASTE A {n}! +{p}', t_ayudaste: '👾 +{p} por ayudar contra {n}'
+    t_remataste: '👾 ¡REMATASTE A {n}! +{p}', t_ayudaste: '👾 +{p} por ayudar contra {n}',
+    ad_aviso: '🧠 LAS BESTIAS APRENDEN · {e}: llega {n}', ad_quieto: 'Te quedas quieto', ad_huye: 'Siempre huyes', ad_cerca: 'Peleas pegado',
+    ad_n_coraza: 'una CORAZA VIVA (rodéala)', ad_n_acechador: 'un ACECHADOR (no huyas)', ad_n_espino: 'un NÚCLEO ESPINADO (no te pegues)'
   },
   en: {
     hud_score: 'SCORE', hud_wave: 'WAVE', hud_bando: 'FACTION', hud_shield: 'SHIELD', hud_od: 'OVERDRIVE',
@@ -182,7 +184,9 @@ const I18N = {
     rd_duelo: 'DUEL', rd_equipos: 'TEAMS', rd_tu: 'YOU', rd_gana: 'first to {n} wins', rd_sin_bajas: 'no kills yet',
     be_medusa: 'QUEEN JELLYFISH', be_ojo: 'VOID EYE', be_serpiente: 'LEVIATHAN', rd_aparecio: '👾 {n} APPEARED! All pilots against it',
     rd_bestia_derribo: '👾 {a} took down {b}', rd_bestia_se: '👾 {n} drifted off into space', rd_remataste: '+{p} YOU FINISHED OFF {n}!', rd_ayudaste: '+{p} · YOU HELPED AGAINST {n}',
-    t_remataste: '👾 YOU FINISHED OFF {n}! +{p}', t_ayudaste: '👾 +{p} for helping against {n}'
+    t_remataste: '👾 YOU FINISHED OFF {n}! +{p}', t_ayudaste: '👾 +{p} for helping against {n}',
+    ad_aviso: '🧠 THE BEASTS ARE LEARNING · {e}: here comes {n}', ad_quieto: 'You camp in place', ad_huye: 'You keep running', ad_cerca: 'You fight up close',
+    ad_n_coraza: 'a LIVING SHELL (flank it)', ad_n_acechador: 'a STALKER (stop running)', ad_n_espino: 'a SPIKED CORE (keep your distance)'
   }
 };
 

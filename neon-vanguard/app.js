@@ -335,6 +335,7 @@ function updatePlayer(dt) {
 
   // timers
   p.fireCd -= dt; p.dashCd -= dt; p.invuln -= dt; p.hitFlash -= dt;
+  if (!NV_DEMO) observarEstilo(p, dt);
   if (p.mut) {
     const T = p.mutT; p.desdeGolpe = (p.desdeGolpe || 0) + dt;
     if (p.mut.venus && (T.venus = (T.venus || 5) - dt) <= 0) { // LANZA SOLAR
@@ -453,7 +454,11 @@ const ENEMY_TYPES = {
   medusa:    { hp: 75,  r: 22, speed: 55,  color: '#7affd6', score: 320, dmg: 14, fireRate: 3.0, contact: true, bando: 'bestia' },
   larva:     { hp: 14,  r: 9,  speed: 235, color: '#b6ff4d', score: 70,  dmg: 8,  fireRate: 0,   contact: true, bando: 'bestia' },
   serpiente: { hp: 130, r: 15, speed: 175, color: '#ff4fd8', score: 560, dmg: 18, fireRate: 0,   contact: true, bando: 'bestia' },
-  ojo:       { hp: 150, r: 24, speed: 45,  color: '#ff3355', score: 500, dmg: 30, fireRate: 4.2, contact: true, bando: 'bestia' }
+  ojo:       { hp: 150, r: 24, speed: 45,  color: '#ff3355', score: 500, dmg: 30, fireRate: 4.2, contact: true, bando: 'bestia' },
+  // BESTIAS QUE APRENDEN (llegan según tu forma de jugar)
+  coraza:    { hp: 170, r: 22, speed: 62,  color: '#4dd2ff', score: 520, dmg: 18, fireRate: 3.0, contact: true, bando: 'bestia' }, // contra el que se queda quieto
+  acechador: { hp: 60,  r: 15, speed: 240, color: '#d9c2ff', score: 460, dmg: 16, fireRate: 3.2, contact: true, bando: 'bestia' }, // contra el que huye
+  espino:    { hp: 95,  r: 20, speed: 78,  color: '#ff9640', score: 440, dmg: 14, fireRate: 2.4, contact: true, bando: 'bestia' }  // contra el que pelea pegado
 };
 
 // Lista de bandos enemigos (todos menos el tuyo se pueden cruzar)
@@ -869,6 +874,7 @@ function updatePowerups(dt) {
 /* ---------- oleadas ---------- */
 function startWave(n) {
   G.wave = n; nvEvento('oleada', n);
+  if (n >= 3 && n % 5 !== 0) setTimeout(() => { if (G.running && G.wave === n && !G.privada && !NV_DEMO) bestiaQueAprende(); }, 3500);
   G.waveActive = true;
   G.waveTimer = 0;
   G.bossSpawned = false;
@@ -948,6 +954,11 @@ function updateBullets(dt) {
       const e = enemies[j];
       if (b.hitSet.has(e)) continue;
       if (dist2(b, e) < (b.r + e.r) * (b.r + e.r)) {
+        if (e.type === 'coraza' && e.escudo != null) { // de frente rebota: hay que rodearla
+          const llega = Math.atan2(b.y - e.y, b.x - e.x), dif = Math.atan2(Math.sin(llega - e.escudo), Math.cos(llega - e.escudo));
+          if (Math.abs(dif) < 1.05) { spawnParticles(b.x, b.y, 5, { color: '#9fe8ff', speed: 200, life: 0.25, size: 2.5 }); b.hitSet.add(e);
+            if (!b.explota) { bullets.splice(i, 1); } break; }
+        }
         e.hp -= b.dmg;
         e.hitFlash = 0.12;
         b.hitSet.add(e);
@@ -1795,7 +1806,7 @@ function drawJoysticks() {
 function resetGame() {
   bullets = []; enemies = []; eBullets = []; particles = []; powerups = []; floaters = []; rings = [];
   G.score = 0; G.wave = 1; G.kills = 0; G.combo = 1; G.comboTimer = 0;
-  G.victorias = 0; G.intro = null;
+  G.victorias = 0; G.intro = null; G.estilo = null;
   G.shake = 0; G.flash = 0; G.slowmo = 1; G.time = 0;
   G.waveActive = false; G.bossActive = false; G.bossPending = false;
   player = createPlayer();
@@ -2037,6 +2048,37 @@ function dibujarModulos(p, capa) {
 /* ============================================================
    BESTIAS DEL ESPACIO (no pertenecen a ningún planeta)
    ============================================================ */
+/* LAS BESTIAS APRENDEN: el juego observa cómo juegas (con memoria corta: lo reciente pesa más)
+   · quieto disparando → CORAZA VIVA (escudo frontal: hay que rodearla)
+   · siempre huyendo / de lejos → ACECHADOR (rapidísimo, adivina hacia dónde vas y se teletransporta)
+   · pegado a los enemigos → NÚCLEO ESPINADO (explota en púas si te acercas)
+   Desde la oleada 3, en cada oleada sin jefe llega una bestia pensada para romper tu estrategia. */
+function observarEstilo(p, dt) {
+  const E = G.estilo || (G.estilo = { quieto: 0, huye: 0, cerca: 0, total: 0 });
+  const k = Math.pow(0.985, dt); // memoria de algo más de un minuto
+  E.quieto *= k; E.huye *= k; E.cerca *= k; E.total *= k;
+  const v = Math.hypot(p.vx, p.vy); let dm = Infinity;
+  for (const e of enemies) { const d = (e.x - p.x) ** 2 + (e.y - p.y) ** 2; if (d < dm) dm = d; }
+  dm = Math.sqrt(dm);
+  E.total += dt;
+  if (v < 60 && mouse.down) E.quieto += dt;
+  if (v > 220 && dm > 300) E.huye += dt;
+  if (dm < 170) E.cerca += dt;
+}
+function estiloDominante() {
+  const E = G.estilo; if (!E || E.total < 8) return null;
+  const q = E.quieto / E.total, h = E.huye / E.total, c = E.cerca / E.total;
+  const m = Math.max(q, h, c); if (m < 0.22) return null;
+  return m === c ? 'cerca' : m === q ? 'quieto' : 'huye';
+}
+const BESTIA_PARA = { quieto: 'coraza', huye: 'acechador', cerca: 'espino' };
+function bestiaQueAprende() {
+  const est = estiloDominante(); if (!est) return;
+  const tipo = BESTIA_PARA[est];
+  spawnFromEdge(tipo);
+  if (typeof Toast !== 'undefined' && !NV_DEMO) Toast.mostrar(t('ad_aviso', { e: t('ad_' + est), n: t('ad_n_' + tipo) }), ENEMY_TYPES[tipo].color);
+}
+
 function spawnBestia(n) {
   const r = Math.random();
   if (r < 0.32) { // enjambre de larvas desde un mismo punto
@@ -2085,6 +2127,32 @@ function iaBestia(e, i, dt, d, nx, ny) {
         if (t > 0 && t < rayoHasta(e.x, e.y, e.laserAng, 1500) && Math.abs(px * uy - py * ux) < 18 + p.r) damagePlayer(e.dmg); }
       if (e.laser <= 0) { e.fireCd = e.fireRate; e.disparado = false; }
     } else if (e.fireCd <= 0 && d < 800) { e.laser = 1.45; e.laserAng = Math.atan2(p.y - e.y, p.x - e.x); } // 1,1 s de aviso + 0,35 s de rayo
+  }
+  else if (e.type === 'coraza') {
+    // avanza firme y gira despacio: su escudo frontal mira hacia ti, pero se le puede rodear
+    if (e.escudo == null) e.escudo = Math.atan2(ny, nx);
+    const quiere = Math.atan2(ny, nx), dif = Math.atan2(Math.sin(quiere - e.escudo), Math.cos(quiere - e.escudo));
+    e.escudo += Math.max(-1.1 * dt, Math.min(1.1 * dt, dif));
+    e.vx = lerp(e.vx, nx * e.speed, dt * 1.5); e.vy = lerp(e.vy, ny * e.speed, dt * 1.5);
+    if (e.fireCd <= 0 && d < 650) { e.fireCd = e.fireRate;
+      for (let k = -2; k <= 2; k++) { const a = e.escudo + k * 0.16; eBullets.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r, vx: Math.cos(a) * 280, vy: Math.sin(a) * 280, r: 5, dmg: 9, life: 2.6, color: '#9fe8ff' }); } }
+  } else if (e.type === 'acechador') {
+    // adivina hacia dónde vas (apunta a donde estarás) y, si te alejas, se teletransporta cerca
+    const fx = p.x + p.vx * 0.55, fy = p.y + p.vy * 0.55, dx = fx - e.x, dy = fy - e.y, dd = Math.hypot(dx, dy) || 1;
+    e.vx = lerp(e.vx, dx / dd * e.speed, dt * 4); e.vy = lerp(e.vy, dy / dd * e.speed, dt * 4);
+    if (e.salto > 0) { e.salto -= dt; e.vx *= 0.85; e.vy *= 0.85;
+      if (e.salto <= 0) { spawnParticles(e.x, e.y, 16, { color: '#d9c2ff', speed: 220, life: 0.4, size: 3 });
+        const a = Math.atan2(p.vy, p.vx) + (Math.random() - 0.5) * 1.2, r = 210;
+        e.x = p.x + Math.cos(a) * r; e.y = p.y + Math.sin(a) * r; spawnRing(e.x, e.y, '#d9c2ff', 70, 400, 3); e.fireCd = e.fireRate; } }
+    else if (e.fireCd <= 0 && d > 420) e.salto = 0.45; // aviso: tiembla antes de saltar
+  } else if (e.type === 'espino') {
+    // se acerca hasta media distancia; si te pegas, carga y explota en púas
+    const quiere = d > 150 ? 1 : 0.15;
+    e.vx = lerp(e.vx, nx * e.speed * quiere, dt * 2); e.vy = lerp(e.vy, ny * e.speed * quiere, dt * 2);
+    if (e.carga > 0) { e.carga -= dt; e.vx *= 0.85; e.vy *= 0.85;
+      if (e.carga <= 0) { e.fireCd = e.fireRate; spawnRing(e.x, e.y, '#ff9640', 120, 500, 4);
+        for (let k = 0; k < 16; k++) { const a = k / 16 * TAU + e.phase; eBullets.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r, vx: Math.cos(a) * 340, vy: Math.sin(a) * 340, r: 4, dmg: 10, life: 0.9, color: '#ffb36b' }); } } }
+    else if (e.fireCd <= 0 && d < 190) e.carga = 0.5;
   }
   return false;
 }
@@ -2146,6 +2214,42 @@ function dibujarBestia(e, col, flash) {
     ctx.beginPath(); ctx.arc(ix, iy, e.r * 0.45, 0, TAU); ctx.fill();
     ctx.fillStyle = '#0a0004'; ctx.shadowBlur = 0; ctx.beginPath(); ctx.arc(ix * 1.1, iy * 1.1, e.r * (e.laser > 0 ? 0.12 : 0.22), 0, TAU); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(ix - 4, iy - 4, 2.5, 0, TAU); ctx.fill();
+  }
+  else if (e.type === 'coraza') {
+    // caparazón de placas con un escudo de energía delante
+    ctx.translate(e.x, e.y); const a = e.escudo || e.angle || 0; ctx.rotate(a);
+    ctx.shadowBlur = 18; ctx.shadowColor = col;
+    const g = ctx.createRadialGradient(-e.r * 0.2, -e.r * 0.2, 2, 0, 0, e.r * 1.1);
+    g.addColorStop(0, flash ? '#fff' : '#d6f6ff'); g.addColorStop(0.6, flash ? '#fff' : col); g.addColorStop(1, '#0b3a52');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, e.r * 1.15, e.r * 0.95, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(5,30,45,.7)'; ctx.lineWidth = 2; ctx.shadowBlur = 0;
+    for (const x of [-0.45, 0, 0.45]) { ctx.beginPath(); ctx.moveTo(e.r * x, -e.r * 0.85); ctx.quadraticCurveTo(e.r * (x + 0.15), 0, e.r * x, e.r * 0.85); ctx.stroke(); }
+    ctx.fillStyle = '#ffe28a'; ctx.beginPath(); ctx.arc(-e.r * 0.75, 0, 3.5, 0, TAU); ctx.fill(); // su punto débil: detrás
+    ctx.strokeStyle = 'rgba(160,240,255,' + (0.55 + Math.sin(e.phase * 8) * 0.25) + ')'; ctx.lineWidth = 5; ctx.shadowBlur = 20; ctx.shadowColor = '#9fe8ff';
+    ctx.beginPath(); ctx.arc(0, 0, e.r * 1.45, -1.05, 1.05); ctx.stroke();
+  } else if (e.type === 'acechador') {
+    // espectro alargado con tres colas y ojos brillantes; tiembla antes de teletransportarse
+    const tiembla = e.salto > 0 ? (Math.random() - 0.5) * 6 : 0;
+    ctx.translate(e.x + tiembla, e.y + tiembla); ctx.rotate(Math.atan2(e.vy, e.vx));
+    ctx.globalAlpha *= e.salto > 0 ? 0.55 : 0.92; ctx.shadowBlur = 18; ctx.shadowColor = col;
+    ctx.strokeStyle = flash ? '#fff' : 'rgba(217,194,255,.6)'; ctx.lineWidth = 2.5;
+    for (const k of [-1, 0, 1]) { ctx.beginPath(); ctx.moveTo(-e.r * 0.4, k * 4);
+      for (let q = 1; q <= 5; q++) ctx.lineTo(-e.r * 0.4 - q * e.r * 0.35, k * 4 + Math.sin(e.phase * 9 + q + k) * 4 * q * 0.5); ctx.stroke(); }
+    ctx.fillStyle = flash ? '#fff' : col;
+    ctx.beginPath(); ctx.moveTo(e.r * 1.3, 0); ctx.lineTo(-e.r * 0.2, -e.r * 0.75); ctx.lineTo(-e.r * 0.6, 0); ctx.lineTo(-e.r * 0.2, e.r * 0.75); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ff2bd6'; ctx.shadowColor = '#ff2bd6'; for (const k of [-1, 1]) { ctx.beginPath(); ctx.arc(e.r * 0.45, k * e.r * 0.22, 2.6, 0, TAU); ctx.fill(); }
+  } else if (e.type === 'espino') {
+    // núcleo con púas que crecen cuando va a explotar
+    ctx.translate(e.x, e.y); ctx.rotate(e.phase * 0.8);
+    const larga = e.carga > 0 ? 1 + (1 - e.carga / 0.5) * 0.7 : 1;
+    ctx.shadowBlur = 16; ctx.shadowColor = col; ctx.fillStyle = flash ? '#fff' : '#ffcf9e';
+    for (let k = 0; k < 12; k++) { const a = k / 12 * TAU; ctx.beginPath();
+      ctx.moveTo(Math.cos(a - 0.14) * e.r * 0.8, Math.sin(a - 0.14) * e.r * 0.8); ctx.lineTo(Math.cos(a) * e.r * 1.55 * larga, Math.sin(a) * e.r * 1.55 * larga);
+      ctx.lineTo(Math.cos(a + 0.14) * e.r * 0.8, Math.sin(a + 0.14) * e.r * 0.8); ctx.closePath(); ctx.fill(); }
+    const g = ctx.createRadialGradient(0, 0, 2, 0, 0, e.r);
+    g.addColorStop(0, '#fff3dc'); g.addColorStop(0.5, flash ? '#fff' : col); g.addColorStop(1, '#7a2a00');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, e.r, 0, TAU); ctx.fill();
+    if (e.carga > 0) { ctx.strokeStyle = 'rgba(255,200,140,' + (0.4 + Math.random() * 0.5) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, e.r * 2.6 * larga, 0, TAU); ctx.stroke(); }
   }
   ctx.restore();
   if (e.hp < e.maxHp && e.type !== 'larva') { const bw = e.r * 2.2; ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x - bw / 2, e.y - e.r - 12, bw, 4);
