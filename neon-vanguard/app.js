@@ -702,6 +702,9 @@ function damagePlayer(amount) {
   if (p.hp <= 0) { p.hp = 0; p.alive = false; if (typeof RED !== 'undefined') RED.muerte(); gameOver(); }
 }
 
+// avisos para las misiones y logros (misiones.js)
+function nvEvento(t, d) { if (!NV_DEMO && typeof Misiones !== 'undefined') try { Misiones.evento(t, d); } catch (e) {} }
+
 function killEnemy(index, byPlayer = true) {
   const e = enemies[index];
   if (!e) return;
@@ -718,6 +721,7 @@ function killEnemy(index, byPlayer = true) {
     G.kills++;
     G.comboTimer = 2.2;
     G.combo = Math.min(G.combo + 1, 20);
+    nvEvento('combo', G.combo); nvEvento('baja', { e });
     const pts = Math.round(e.score * G.combo);
     G.score += pts;
     addFloater(e.x, e.y, '+' + pts, G.combo > 3 ? '#ffb020' : '#00f0ff', 14 + Math.min(G.combo, 8));
@@ -778,7 +782,7 @@ function collectPowerup(pu) {
       p.hp = Math.min(p.maxHp, p.hp + 15); G.score += 150;
       addFloater(p.x, p.y - 34, m.icono + ' MÁXIMO · +15 HP', m.color, 18);
     }
-    Audio2.powerup();
+    Audio2.powerup(); nvEvento('nucleo', p.mej);
     spawnRing(pu.x, pu.y, m.color, 80, 420, 3);
     spawnParticles(pu.x, pu.y, 18, { color: m.color, speed: 220, life: 0.5, size: 3 });
     return;
@@ -823,7 +827,7 @@ function updatePowerups(dt) {
 
 /* ---------- oleadas ---------- */
 function startWave(n) {
-  G.wave = n;
+  G.wave = n; nvEvento('oleada', n);
   G.waveActive = true;
   G.waveTimer = 0;
   G.bossSpawned = false;
@@ -1757,10 +1761,12 @@ function startGame() {
   G.running = true; G.over = false;
   el.overlay.classList.add('hidden');
   el.gameover.classList.add('hidden');
+  nvEvento('inicio');
   // presentación: tu nave despega de tu planeta hasta el centro de la galaxia (intro.js); la demo va directa
   if (!NV_DEMO && typeof empezarIntro === 'function') { try { empezarIntro(); return; } catch (e) { G.intro = null; } }
   if (typeof RED !== 'undefined') RED.inicio();
   startWave(1);
+  if (typeof Misiones !== 'undefined') Misiones.aplicarPremios();
 }
 
 function gameOver() {
@@ -1773,6 +1779,8 @@ function gameOver() {
 
   // Récord + tarjeta compartible + pizarra mundial (vive en ranking.js)
   const scoreFinal = G.score, waveFinal = G.wave, killsFinal = G.kills;
+  nvEvento('fin', { score: scoreFinal, wave: waveFinal });
+  if (typeof pintarBotonMisiones === 'function') pintarBotonMisiones();
   const victoriasFinal = G.victorias || 0;
   const recordPrevio = (typeof leerRecordLocal === 'function') ? leerRecordLocal() : null;
   const esRecord = scoreFinal > 0 && (!recordPrevio || scoreFinal > (recordPrevio.score || 0));
@@ -2105,6 +2113,9 @@ const JEFES = {
 function elegirJefe() {
   const mio = (typeof bandoElegido !== 'undefined' && bandoElegido) ? bandoElegido : null;
   const rivales = Object.keys(JEFES).filter(k => k !== mio);
+  // JEFE DE LA SEMANA: el planeta que va ganando la guerra manda a su jefe la mitad de las veces
+  const lider = typeof guerraCache !== 'undefined' && guerraCache && guerraCache.lider;
+  if (lider && lider !== mio && rivales.includes(lider) && Math.random() < 0.5) return lider;
   return rivales[(Math.max(1, Math.floor(G.wave / 5)) - 1) % rivales.length];
 }
 let balaBando = null; // el planeta del jefe que está disparando

@@ -75,11 +75,13 @@ async function subirRecord(score, wave, kills, victorias) {
         score: score,
         wave: wave,
         kills: kills,
-        victorias: victorias || 0
+        victorias: victorias || 0,
+        logros: (typeof Misiones !== 'undefined') ? Misiones.logros() : []
       })
     });
     if (!r.ok) return null;
     const res = await r.json();
+    if (res && res.guerra && typeof pintarGuerraMini === 'function') { guerraCache = res.guerra; pintarGuerraMini(); pintarHudCampeon(); Misiones.revisarLogros(); }
     // el nombre del ranking manda: si se cambió en el servidor, este dispositivo lo adopta
     try {
       const nuevo = res && res.piloto && res.piloto.nombre;
@@ -155,7 +157,7 @@ async function abrirPizarra() {
     const medalla = p.puesto === 1 ? '🥇' : p.puesto === 2 ? '🥈' : p.puesto === 3 ? '🥉' : p.puesto;
     html += '<div class="pz-fila' + yo + '">' +
               '<span class="pz-pos">' + medalla + '</span>' +
-              '<span class="pz-nom">' + escaparHtml(p.nombre) + '</span>' +
+              '<span class="pz-nom">' + (p.oro ? '<span class="pz-oro" title="Su planeta ganó la guerra">🏆</span>' : '') + escaparHtml(p.nombre) + '</span>' +
               '<span class="pz-ban ban-' + (p.bando || 'x') + '">' + (p.bando || '—').toUpperCase() + '</span>' +
               '<span class="pz-vic">' + Number(p.victorias || 0) + '</span>' +
               '<span class="pz-pts">' + Number(p.score).toLocaleString('es') + '</span>' +
@@ -166,33 +168,22 @@ async function abrirPizarra() {
   // si no estoy en la lista, mi fila va al final con mi puesto
   if (data.mi && !data.top.some(p => p.yo)) html += '<div class="pz-tabla pz-mio">' + filaPizarra(data.mi, true) + '</div>';
 
-  // GUERRA DE PLANETAS: ordenada por victorias y luego por puntos.
-  // El primero es el planeta que va ganando.
-  if (data.por_bando) {
-    const bandos = Object.keys(data.por_bando)
-      .sort((a, b) => {
-        const va = data.por_bando[a], vb = data.por_bando[b];
-        return ((vb.victorias || 0) - (va.victorias || 0)) ||
-               ((vb.score || 0) - (va.score || 0));
-      });
-    if (bandos.length) {
-      const lider = bandos[0];
-      html += '<div class="pz-bandos-tit">GUERRA DE PLANETAS</div>';
-      html += '<div class="pz-lider">👑 VA GANANDO: <strong class="ban-' + lider + '">' +
-                lider.toUpperCase() + '</strong></div>';
-      html += '<div class="pz-bandos">';
-      bandos.forEach((b, i) => {
-        const v = data.por_bando[b];
-        html += '<div class="pz-bando ban-' + b + (i === 0 ? ' pz-bando-lider' : '') + '">' +
-                  '<span class="pb-pos">' + (i + 1) + '</span>' +
-                  '<span class="pb-nom">' + b.toUpperCase() + '</span>' +
-                  '<span class="pb-vic">' + Number(v.victorias || 0) + ' vict.</span>' +
-                  '<span class="pb-pts">' + Number(v.score).toLocaleString('es') + '</span>' +
-                  '<span class="pb-pil">' + v.pilotos + ' piloto' + (v.pilotos === 1 ? '' : 's') + '</span>' +
-                '</div>';
-      });
-      html += '</div>';
-    }
+  // GUERRA DE PLANETAS DE ESTA SEMANA (se reinicia cada lunes; el ganador lleva la insignia 🏆)
+  if (data.guerra && data.guerra.orden) {
+    const g = data.guerra; if (typeof guerraCache !== 'undefined') guerraCache = g;
+    html += '<div class="pz-bandos-tit">GUERRA DE PLANETAS · ESTA SEMANA</div>';
+    html += '<div class="pz-lider">' + (g.lider ? '👑 VA GANANDO: <strong class="ban-' + g.lider + '">' + g.lider.toUpperCase() + '</strong>' : 'Nadie ha sumado puntos todavía') +
+      ' · cierra en ' + (typeof tiempoRestante === 'function' ? tiempoRestante(g.cierra_en) : '') + (g.campeon ? ' · 🏆 campeón: <strong class="ban-' + g.campeon + '">' + g.campeon.toUpperCase() + '</strong>' : '') + '</div>';
+    html += '<div class="pz-bandos">';
+    g.orden.forEach((b, i) => {
+      html += '<div class="pz-bando ban-' + b + (i === 0 && g.lider ? ' pz-bando-lider' : '') + '">' +
+                '<span class="pb-pos">' + (i + 1) + '</span>' +
+                '<span class="pb-nom">' + b.toUpperCase() + (b === g.campeon ? ' 🏆' : '') + '</span>' +
+                '<span class="pb-vic">' + Number((g.partidas || {})[b] || 0) + ' partidas</span>' +
+                '<span class="pb-pts">' + Number(g.puntos[b] || 0).toLocaleString('es') + '</span>' +
+              '</div>';
+    });
+    html += '</div>';
   }
 
   cont.innerHTML = html;
@@ -458,7 +449,7 @@ function filaPizarra(p, yo) {
   const medalla = p.puesto === 1 ? '🥇' : p.puesto === 2 ? '🥈' : p.puesto === 3 ? '🥉' : p.puesto;
   return '<div class="pz-fila' + (yo ? ' pz-yo' : '') + '">' +
     '<span class="pz-pos">' + medalla + '</span>' +
-    '<span class="pz-nom">' + escaparHtml(p.nombre) + '</span>' +
+    '<span class="pz-nom">' + (p.oro ? '<span class="pz-oro" title="Su planeta ganó la guerra">🏆</span>' : '') + escaparHtml(p.nombre) + '</span>' +
     '<span class="pz-ban ban-' + (p.bando || 'x') + '">' + (p.bando || '—').toUpperCase() + '</span>' +
     '<span class="pz-vic">' + Number(p.victorias || 0) + '</span>' +
     '<span class="pz-pts">' + Number(p.score).toLocaleString('es') + '</span>' +

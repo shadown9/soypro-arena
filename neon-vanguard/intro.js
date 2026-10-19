@@ -170,6 +170,7 @@ function terminarIntro() {
   if (typeof RED !== 'undefined') RED.inicio();
   addFloater(CAM.x, CAM.y - H * 0.29, '¡A LA BATALLA!', '#ff2bd6', 26);
   startWave(1);
+  if (typeof Misiones !== 'undefined') Misiones.aplicarPremios();
 }
 // un toque o una tecla salta la presentación
 ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, e => {

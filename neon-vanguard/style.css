@@ -440,12 +440,8 @@ button:active { transform:scale(.98); }
   padding-right: 4px;
   -webkit-overflow-scrolling: touch;
 }
-.pizarra-lista::-webkit-scrollbar { width: 6px; }
-.pizarra-lista::-webkit-scrollbar-track { background: rgba(255,255,255,.04); border-radius: 3px; }
-.pizarra-lista::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, .4);
-  border-radius: 3px;
-}
+.pizarra-lista { scrollbar-width: none; }
+.pizarra-lista::-webkit-scrollbar { display: none; } /* nunca barras de scroll */
 
 .pz-tabla { display: flex; flex-direction: column; gap: 4px; }
 
@@ -599,6 +595,7 @@ button:active { transform:scale(.98); }
   }
   #overlay .panel { grid-template-columns:auto auto;
     grid-template-areas:"t c" "s c" "b c" "h c" "f f"; }
+  #overlay .guerra-mini { grid-area:h; margin:2px 0 0; max-width:34ch; justify-self:center; }
   #overlay .title { grid-area:t; font-size:30px; }
   #overlay .subtitle { grid-area:s; margin:2px 0; max-width:30ch; justify-self:center; }
   #overlay .controls { grid-area:c; margin:0 !important; }
@@ -614,7 +611,7 @@ button:active { transform:scale(.98); }
   #gameover .record-nuevo { grid-area:r; margin:0; }
   #gameover .puesto-mundial { grid-area:p; margin:0; }
   #gameover #restart-btn { grid-area:b; justify-self:center; margin:6px 0 0; }
-  #gameover .fila-botones { grid-area:f; margin-top:4px; }
+  #gameover .fila-botones { grid-area:f; margin-top:4px; max-width:min(46vw, 420px); justify-self:center; }
   #gameover .tarjeta-box { grid-area:k; margin:0; align-self:center; }
   #gameover .tarjeta-box img { max-height:calc(100vh - 92px); width:auto; max-width:34vw; }
   #gameover .tarjeta-botones { margin-top:6px; }
@@ -628,6 +625,7 @@ button:active { transform:scale(.98); }
   #gameover .puesto-mundial { font-size:10px; }
   #gameover #restart-btn { padding:9px 26px; }
   #gameover .fila-botones, #gameover .tarjeta-botones { display:flex; flex-direction:row; flex-wrap:nowrap; gap:8px; justify-content:center; }
+  #gameover .fila-botones { flex-wrap:wrap; } /* con 4 botones: dos renglones, sin empujar la tarjeta */
   #gameover .fila-botones .btn-sec, #gameover .tarjeta-botones .btn-sec { width:auto; flex:0 1 auto; white-space:nowrap; margin:0; }
   #gameover .tarjeta-box img { max-height:calc(100vh - 80px); }
 }
@@ -753,3 +751,61 @@ html.nv-demo .hud-sonido { display:none; }
 /* --- Presentación al iniciar: sin HUD encima --- */
 html.nv-intro #hud { opacity:0; pointer-events:none; }
 html.nv-intro #hud .hud-sonido { pointer-events:none; }
+
+/* ===== FASE 3: misiones, logros y guerra de planetas ===== */
+/* avisos arriba (misión cumplida, logro, premio) */
+#nv-toast { position:fixed; left:50%; top:calc(env(safe-area-inset-top, 0px) + 44px); transform:translate(-50%, -14px); z-index:80;
+  padding:7px 16px; border-radius:20px; background:rgba(5,6,13,.88); border:1px solid var(--c, #00f0ff); color:#fff;
+  font:800 12px/1.2 system-ui, sans-serif; letter-spacing:1px; white-space:nowrap; max-width:92vw; overflow:hidden; text-overflow:ellipsis;
+  box-shadow:0 0 18px color-mix(in srgb, var(--c, #00f0ff) 55%, transparent); opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; }
+#nv-toast.ver { opacity:1; transform:translate(-50%, 0); }
+
+.btn-misiones .bm-n { margin-left:4px; padding:1px 6px; border-radius:8px; background:rgba(0,255,168,.18); color:#00ffa8; font-size:.9em; }
+
+/* barra de la guerra en la pantalla de inicio */
+.guerra-mini { margin:12px auto 0; max-width:520px; width:100%; }
+.gm-txt { font-size:11px; color:#8fb4d0; letter-spacing:.5px; text-align:center; margin-bottom:5px; }
+.gm-barra { display:flex; height:6px; border-radius:3px; overflow:hidden; gap:2px; }
+.gm-seg { display:block; min-width:2px; opacity:.85; }
+.gm-seg.gm-yo { opacity:1; box-shadow:0 0 8px #fff; }
+
+/* insignia dorada */
+.pz-oro { margin-right:4px; }
+#hud-bando.campeon::after { content:' 🏆'; }
+
+/* pantalla de misiones */
+.misiones-lista { text-align:left; }
+.mi-sec { margin:14px 0 6px; font-size:12px; font-weight:800; letter-spacing:2px; color:#00f0ff; }
+.mi-sec:first-child { margin-top:2px; }
+.mi-nota { font-weight:600; letter-spacing:.5px; color:#5f7f9f; font-size:11px; margin-left:6px; }
+.mi-fila { display:grid; grid-template-columns:22px 1fr auto; align-items:center; gap:10px; padding:7px 4px; border-bottom:1px solid rgba(0,240,255,.08); }
+.mi-check { width:18px; height:18px; border-radius:50%; border:1px solid rgba(0,240,255,.4); display:flex; align-items:center; justify-content:center; color:#05060d; font-weight:900; font-size:12px; }
+.mi-ok .mi-check { background:#00ffa8; border-color:#00ffa8; box-shadow:0 0 10px #00ffa8; }
+.mi-txt { color:#dcefff; font-size:13px; }
+.mi-ok .mi-txt { color:#00ffa8; }
+.mi-prog { display:flex; align-items:center; gap:8px; font-size:11px; color:#8fb4d0; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.mi-bar, .gw-bar { display:block; width:90px; height:5px; border-radius:3px; background:rgba(255,255,255,.08); overflow:hidden; }
+.mi-bar i, .gw-bar i { display:block; height:100%; background:#00f0ff; }
+.mi-ok .mi-bar i { background:#00ffa8; }
+.mi-premio { font-size:11px; color:#7fa6c4; margin:8px 2px 4px; line-height:1.45; }
+.gw-fila { display:grid; grid-template-columns:18px 110px 1fr auto; align-items:center; gap:10px; padding:4px 4px; font-size:12px; }
+.gw-fila .gw-bar { width:100%; }
+.gw-pos { color:#5f7f9f; font-weight:700; }
+.gw-nom { font-weight:800; letter-spacing:1px; }
+.gw-pts { color:#cfe0f0; font-variant-numeric:tabular-nums; }
+.gw-yo { background:rgba(0,240,255,.06); border-radius:6px; }
+.lg-rejilla { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin-top:6px; }
+.lg { display:grid; grid-template-columns:30px 1fr; grid-template-rows:auto auto; column-gap:8px; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,.06); opacity:.42; filter:grayscale(1); }
+.lg-ok { opacity:1; filter:none; border-color:rgba(255,210,63,.45); box-shadow:0 0 12px rgba(255,210,63,.15) inset; }
+.lg-ico { grid-row:1 / 3; font-size:22px; align-self:center; text-align:center; }
+.lg-nom { font-size:12px; font-weight:800; color:#fff; }
+.lg-ok .lg-nom { color:#ffd23f; }
+.lg-desc { font-size:10px; color:#8fb4d0; line-height:1.3; }
+@media (orientation: landscape) and (max-height: 500px) {
+  #screen-misiones .title { font-size:22px; }
+  #screen-misiones .title span { display:inline; margin-left:8px; }
+  .misiones-lista { max-height:calc(100vh - 120px); }
+  .gm-txt { font-size:10px; margin-bottom:3px; }
+  .guerra-mini { max-width:560px; }
+}
+#overlay.con-guerra .hint { display:none; } /* con la guerra cargada, su barra ocupa el lugar del consejo */

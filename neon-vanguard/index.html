@@ -17,7 +17,7 @@
 <link rel="apple-touch-icon" href="icono-180.png">
 <meta name="apple-mobile-web-app-title" content="Neon Vanguard">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="style.css?v=73">
+<link rel="stylesheet" href="style.css?v=82">
 </head>
 <body>
 <div id="game-wrap">
@@ -130,7 +130,9 @@
       </div>
       <button id="start-btn" onclick="startGame()">INICIAR MISIÓN</button>
       <p class="hint">Consejo: el dash te da invulnerabilidad por un instante.</p>
+      <div id="guerra-mini" class="guerra-mini"></div>
       <div class="fila-botones">
+        <button class="btn-sec btn-misiones" onclick="abrirMisiones()">🎯 MISIONES</button>
         <button class="btn-sec" onclick="abrirPizarra()">🏆 PIZARRA MUNDIAL</button>
         <button class="btn-sec" onclick="cambiarDeBando()">🔄 CAMBIAR DE BANDO</button>
         <button class="btn-sec btn-instalar hidden" onclick="instalarApp()">📲 INSTALAR</button>
@@ -148,6 +150,15 @@
       <div id="pz-resultado" class="pz-resultado"></div>
       <div id="pizarra-lista" class="pizarra-lista"></div>
       <button class="btn-sec" onclick="cerrarPizarra()">← VOLVER</button>
+    </div>
+  </div>
+
+  <!-- MISIONES DIARIAS · GUERRA DE PLANETAS · LOGROS -->
+  <div id="screen-misiones" class="overlay hidden">
+    <div class="panel panel-wide">
+      <h1 class="title">MISIONES<span>Y LOGROS</span></h1>
+      <div id="misiones-lista" class="pizarra-lista misiones-lista"></div>
+      <button class="btn-sec" onclick="cerrarMisiones()">← VOLVER</button>
     </div>
   </div>
 
@@ -172,6 +183,7 @@
 
       <button id="restart-btn" onclick="startGame()">REINTENTAR</button>
       <div class="fila-botones">
+        <button class="btn-sec btn-misiones" onclick="abrirMisiones()">🎯 MISIONES</button>
         <button class="btn-sec" onclick="abrirPizarra()">🏆 PIZARRA MUNDIAL</button>
         <button class="btn-sec" onclick="cambiarDeBando()">🔄 CAMBIAR DE BANDO</button>
         <button class="btn-sec btn-instalar hidden" onclick="instalarApp()">📲 INSTALAR</button>
@@ -202,12 +214,13 @@
   <button id="rotar-cerrar" aria-label="Cerrar aviso" onclick="cerrarAvisoRotar()">✕</button>
 </div>
 
-<script src="sonido.js?v=73" charset="utf-8"></script>
-<script src="instalar.js?v=73" charset="utf-8"></script>
-<script src="pantallas.js?v=73" charset="utf-8"></script>
-<script src="ranking.js?v=73" charset="utf-8"></script>
-<script src="app.js?v=78" charset="utf-8"></script>
-<script src="intro.js?v=73" charset="utf-8"></script>
-<script src="red.js?v=73" charset="utf-8"></script>
+<script src="sonido.js?v=80" charset="utf-8"></script>
+<script src="instalar.js?v=80" charset="utf-8"></script>
+<script src="pantallas.js?v=80" charset="utf-8"></script>
+<script src="ranking.js?v=80" charset="utf-8"></script>
+<script src="app.js?v=80" charset="utf-8"></script>
+<script src="intro.js?v=80" charset="utf-8"></script>
+<script src="misiones.js?v=80" charset="utf-8"></script>
+<script src="red.js?v=80" charset="utf-8"></script>
 </body>
 </html>
