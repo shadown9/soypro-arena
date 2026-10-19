@@ -749,3 +749,7 @@ html.nv-demo .hud-sonido { display:none; }
 .caja-ios ol { text-align:left; margin:0 auto 16px; padding-left:22px; line-height:1.7; font-size:14px; }
 .caja-ios b { color:#fff; }
 .ico-ios { display:inline-block; padding:0 6px; border:1px solid rgba(0,240,255,.4); border-radius:5px; color:#00f0ff; }
+
+/* --- Presentación al iniciar: sin HUD encima --- */
+html.nv-intro #hud { opacity:0; pointer-events:none; }
+html.nv-intro #hud .hud-sonido { pointer-events:none; }

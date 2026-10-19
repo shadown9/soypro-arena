@@ -106,6 +106,22 @@ const Audio2 = {
     this.osc('sawtooth', 220, 55, 0.28, 0.16);
     this.ruidoF(0.18, 0.2, 'lowpass', 900, 200);
   },
+  despegue() { // motores que arrancan y rugen
+    if (!this.listo()) return;
+    const t = this.ctx.currentTime;
+    this.ruidoF(2.2, 0.35, 'lowpass', 180, 1400, null, t);
+    this.osc('sawtooth', 48, 110, 2.0, 0.16, null, t);
+    this.osc('sine', 40, 70, 2.2, 0.35, null, t);
+  },
+  salto() { // salto al centro de la galaxia: subida aguda y golpe al llegar
+    if (!this.listo()) return;
+    const t = this.ctx.currentTime;
+    this.osc('sawtooth', 120, 2400, 1.25, 0.09, null, t);
+    this.osc('sine', 240, 3600, 1.25, 0.08, null, t);
+    this.ruidoF(1.3, 0.28, 'bandpass', 400, 6000, null, t);
+    this.osc('sine', 90, 30, 0.9, 0.5, null, t + 1.25);
+    this.ruidoF(0.9, 0.35, 'lowpass', 2600, 120, null, t + 1.25);
+  },
   boss() { // alarma: tres bocinazos graves que bajan
     if (!this.listo()) return;
     const t = this.ctx.currentTime;

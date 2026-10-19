@@ -1590,6 +1590,7 @@ function loop(now) {
 
   if (!G.running) { drawBackground(rawDt); return; }
 
+  if (G.intro) { dibujarIntro(rawDt); return; } // presentación antes de la batalla
   const dt = rawDt * G.slowmo;
   G.time += dt;
   if (!NV_DEMO) { // la música sigue a la partida: combate, o jefe si hay uno vivo
@@ -1686,7 +1687,7 @@ function drawJoysticks() {
 function resetGame() {
   bullets = []; enemies = []; eBullets = []; particles = []; powerups = []; floaters = []; rings = [];
   G.score = 0; G.wave = 1; G.kills = 0; G.combo = 1; G.comboTimer = 0;
-  G.victorias = 0;
+  G.victorias = 0; G.intro = null;
   G.shake = 0; G.flash = 0; G.slowmo = 1; G.time = 0;
   G.waveActive = false; G.bossActive = false; G.bossPending = false;
   player = createPlayer();
@@ -1699,9 +1700,11 @@ function startGame() {
   CAM.x = player.x; CAM.y = player.y;
   despejarZona(player.x, player.y, 220);
   G.running = true; G.over = false;
-  if (typeof RED !== 'undefined') RED.inicio();
   el.overlay.classList.add('hidden');
   el.gameover.classList.add('hidden');
+  // presentación: tu nave despega de tu planeta hasta el centro de la galaxia (intro.js); la demo va directa
+  if (!NV_DEMO && typeof empezarIntro === 'function') { try { empezarIntro(); return; } catch (e) { G.intro = null; } }
+  if (typeof RED !== 'undefined') RED.inicio();
   startWave(1);
 }
 
