@@ -13,7 +13,7 @@ const RED = (function () {
   let ws = null, conectado = false, miId = 0, envAcc = 0, cerrandoAdrede = false;
   let totalLinea = 0; // personas reales conectadas ahora (Neon Vanguard en todas las salas + ProArena), lo manda el servidor
   let bestia = null, golpeAcum = 0, golpeT = 0; // BESTIA ERRANTE compartida (la mueve el servidor)
-  const COLOR_BESTIA = { medusa: '#ffb45c', ojo: '#ff3355', serpiente: '#ff4fd8' };
+  const COLOR_BESTIA = { medusa: '#ffb45c', ojo: '#ff3355', serpiente: '#5fd4ff' };
   let sala = null, pedido = null, marc = null; // SALA PRIVADA: {codigo, modo, meta}; pedido = {crear} o {sala}
   const remotos = new Map();   // id → piloto
   let rBalas = [];             // balas de otros jugadores

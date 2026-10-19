@@ -454,7 +454,7 @@ const ENEMY_TYPES = {
   // BESTIAS DEL ESPACIO: no son de ningún planeta
   medusa:    { hp: 75,  r: 22, speed: 55,  color: '#c48cff', score: 320, dmg: 14, fireRate: 3.0, contact: true, bando: 'bestia' },
   larva:     { hp: 14,  r: 9,  speed: 235, color: '#7ad7ff', score: 70,  dmg: 8,  fireRate: 0,   contact: true, bando: 'bestia' },
-  serpiente: { hp: 130, r: 15, speed: 175, color: '#ff4fd8', score: 560, dmg: 18, fireRate: 0,   contact: true, bando: 'bestia' },
+  serpiente: { hp: 130, r: 15, speed: 175, color: '#5fd4ff', score: 560, dmg: 18, fireRate: 0,   contact: true, bando: 'bestia' },
   ojo:       { hp: 150, r: 24, speed: 45,  color: '#6dffa8', score: 500, dmg: 30, fireRate: 4.2, contact: true, bando: 'bestia' },
   // BESTIAS QUE APRENDEN (llegan según tu forma de jugar)
   coraza:    { hp: 170, r: 22, speed: 62,  color: '#4dd2ff', score: 520, dmg: 18, fireRate: 3.0, contact: true, bando: 'bestia' }, // contra el que se queda quieto
@@ -1349,7 +1349,9 @@ const JEFE_IMG = {};
 const BESTIA_IMG = {}, BESTIA_ARTE = { medusa: { eje: -0.43, ancho: 4.7, cx: 0.69, cy: 0.36, tonos: [0, 35, -45], reina: 150 },
   ojo: { eje: 0, ancho: 7.6, cx: 0.494, cy: 0.432, tonos: [0, 40, -50], reina: 120 },
   espino: { eje: 0, ancho: 3.3, cx: 0.514, cy: 0.463, tonos: [0, 35, -45] },
-  larva: { eje: Math.PI, ancho: 4.6, cx: 0.38, cy: 0.53, tonos: [0, 35, -45] } };
+  larva: { eje: Math.PI, ancho: 4.6, cx: 0.38, cy: 0.53, tonos: [0, 35, -45] },
+  serpiente: { eje: Math.PI / 2, ancho: 3.2, cx: 0.5, cy: 0.45, tonos: [35, -45], reina: 0 },          // cabeza (mandíbulas hacia abajo en la imagen)
+  'serpiente-cuerpo': { eje: 1.27, ancho: 2.5, cx: 0.5, cy: 0.5, tonos: [35, -45], reina: 0 } };   // disco de escamas de cada segmento
 // misma figura con otro tono (rotación de tono como el filtro hue-rotate, hecha a mano para que funcione en todos los teléfonos)
 function girarTono(im, grados) {
   const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
@@ -1370,7 +1372,7 @@ Object.keys(BESTIA_ARTE).forEach(k => {
     const A = BESTIA_ARTE[k];
     BESTIA_IMG[k] = Object.assign({ im, blanco: c, variantes: (A.tonos || [0]).map(gr => girarTono(im, gr)), gigante: A.reina != null ? girarTono(im, A.reina) : null }, A);
   };
-  im.src = 'naves/bestia-' + k + '.webp?v=3';
+  im.src = 'naves/bestia-' + k + '.webp?v=4';
 });
 // gira suave hacia donde avanza (si casi no se mueve, se queda como estaba)
 function rumboBestia(e, porDefecto) {
@@ -2310,6 +2312,19 @@ function dibujarBestia(e, col, flash) {
     ctx.strokeStyle = col; ctx.lineWidth = 1.2; // patitas
     for (const s of [-1, 1]) for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.moveTo(-k * 5, 0); ctx.lineTo(-k * 5 - 3, s * (8 + Math.sin(e.wobble * 8 + k) * 2)); ctx.stroke(); }
     ctx.fillStyle = '#1b2a00'; ctx.beginPath(); ctx.arc(4, -2.5, 1.6, 0, TAU); ctx.arc(4, 2.5, 1.6, 0, TAU); ctx.fill();
+  } else if (e.type === 'serpiente' && BESTIA_IMG.serpiente && BESTIA_IMG['serpiente-cuerpo']) {
+    // diseño del Jefe (serpiente cósmica): segmentos de escamas que siguen la curva y la cabeza con mandíbulas al frente
+    const S = BESTIA_IMG.serpiente, C = BESTIA_IMG['serpiente-cuerpo'], gig = e.r >= 30;
+    if (e._tono == null) e._tono = Math.floor(Math.random() * S.variantes.length);
+    const imC = gig && C.gigante ? C.gigante : C.variantes[e._tono], imS = gig && S.gigante ? S.gigante : S.variantes[e._tono];
+    if (e.cuerpo) for (let k = e.cuerpo.length - 1; k >= 0; k--) {
+      const c = e.cuerpo[k], ant = k ? e.cuerpo[k - 1] : e, a = Math.atan2(ant.y - c.y, ant.x - c.x), L = c.r * C.ancho;
+      ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(a - C.eje); dibujarConBrillo({ im: imC, blanco: C.blanco }, flash, -L / 2, -L / 2, L, L); ctx.restore();
+    }
+    const c0 = e.cuerpo && e.cuerpo[0], ang = c0 && (c0.x !== e.x || c0.y !== e.y) ? Math.atan2(e.y - c0.y, e.x - c0.x) : (e.angle || 0);
+    ctx.translate(e.x, e.y); ctx.rotate(ang - S.eje);
+    const L = e.r * S.ancho * (1 + Math.sin((e.phase || G.time) * 10) * 0.03), h = S.im.height * L / S.im.width;
+    dibujarConBrillo({ im: imS, blanco: S.blanco }, flash, -L * S.cx, -h * S.cy, L, h);
   } else if (e.type === 'serpiente') {
     if (e.cuerpo) for (let k = e.cuerpo.length - 1; k >= 0; k--) { const c = e.cuerpo[k], t = k / e.cuerpo.length;
       ctx.shadowBlur = 12; ctx.shadowColor = col; ctx.fillStyle = flash ? '#fff' : 'hsl(' + (310 - t * 50) + ',90%,' + (60 - t * 20) + '%)';
