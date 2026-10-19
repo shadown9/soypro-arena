@@ -1597,14 +1597,12 @@ function gameOver() {
   }
 }
 
-document.getElementById('start-btn').addEventListener('click', startGame);
-document.getElementById('restart-btn').addEventListener('click', startGame);
 
 /* ---------- aviso de rotar: SOLO en celular real en vertical ---------- */
 function actualizarAvisoRotar() {
   const el = document.getElementById('rotar');
   if (!el) return;
-  const esCelularReal = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  const esCelularReal = (typeof esMovil === 'function') ? esMovil() : (navigator.maxTouchPoints > 0);
   const vertical = window.innerHeight > window.innerWidth;
   const angosto = window.innerWidth <= 760;
   el.classList.toggle('visible', esCelularReal && vertical && angosto);

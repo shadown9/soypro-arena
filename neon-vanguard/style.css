@@ -589,3 +589,59 @@ button:active { transform:scale(.98); }
 
 /* celular: los cuatro chips del mismo ancho */
 #ctrl-movil kbd { min-width:11.5em; }
+
+/* ===== CELULAR DE LADO: todo cabe sin scroll =====
+   Inicio y final en dos columnas: así entran en 360 px de alto. */
+@media (orientation: landscape) and (max-height: 500px) {
+  #overlay .panel, #gameover .panel {
+    display:grid; align-items:center; column-gap:26px; row-gap:6px;
+    padding:14px 22px; max-width:min(96vw, 860px); width:auto;
+  }
+  #overlay .panel { grid-template-columns:auto auto;
+    grid-template-areas:"t c" "s c" "b c" "h c" "f f"; }
+  #overlay .title { grid-area:t; font-size:30px; }
+  #overlay .subtitle { grid-area:s; margin:2px 0; max-width:30ch; justify-self:center; }
+  #overlay .controls { grid-area:c; margin:0 !important; }
+  #overlay #start-btn { grid-area:b; justify-self:center; margin:6px 0 0; }
+  #overlay .hint { grid-area:h; margin:2px 0 0; font-size:10px; max-width:30ch; justify-self:center; }
+  #overlay .fila-botones { grid-area:f; margin-top:6px; }
+
+  #gameover .panel { grid-template-columns:auto auto;
+    grid-template-areas:"t k" "e k" "r k" "p k" "b k" "f k"; }
+  #gameover .title { grid-area:t; font-size:28px; }
+  #gameover .final-stats { grid-area:e; margin:2px 0; }
+  #gameover .final-stats strong { font-size:22px; }
+  #gameover .record-nuevo { grid-area:r; margin:0; }
+  #gameover .puesto-mundial { grid-area:p; margin:0; }
+  #gameover #restart-btn { grid-area:b; justify-self:center; margin:6px 0 0; }
+  #gameover .fila-botones { grid-area:f; margin-top:4px; }
+  #gameover .tarjeta-box { grid-area:k; margin:0; align-self:center; }
+  #gameover .tarjeta-box img { max-height:calc(100vh - 92px); width:auto; max-width:34vw; }
+  #gameover .tarjeta-botones { margin-top:6px; }
+  .fila-botones .btn-sec, .tarjeta-botones .btn-sec { padding:8px 12px; font-size:10px; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  #gameover .title { font-size:24px; }
+  #gameover .final-stats strong { font-size:19px; }
+  #gameover .final-stats span { font-size:9px; }
+  #gameover .record-nuevo { font-size:11px; }
+  #gameover .puesto-mundial { font-size:10px; }
+  #gameover #restart-btn { padding:9px 26px; }
+  #gameover .fila-botones, #gameover .tarjeta-botones { display:flex; flex-direction:row; flex-wrap:nowrap; gap:8px; justify-content:center; }
+  #gameover .fila-botones .btn-sec, #gameover .tarjeta-botones .btn-sec { width:auto; flex:0 1 auto; white-space:nowrap; margin:0; }
+  #gameover .tarjeta-box img { max-height:calc(100vh - 80px); }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .overlay { padding:calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left)); }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  #gameover .tarjeta-box img { max-height:calc(100vh - 128px); }
+  #gameover .panel { row-gap:3px; padding-top:10px; padding-bottom:10px; }
+  #gameover .final-stats { margin:0; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  #screen-pizarra .title { font-size:24px; }
+  .pz-fila { padding-top:5px !important; padding-bottom:5px !important; min-height:0 !important; }
+}
+.pz-tabla, #pizarra-lista { scrollbar-width:none; }
+.pz-tabla::-webkit-scrollbar, #pizarra-lista::-webkit-scrollbar { display:none; }

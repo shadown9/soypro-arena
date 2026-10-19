@@ -15,13 +15,21 @@ const BANDOS = [
 
 let bandoElegido = null;
 
-/* ---------- Detección de dispositivo ---------- */
-function esMovil() {
-  const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  const ua = /Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile/i.test(navigator.userAgent);
-  const chico = window.matchMedia('(max-width: 820px)').matches;
-  return (touch && chico) || ua;
+/* ---------- Detección de dispositivo: 'pc', 'tablet' o 'telefono' ----------
+   - El iPad moderno se presenta como "Macintosh": se le reconoce por tener pantalla táctil.
+   - Android sin "Mobile" en el user-agent es tablet.
+   - Si el puntero principal es un dedo (sin ratón), se trata como teléfono aunque el user-agent no lo diga.
+   - Un portátil con pantalla táctil sigue siendo PC: su puntero principal es el ratón/touchpad. */
+function tipoDispositivo() {
+  const ua = navigator.userAgent || '';
+  const ipad = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1;
+  if (/iPad|Tablet|PlayBook|Silk/i.test(ua) || ipad || (/Android/i.test(ua) && !/Mobile/i.test(ua))) return 'tablet';
+  if (/Android|iPhone|iPod|Mobile|Opera Mini|IEMobile|Windows Phone/i.test(ua)) return 'telefono';
+  const mm = q => window.matchMedia && window.matchMedia(q).matches;
+  if (mm('(pointer: coarse)') && !mm('(any-pointer: fine)')) return 'telefono';
+  return 'pc';
 }
+function esMovil() { return tipoDispositivo() !== 'pc'; }
 
 /* ---------- PANTALLA 1: REGISTRO ---------- */
 function generarCodigo() {
