@@ -354,3 +354,13 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   } catch (e) {}
 });
+
+/* ---------- Dentro de la app de ProArena (?app=1 en un marco) ----------
+   Botón para volver al lobby de ProArena en los menús (el iPhone no tiene botón atrás). */
+window.addEventListener('DOMContentLoaded', () => {
+  if (!new URLSearchParams(location.search).has('app') || window.parent === window) return;
+  const salir = () => window.parent.postMessage({ nv: 'salir' }, '*');
+  const boton = (clase) => { const b = document.createElement('button'); b.className = clase; b.textContent = '← PROARENA'; b.onclick = salir; return b; };
+  ['#overlay .fila-botones', '#gameover .fila-botones'].forEach(sel => { const f = document.querySelector(sel); if (f) f.prepend(boton('btn-sec')); });
+  ['#screen-registro .panel', '#screen-bandos .panel'].forEach(sel => { const p = document.querySelector(sel); if (p) { const b = boton('btn-volver'); b.style.marginTop = '10px'; p.appendChild(b); } });
+});
