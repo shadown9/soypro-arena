@@ -705,3 +705,12 @@ button:active { transform:scale(.98); }
 .hud-mejoras span { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:7px; font-size:13px; color:var(--c);
   border:1px solid color-mix(in srgb, var(--c) 55%, transparent); background:rgba(5,6,13,.55); text-shadow:0 0 8px var(--c); }
 .hud-mejoras b { font-size:11px; color:#fff; }
+
+/* campo del código con el ojito para mostrar/ocultar */
+.campo-clave { position:relative; display:inline-block; width:280px; max-width:100%; }
+.campo-clave #reg-codigo-input { width:100%; padding-right:46px; }
+.ver-clave { position:absolute; right:6px; top:50%; transform:translateY(-50%); width:36px; height:36px; padding:0; margin:0; border:0; border-radius:8px;
+  background:transparent; color:#c48bd0; box-shadow:none; letter-spacing:0; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.ver-clave:hover { background:rgba(255,43,214,.12); }
+.ver-clave #ojo-tachado { display:block; } .ver-clave.visible #ojo-tachado { display:none; }
+.ver-clave.visible { color:var(--magenta); }

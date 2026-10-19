@@ -87,7 +87,10 @@ function elegirCamino(cual) {
   } else {
     document.getElementById('reg-paso-codigo').classList.remove('hidden');
     document.getElementById('reg-sub').textContent = 'Entrá con tu nombre y código.';
-    setTimeout(() => document.getElementById('reg-codigo-input').focus(), 80);
+    // el último nombre y código usados en este teléfono aparecen ya escritos
+    const rec = leerRecordado();
+    if (rec) { document.getElementById('reg-nombre-entrar').value = rec.nombre || ''; document.getElementById('reg-codigo-input').value = rec.codigo || ''; }
+    setTimeout(() => document.getElementById(rec ? 'reg-entrar-btn' : 'reg-nombre-entrar').focus(), 80);
   }
 }
 
@@ -377,3 +380,23 @@ window.addEventListener('DOMContentLoaded', () => {
   ['#overlay .fila-botones', '#gameover .fila-botones'].forEach(sel => { const f = document.querySelector(sel); if (f) f.prepend(boton('btn-sec')); });
   ['#screen-registro .panel', '#screen-bandos .panel'].forEach(sel => { const p = document.querySelector(sel); if (p) { const b = boton('btn-volver'); b.style.marginTop = '10px'; p.appendChild(b); } });
 });
+
+
+/* ---------- recordar nombre y código en este teléfono (siempre) ---------- */
+function leerRecordado() { try { return JSON.parse(localStorage.getItem('nv_recordado') || 'null'); } catch (e) { return null; } }
+function guardarRecordado(nombre, codigo) { try { if (nombre && codigo) localStorage.setItem('nv_recordado', JSON.stringify({ nombre, codigo })); } catch (e) {} }
+// el ojito: muestra u oculta el código
+function verClave() {
+  const inp = document.getElementById('reg-codigo-input'), btn = document.getElementById('ver-clave');
+  const ver = inp.type === 'password'; inp.type = ver ? 'text' : 'password';
+  btn.classList.toggle('visible', ver); btn.setAttribute('aria-label', ver ? 'Ocultar código' : 'Mostrar código');
+}
+// cada vez que se guarda el piloto activo, también queda recordado
+(function () {
+  const orig = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (k, v) {
+    orig.call(this, k, v);
+    if (k === 'nv_piloto' && this === window.localStorage) { try { const p = JSON.parse(v); if (p && p.nombre && p.codigo) orig.call(this, 'nv_recordado', JSON.stringify({ nombre: p.nombre, codigo: p.codigo })); } catch (e) {} }
+  };
+  const p = (typeof leerPiloto === 'function') ? leerPiloto() : null; if (p && p.nombre && p.codigo && !leerRecordado()) guardarRecordado(p.nombre, p.codigo);
+})();
