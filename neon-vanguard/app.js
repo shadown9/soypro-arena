@@ -452,7 +452,7 @@ const ENEMY_TYPES = {
   // NEPTUNO — ESPECTRAL: overdrive, ráfagas cortas y fuertes.
   neptuno: { hp: 44,  r: 14, speed: 132, color: '#2f6bff', score: 210, dmg: 12, fireRate: 1.7,  contact: true,  bando: 'neptuno' },
   // BESTIAS DEL ESPACIO: no son de ningún planeta
-  medusa:    { hp: 75,  r: 22, speed: 55,  color: '#7affd6', score: 320, dmg: 14, fireRate: 3.0, contact: true, bando: 'bestia' },
+  medusa:    { hp: 75,  r: 22, speed: 55,  color: '#c48cff', score: 320, dmg: 14, fireRate: 3.0, contact: true, bando: 'bestia' },
   larva:     { hp: 14,  r: 9,  speed: 235, color: '#b6ff4d', score: 70,  dmg: 8,  fireRate: 0,   contact: true, bando: 'bestia' },
   serpiente: { hp: 130, r: 15, speed: 175, color: '#ff4fd8', score: 560, dmg: 18, fireRate: 0,   contact: true, bando: 'bestia' },
   ojo:       { hp: 150, r: 24, speed: 45,  color: '#ff3355', score: 500, dmg: 30, fireRate: 4.2, contact: true, bando: 'bestia' },
@@ -1338,6 +1338,42 @@ const JEFE_IMG = {};
   };
   im.src = 'naves/jefe-' + k + '.png?v=1';
 });
+// BESTIAS con el diseño del Jefe: naves/bestia-<tipo>.png (arte neón recortado por brillo, ya trae su resplandor)
+//   eje = hacia dónde mira la imagen (de la cola a la cabeza), ancho = ancho dibujado en radios, cx/cy = centro del cuerpo en la imagen
+//   tonos = variaciones de color (grados de tono) para que no salgan todas iguales; reina = el tono de la gigante del modo en línea
+const BESTIA_IMG = {}, BESTIA_ARTE = { medusa: { eje: -0.43, ancho: 4.7, cx: 0.69, cy: 0.36, tonos: [0, 35, -45], reina: 150 } };
+// misma figura con otro tono (rotación de tono como el filtro hue-rotate, hecha a mano para que funcione en todos los teléfonos)
+function girarTono(im, grados) {
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+  const g = c.getContext('2d'); g.drawImage(im, 0, 0); if (!grados) return c;
+  const d = g.getImageData(0, 0, c.width, c.height), p = d.data, a = grados * Math.PI / 180, co = Math.cos(a), si = Math.sin(a);
+  const M = [.213 + co * .787 - si * .213, .715 - co * .715 - si * .715, .072 - co * .072 + si * .928,
+             .213 - co * .213 + si * .143, .715 + co * .285 + si * .140, .072 - co * .072 - si * .283,
+             .213 - co * .213 - si * .787, .715 - co * .715 + si * .715, .072 + co * .928 + si * .072];
+  for (let i = 0; i < p.length; i += 4) { if (!p[i + 3]) continue; const r = p[i], gg = p[i + 1], b = p[i + 2];
+    p[i] = M[0] * r + M[1] * gg + M[2] * b; p[i + 1] = M[3] * r + M[4] * gg + M[5] * b; p[i + 2] = M[6] * r + M[7] * gg + M[8] * b; }
+  g.putImageData(d, 0, 0); return c;
+}
+Object.keys(BESTIA_ARTE).forEach(k => {
+  const im = new Image();
+  im.onload = () => {
+    const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+    const g = c.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    const A = BESTIA_ARTE[k];
+    BESTIA_IMG[k] = Object.assign({ im, blanco: c, variantes: (A.tonos || [0]).map(gr => girarTono(im, gr)), gigante: A.reina != null ? girarTono(im, A.reina) : null }, A);
+  };
+  im.src = 'naves/bestia-' + k + '.png?v=2';
+});
+// gira suave hacia donde avanza (si casi no se mueve, se queda como estaba)
+function rumboBestia(e, porDefecto) {
+  if (e._px != null) { const vx = e.x - e._px, vy = e.y - e._py; if (vx * vx + vy * vy > 0.04) e._obj = Math.atan2(vy, vx); }
+  e._px = e.x; e._py = e.y;
+  const obj = e._obj != null ? e._obj : porDefecto;
+  if (e._ang == null) e._ang = obj;
+  let d = obj - e._ang; d = Math.atan2(Math.sin(d), Math.cos(d)); e._ang += d * 0.06;
+  return e._ang;
+}
+
 function naveSprite(k, e, flash) {
   const N = NAVE_IMG[k]; if (!N) return false;
   const L = e.r * NAVE_LARGO[k], h = N.im.height * L / N.im.width * (NAVE_ANCHO[k] || 1);
@@ -2228,7 +2264,17 @@ function iaBestia(e, i, dt, d, nx, ny) {
 
 function dibujarBestia(e, col, flash) {
   ctx.save();
-  if (e.type === 'medusa') {
+  if (e.type === 'medusa' && BESTIA_IMG.medusa) {
+    const S = BESTIA_IMG.medusa, pul = 1 + Math.sin((e.phase || G.time) * 4) * 0.06;
+    ctx.translate(e.x, e.y);
+    if (e.carga > 0) { ctx.strokeStyle = 'rgba(200,170,255,' + (0.4 + Math.random() * 0.5) + ')'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, 210 * (1 - e.carga / 0.7), 0, TAU); ctx.stroke(); }
+    ctx.rotate(rumboBestia(e, -Math.PI / 2) - S.eje);
+    const L = e.r * S.ancho * pul, h = S.im.height * L / S.im.width;
+    if (e._tono == null) e._tono = Math.floor(Math.random() * S.variantes.length);
+    const im = e.r >= 40 && S.gigante ? S.gigante : S.variantes[e._tono]; // la gigante (Medusa Reina) va dorada
+    dibujarConBrillo({ im, blanco: S.blanco }, flash, -L * S.cx, -h * S.cy, L, h);
+  } else if (e.type === 'medusa') {
     const pul = 1 + Math.sin(e.phase * 4) * 0.08, R = e.r * pul;
     ctx.translate(e.x, e.y);
     // tentáculos ondulantes
