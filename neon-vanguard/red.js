@@ -226,12 +226,13 @@ const RED = (function () {
         ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(-9, -12); ctx.lineTo(-4, 0); ctx.lineTo(-9, 12); ctx.closePath(); ctx.fill(); ctx.restore();
         ctx.save(); ctx.font = '900 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = bestia.color; ctx.fillText('👾 ' + Math.round(Math.hypot(dx, dy) / 10) + ' m', x - Math.cos(an) * 30, y - Math.sin(an) * 30 + 4); ctx.restore();
       }
+      const y0 = franjaTope();
       let vivos = 1; for (const r of remotos.values()) if (r.visto) vivos++;
       ctx.save(); ctx.font = '800 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(0,240,255,.85)';
-      if (sala) ctx.fillText(textoMarcador(), W / 2, 18);
+      if (sala) ctx.fillText(textoMarcador(), W / 2, y0);
       else { // en línea (personas reales) · en combate (todas las naves de tu batalla)
         let naves = 1 + enemies.length + (bestia ? 1 : 0); for (const r of remotos.values()) if (r.v && r.visto) naves++;
-        ctx.fillText(t('rd_linea', { n: Math.max(totalLinea, vivos) }) + '   ·   ' + t('rd_combate', { n: naves }), W / 2, 18);
+        ctx.fillText(t('rd_linea', { n: Math.max(totalLinea, vivos) }) + '   ·   ' + t('rd_combate', { n: naves }), W / 2, y0);
       }
       ctx.restore();
       if (sala && !remotos.size) { // sola en la sala: esperando rival
@@ -241,7 +242,20 @@ const RED = (function () {
       }
     }
     feed.forEach((f, i) => { ctx.save(); ctx.globalAlpha = Math.min(1, f.vida); ctx.font = '800 12px system-ui, sans-serif'; ctx.textAlign = 'center';
-      ctx.fillStyle = f.color; ctx.shadowBlur = 8; ctx.shadowColor = '#000'; ctx.fillText(f.txt, W / 2, 38 + i * 17); ctx.restore(); });
+      ctx.fillStyle = f.color; ctx.shadowBlur = 8; ctx.shadowColor = '#000'; ctx.fillText(f.txt, W / 2, franjaTope() + 20 + i * 17); ctx.restore(); });
+  }
+
+  // altura (en mundo) de la línea «EN LÍNEA · EN COMBATE»: arriba del todo, salvo con el teléfono en vertical,
+  // donde no cabe entre los dos lados del marcador y baja justo debajo de él (los avisos también, vía --hud-bajo)
+  let topeY = 18, topeT = 0;
+  function franjaTope() {
+    const ahora = performance.now(); if (ahora - topeT < 1000) return topeY; topeT = ahora;
+    const sw = W * ZOOM, vertical = H > W && sw < 600;
+    let bajo = 0;
+    if (vertical) for (const sel of ['.hud-left', '.hud-right']) { const e = document.querySelector(sel); if (e) bajo = Math.max(bajo, e.getBoundingClientRect().bottom); }
+    topeY = vertical && bajo ? (bajo + 16) / ZOOM : 18;
+    document.documentElement.style.setProperty('--hud-bajo', vertical && bajo ? Math.round(bajo + 30) + 'px' : '');
+    return topeY;
   }
 
   function textoMarcador() {

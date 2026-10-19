@@ -886,3 +886,7 @@ html.nv-intro #hud .hud-sonido { pointer-events:none; }
 .tarjeta-modo button.activa { color:#05060d; background:#00f0ff; border-color:#00f0ff; box-shadow:0 0 10px rgba(0,240,255,.5); }
 @media (orientation: landscape) and (max-height: 500px) { .tarjeta-modo button { padding:4px 10px; font-size:10px; } }
 #gameover .tarjeta-modo button { width:auto; flex:0 0 auto; white-space:nowrap; margin:0; min-height:0; padding:6px 14px; font-size:11px; letter-spacing:1.5px; }
+
+/* teléfono en vertical: los avisos bajan debajo del marcador (--hud-bajo lo calcula red.js) */
+#nv-toast { top:calc(env(safe-area-inset-top, 0px) + var(--hud-bajo, 44px)); }
+@media (orientation: portrait) and (max-width: 600px) { #nv-toast { white-space:normal; text-align:center; width:max-content; max-width:88vw; border-radius:16px; } }
