@@ -482,6 +482,29 @@ function spawnFromEdge(type) {
   spawnEnemy(type, x, y);
 }
 
+/* GUERRA DE TODOS CONTRA TODOS: cada planeta pelea contra los demás, no solo contra ti.
+   Cada nave elige al enemigo más cercano (tú u otra nave de otro planeta) y lo revisa cada poco.
+   Tú tienes un poco más de «atracción» (eres el piloto más peligroso), pero no eres el único blanco. */
+function bandoDe(e) { return e.type === 'boss' ? e.jefe : (ENEMY_TYPES[e.type] && ENEMY_TYPES[e.type].bando); }
+function elegirObjetivo(e) {
+  const p = player, mio = bandoDe(e);
+  let mejor = p.alive ? p : null, dm = p.alive ? Math.hypot(p.x - e.x, p.y - e.y) * 0.8 : Infinity;
+  for (const o of enemies) {
+    if (o === e || o.muerto) continue;
+    const b = bandoDe(o); if (!b || b === 'bestia' || b === mio) continue;
+    const d = Math.hypot(o.x - e.x, o.y - e.y);
+    if (d < dm && d < 650) { dm = d; mejor = o; }
+  }
+  return mejor || p;
+}
+// daño de una nave de planeta a otra (balas o embestidas). Al jefe le hacen poco y no lo rematan: ese es tuyo.
+function golpearNave(o, dmg) {
+  if (!o || o.muerto) return;
+  if (o.type === 'boss') { o.hp = Math.max(1, o.hp - dmg * 0.25); o.hitFlash = 0.06; return; }
+  o.hp -= dmg; o.hitFlash = 0.1;
+  if (o.hp <= 0) { const k = enemies.indexOf(o); if (k >= 0) killEnemy(k, false); }
+}
+
 function updateEnemies(dt) {
   const p = player;
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -506,12 +529,18 @@ function updateEnemies(dt) {
       continue;
     }
 
-    const dx = p.x - e.x, dy = p.y - e.y;
+    const esBestia = ENEMY_TYPES[e.type] && ENEMY_TYPES[e.type].bando === 'bestia';
+    if (!esBestia) {
+      e.buscar = (e.buscar || 0) - dt;
+      if (e.buscar <= 0 || !e.obj || e.obj.muerto || (e.obj === p && !p.alive)) { e.obj = elegirObjetivo(e); e.buscar = 0.9 + Math.random() * 0.6; }
+    }
+    const T = esBestia ? p : e.obj;
+    const dx = T.x - e.x, dy = T.y - e.y;
     const d = Math.hypot(dx, dy) || 1;
     const nx = dx / d, ny = dy / d;
     e.angle = Math.atan2(dy, dx);
 
-    if (ENEMY_TYPES[e.type] && ENEMY_TYPES[e.type].bando === 'bestia') {
+    if (esBestia) {
       if (iaBestia(e, i, dt, d, nx, ny)) continue; // true = murió en la embestida
     } else
     // ---- IA POR NAVES DE PLANETA ----
@@ -525,54 +554,59 @@ function updateEnemies(dt) {
       const ca = Math.cos(wob), sa = Math.sin(wob);
       e.vx = lerp(e.vx, (nx * ca - ny * sa) * e.speed, dt * 6);
       e.vy = lerp(e.vy, (nx * sa + ny * ca) * e.speed, dt * 6);
-      if (e.fireCd <= 0 && d < 560) { enemyShoot(e, 1); e.fireCd = e.fireRate; }
+      if (e.fireCd <= 0 && d < 560) { enemyShoot(e, 1, T); e.fireCd = e.fireRate; }
     } else if (e.type === 'jupiter') {
       // COLOSO: lento, imparable, dispara triple andanada.
       e.vx = lerp(e.vx, nx * e.speed, dt * 1.2);
       e.vy = lerp(e.vy, ny * e.speed, dt * 1.2);
-      if (e.fireCd <= 0 && d < 720) { enemyShoot(e, 3); e.fireCd = e.fireRate; }
+      if (e.fireCd <= 0 && d < 720) { enemyShoot(e, 3, T); e.fireCd = e.fireRate; }
     } else if (e.type === 'saturno') {
       // ANILLADA: orbita y esquiva, mantiene distancia.
       const tang = { x: -ny, y: nx };
       const radial = d > e.orbitR ? 1 : -1;
       e.vx = lerp(e.vx, (tang.x * 1.2 + nx * radial * 0.5) * e.speed, dt * 3.5);
       e.vy = lerp(e.vy, (tang.y * 1.2 + ny * radial * 0.5) * e.speed, dt * 3.5);
-      if (e.fireCd <= 0 && d < 520) { enemyShoot(e, 1); e.fireCd = e.fireRate; }
+      if (e.fireCd <= 0 && d < 520) { enemyShoot(e, 1, T); e.fireCd = e.fireRate; }
     } else if (e.type === 'neptuno') {
       // ESPECTRAL: se acerca rápido y suelta ráfagas de 2.
       const want = d > 300 ? 1 : 0.2;
       e.vx = lerp(e.vx, nx * want * e.speed, dt * 4);
       e.vy = lerp(e.vy, ny * want * e.speed, dt * 4);
-      if (e.fireCd <= 0 && d < 600) { enemyShoot(e, 2); e.fireCd = e.fireRate; }
+      if (e.fireCd <= 0 && d < 600) { enemyShoot(e, 2, T); e.fireCd = e.fireRate; }
     }
 
     e.fireCd -= dt;
     e.x += e.vx * dt; e.y += e.vy * dt;
     empujarFuera(e);
 
+    // las que embisten también chocan contra naves de otros planetas
+    if (T !== p && (e.type === 'venus' || e.type === 'marte') && dist2(e, T) < (e.r + T.r) * (e.r + T.r)) {
+      killEnemy(i, false); golpearNave(T, e.dmg * 2); continue;
+    }
+
     // colisión con jugador
     if (p.alive && p.invuln <= 0 && dist2(e, p) < (e.r + p.r) * (e.r + p.r)) {
       damagePlayer(e.dmg);
       // empuje
-      e.vx -= nx * 260; e.vy -= ny * 260;
+      { const qx = p.x - e.x, qy = p.y - e.y, q = Math.hypot(qx, qy) || 1; e.vx -= qx / q * 260; e.vy -= qy / q * 260; }
       // Las naves ligeras (Marte y Venus) se destruyen al embestir
       if (e.type === 'marte' || e.type === 'venus' || e.type === 'larva') { killEnemy(i, false); continue; }
     }
   }
 }
 
-function enemyShoot(e, count) {
-  const p = player;
+function enemyShoot(e, count, T) {
+  const p = T || player;
   const baseA = Math.atan2(p.y - e.y, p.x - e.x);
   for (let i = 0; i < count; i++) {
     const a = baseA + (i - (count - 1) / 2) * 0.22;
     eBullets.push({
       x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r,
       vx: Math.cos(a) * 300, vy: Math.sin(a) * 300,
-      r: 5, dmg: 8, life: 3.2, color: e.color
+      r: 5, dmg: 8, life: 3.2, color: e.color, bando: bandoDe(e)
     });
   }
-  Audio2.tone(220, 0.08, 'sawtooth', 0.06, 140);
+  if (p === player) Audio2.tone(220, 0.08, 'sawtooth', 0.06, 140); // los tiros entre ellos no te ensucian el sonido
 }
 
 /* ---------- jefe ---------- */
@@ -608,7 +642,7 @@ function updateBoss(e, dt) {
     if (e.y >= meta) { e.y = meta; e.entering = false; }
     return;
   }
-  if (e.jefe) { iaJefe(e, dt); return; }
+  if (e.jefe) { balaBando = e.jefe; iaJefe(e, dt); balaBando = null; return; }
 
   const targetX = p.x + Math.sin(e.phase * 0.6) * (W * 0.28);
   const targetY = p.y - H / 2 + 140 + Math.sin(e.phase * 0.9) * 40;
@@ -671,7 +705,7 @@ function damagePlayer(amount) {
 function killEnemy(index, byPlayer = true) {
   const e = enemies[index];
   if (!e) return;
-  enemies.splice(index, 1);
+  enemies.splice(index, 1); e.muerto = true;
   const isBoss = e.type === 'boss';
   spawnParticles(e.x, e.y, isBoss ? 90 : 22, {
     color: e.color, speed: isBoss ? 520 : 300, life: isBoss ? 1.4 : 0.7, size: isBoss ? 7 : 4
@@ -889,7 +923,7 @@ function updateBullets(dt) {
     if (b.guiaJ && p.alive) { const va = Math.atan2(b.vy, b.vx), obj = Math.atan2(p.y - b.y, p.x - b.x), v = Math.hypot(b.vx, b.vy);
       const na = va + Math.max(-b.guiaJ * dt, Math.min(b.guiaJ * dt, Math.atan2(Math.sin(obj - va), Math.cos(obj - va)))); b.vx = Math.cos(na) * v; b.vy = Math.sin(na) * v; }
     if (b.mina !== undefined) { b.mina -= dt; if (b.mina <= 0) { // la mina explota en 8 balas
-      for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; eBullets.push({ x: b.x, y: b.y, vx: Math.cos(a) * 230, vy: Math.sin(a) * 230, r: 5, dmg: 9, life: 1.6, color: '#ffd27a' }); }
+      for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; eBullets.push({ x: b.x, y: b.y, vx: Math.cos(a) * 230, vy: Math.sin(a) * 230, r: 5, dmg: 9, life: 1.6, color: '#ffd27a', bando: b.bando }); }
       spawnRing(b.x, b.y, '#ffd23f', 60, 400, 3); eBullets.splice(i, 1); continue; } }
     b.x += b.vx * dt; b.y += b.vy * dt;
     b.life -= dt;
@@ -900,7 +934,13 @@ function updateBullets(dt) {
     if (p.alive && p.invuln <= 0 && dist2(b, p) < (b.r + p.r) * (b.r + p.r)) {
       damagePlayer(b.dmg);
       spawnParticles(b.x, b.y, 8, { color: b.color, speed: 180, life: 0.4, size: 3 });
-      eBullets.splice(i, 1);
+      eBullets.splice(i, 1); continue;
+    }
+    if (b.bando) { // también le da a naves de otros planetas (nunca a las de su planeta)
+      let tocada = null;
+      for (const o of enemies) { const bo = bandoDe(o); if (!bo || bo === 'bestia' || bo === b.bando) continue;
+        if (dist2(b, o) < (b.r + o.r) * (b.r + o.r)) { tocada = o; break; } }
+      if (tocada) { spawnParticles(b.x, b.y, 5, { color: b.color, speed: 150, life: 0.3, size: 2.5 }); eBullets.splice(i, 1); golpearNave(tocada, b.dmg); }
     }
   }
 }
@@ -2067,8 +2107,9 @@ function elegirJefe() {
   const rivales = Object.keys(JEFES).filter(k => k !== mio);
   return rivales[(Math.max(1, Math.floor(G.wave / 5)) - 1) % rivales.length];
 }
+let balaBando = null; // el planeta del jefe que está disparando
 function bala(x, y, a, v, r, dmg, color, life, extra) {
-  const b = { x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r, dmg, life: life || 3.5, color };
+  const b = { x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r, dmg, life: life || 3.5, color, bando: balaBando };
   if (extra) Object.assign(b, extra); eBullets.push(b); return b;
 }
 // mantener al jefe a cierta distancia del jugador, orbitando
