@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#05060d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Neon Vanguard · Shooter arcade de naves gratis | ProArena</title>
+<meta name="description" content="Juega gratis a Neon Vanguard en el navegador: elige tu planeta, sobrevive a las oleadas de naves, activa el overdrive y sube en el ranking mundial. Sin cuenta y sin descargar.">
+<link rel="canonical" href="https://soyproarena.com/neon-vanguard/">
+<meta property="og:type" content="website"><meta property="og:url" content="https://soyproarena.com/neon-vanguard/">
+<meta property="og:title" content="Neon Vanguard · Shooter arcade gratis"><meta property="og:description" content="Elige tu planeta, sobrevive a las oleadas y sube en el ranking mundial. Gratis en el navegador.">
+<meta property="og:image" content="https://soyproarena.com/neon-vanguard/portada.jpg"><meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="style.css?v=39">
+</head>
+<body>
+<div id="game-wrap">
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-left">
+      <div class="stat"><span class="lbl">SCORE</span><span id="score" class="val">0</span></div>
+      <div class="stat"><span class="lbl">WAVE</span><span id="wave" class="val">1</span></div>
+      <div class="stat"><span class="lbl">BANDO</span><span id="hud-bando" class="val bando">—</span></div>
+    </div>
+    <div class="hud-center">
+      <div id="combo" class="combo hidden">x1</div>
+    </div>
+    <div class="hud-right">
+      <div class="stat"><span class="lbl">SHIELD</span>
+        <div class="bar"><div id="shield-fill" class="bar-fill shield"></div></div>
+      </div>
+      <div class="stat"><span class="lbl">OVERDRIVE</span>
+        <div class="bar"><div id="od-fill" class="bar-fill od"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 1: REGISTRO -->
+  <div id="screen-registro" class="overlay">
+    <div class="panel">
+      <h1 class="title">NEON<span>VANGUARD</span></h1>
+      <p class="subtitle" id="reg-sub">Identificate, piloto.</p>
+
+      <!-- PASO 1: elegir camino -->
+      <div id="reg-paso1" class="reg-paso">
+        <button class="btn-camino" onclick="elegirCamino('nuevo')">
+          <span class="camino-t">SOY NUEVO</span>
+          <span class="camino-s">Generá tu código de piloto</span>
+        </button>
+        <button class="btn-camino" onclick="elegirCamino('codigo')">
+          <span class="camino-t">YA TENGO CÓDIGO</span>
+          <span class="camino-s">Entrá con tu código</span>
+        </button>
+      </div>
+
+      <!-- PASO 2A: nuevo piloto -->
+      <div id="reg-paso-nuevo" class="reg-paso hidden">
+        <div class="reg-form">
+          <input id="reg-nombre" type="text" maxlength="16" placeholder="TU NOMBRE" autocomplete="off" spellcheck="false">
+          <button id="reg-btn" onclick="registrarPiloto()">GENERAR CÓDIGO</button>
+        </div>
+        <div id="reg-codigo-box" class="codigo-box hidden">
+          <span class="codigo-lbl">TU CÓDIGO DE PILOTO</span>
+          <strong id="reg-codigo">—</strong>
+          <button id="reg-copiar" class="btn-copiar" onclick="copiarCodigo()">COPIAR</button>
+          <span class="codigo-hint">Guardalo. Lo vas a necesitar para volver.</span>
+        </div>
+        <button id="reg-continuar" class="hidden" onclick="irABandos()">CONTINUAR →</button>
+      </div>
+
+      <!-- PASO 2B: ya tengo código -->
+      <div id="reg-paso-codigo" class="reg-paso hidden">
+        <div class="reg-form">
+          <input id="reg-codigo-input" type="text" maxlength="8" placeholder="TU CÓDIGO (EJ: TGT-6456)" autocomplete="off" spellcheck="false">
+          <button id="reg-entrar-btn" onclick="entrarConCodigo()">ENTRAR</button>
+        </div>
+      </div>
+
+      <button id="reg-volver" class="btn-volver hidden" onclick="volverPaso1()">← volver</button>
+      <p class="hint" id="reg-hint">Sin nombre no hay código. Sin código no hay misión.</p>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: ELEGIR BANDO -->
+  <div id="screen-bandos" class="overlay hidden">
+    <div class="panel panel-wide">
+      <h1 class="title">ELEGÍ TU<span>BANDO</span></h1>
+      <p class="subtitle">Cada planeta pelea distinto. Elegí bien.</p>
+      <div id="planetas" class="planetas"></div>
+      <button id="bando-continuar" class="hidden" onclick="irAControles()">CONTINUAR →</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 3: CONTROLES (según dispositivo) -->
+  <div id="overlay" class="overlay hidden">
+    <div class="panel">
+      <h1 class="title">NEON<span>VANGUARD</span></h1>
+      <p class="subtitle">Sobrevive a las oleadas. Encadená kills. Activá el OVERDRIVE.</p>
+      <div id="ctrl-desktop" class="controls hidden">
+        <div class="accion">mover</div><div class="lado"><kbd>W A S D</kbd><kbd>← ↑ ↓ →</kbd></div>
+        <div class="accion">apuntar</div><div class="lado"><kbd>MOUSE</kbd></div>
+        <div class="accion">disparar</div><div class="lado"><kbd>CLICK</kbd></div>
+        <div class="accion">dash</div><div class="lado"><kbd>SPACE</kbd></div>
+        <div class="accion">overdrive</div><div class="lado"><kbd>SHIFT</kbd></div>
+      </div>
+      <div id="ctrl-movil" class="controls hidden">
+        <div class="accion">mover</div><div class="lado"><kbd>DEDO IZQ.</kbd></div>
+        <div class="accion">apuntar y disparar</div><div class="lado"><kbd>DEDO DER.</kbd></div>
+        <div class="accion">dash</div><div class="lado"><kbd>2 TOQUES IZQ.</kbd></div>
+        <div class="accion">overdrive</div><div class="lado"><kbd>2 TOQUES DER.</kbd></div>
+      </div>
+      <button id="start-btn" onclick="startGame()">INICIAR MISIÓN</button>
+      <p class="hint">Consejo: el dash te da invulnerabilidad por un instante.</p>
+      <div class="fila-botones">
+        <button class="btn-sec" onclick="abrirPizarra()">🏆 PIZARRA MUNDIAL</button>
+        <button class="btn-sec" onclick="cambiarDeBando()">🔄 CAMBIAR DE BANDO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA: PIZARRA MUNDIAL -->
+  <div id="screen-pizarra" class="overlay hidden">
+    <div class="panel panel-wide">
+      <h1 class="title">PIZARRA<span>MUNDIAL</span></h1>
+      <p class="subtitle" id="pizarra-estado">Los mejores pilotos de la galaxia.</p>
+      <div id="pizarra-lista" class="pizarra-lista"></div>
+      <button class="btn-sec" onclick="cerrarPizarra()">← VOLVER</button>
+    </div>
+  </div>
+
+  <div id="gameover" class="overlay hidden">
+    <div class="panel">
+      <h1 class="title dead">SISTEMA<span>CAÍDO</span></h1>
+      <div class="final-stats">
+        <div><span>PUNTAJE</span><strong id="final-score">0</strong></div>
+        <div><span>OLEADA</span><strong id="final-wave">1</strong></div>
+        <div><span>BAJAS</span><strong id="final-kills">0</strong></div>
+      </div>
+      <p id="record-nuevo" class="record-nuevo hidden">¡NUEVO RÉCORD PERSONAL!</p>
+      <p id="puesto-mundial" class="puesto-mundial hidden"></p>
+
+      <div id="tarjeta-box" class="tarjeta-box hidden">
+        <img id="tarjeta-img" alt="Tarjeta de récord">
+        <div class="tarjeta-botones">
+          <button id="tarjeta-compartir" class="btn-sec" onclick="compartirTarjeta()">📤 COMPARTIR</button>
+          <button class="btn-sec" onclick="descargarTarjeta()">⬇ DESCARGAR</button>
+        </div>
+      </div>
+
+      <button id="restart-btn" onclick="startGame()">REINTENTAR</button>
+      <div class="fila-botones">
+        <button class="btn-sec" onclick="abrirPizarra()">🏆 PIZARRA MUNDIAL</button>
+        <button class="btn-sec" onclick="cambiarDeBando()">🔄 CAMBIAR DE BANDO</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fps" class="fps">60</div>
+</div>
+
+<!-- Aviso de rotar en celular vertical -->
+<div id="rotar">
+  <div class="icono">📱</div>
+  <p><strong>GIRÁ EL CELULAR</strong><br>Se juega en horizontal</p>
+</div>
+
+<script src="pantallas.js?v=39" charset="utf-8"></script>
+<script src="ranking.js?v=39" charset="utf-8"></script>
+<script src="app.js?v=39" charset="utf-8"></script>
+</body>
+</html>

@@ -123,3 +123,17 @@ footer{border-top:1px solid var(--line);background:#050706}
 .links a,.btn,.lang{white-space:nowrap}
 @media(max-width:1000px){.links{display:none}.bar-r{margin-left:auto}}
 .screen.tall{aspect-ratio:3/3.9}
+/* Neon Vanguard: bloque destacado */
+.nv-sec{padding-top:0}
+.nv{display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:28px;padding:34px;border-radius:26px;text-decoration:none;color:#e8f6ff;
+  background:radial-gradient(1px 1px at 12% 30%,#fff8 50%,#0000 51%),radial-gradient(1px 1px at 72% 18%,#fff9 50%,#0000 51%),radial-gradient(1.5px 1.5px at 85% 70%,#fff7 50%,#0000 51%),radial-gradient(1px 1px at 40% 80%,#fff6 50%,#0000 51%),linear-gradient(160deg,#0b1030,#05060d);
+  border:1px solid rgba(0,240,255,.3);box-shadow:0 0 50px rgba(0,240,255,.1),inset 0 0 60px rgba(0,240,255,.05);transition:transform .25s,box-shadow .25s}
+.nv:hover{transform:translateY(-3px);box-shadow:0 0 70px rgba(255,43,214,.18),inset 0 0 60px rgba(0,240,255,.06)}
+.nv-new{display:inline-block;font:800 .72rem/1 "DM Sans";letter-spacing:.12em;color:#05060d;background:#00f0ff;padding:6px 9px;border-radius:7px}
+.nv h2{margin:14px 0 8px;font-size:clamp(2rem,4vw,3rem);color:#fff;text-shadow:0 0 22px rgba(0,240,255,.6)}
+.nv p{color:#b9c8e6;margin:0 0 20px;max-width:46ch}
+.nv-art{position:relative;min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;font:900 clamp(2rem,5vw,3.4rem)/.95 "DM Sans",system-ui,sans-serif;letter-spacing:.08em}
+.nv-art b:first-child{color:#fff;text-shadow:0 0 18px rgba(0,240,255,.9),0 0 50px rgba(0,240,255,.4)}
+.nv-art b:nth-child(2){color:#ff2bd6;text-shadow:0 0 18px rgba(255,43,214,.9),0 0 50px rgba(255,43,214,.4)}
+.nv-ship{position:absolute;right:12%;bottom:6%;width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:34px solid #00f0ff;filter:drop-shadow(0 0 10px #00f0ff);transform:rotate(35deg)}
+@media (max-width:760px){.nv{grid-template-columns:1fr;padding:24px}.nv-art{min-height:130px;order:-1}}

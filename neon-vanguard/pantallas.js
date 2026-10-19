@@ -1,0 +1,348 @@
+/* ============================================================
+   NEON VANGUARD — Flujo de pantallas
+   1. Registro (nombre -> código)
+   2. Elegir bando (planetas)
+   3. Controles (desktop o móvil según dispositivo)
+   ============================================================ */
+
+const BANDOS = [
+  { id:'venus',   nombre:'VENUS',   bonus:'+25% daño',      glow:'rgba(255,196,110,.55)' },
+  { id:'marte',   nombre:'MARTE',   bonus:'+30% cadencia',  glow:'rgba(255,110,70,.55)' },
+  { id:'jupiter', nombre:'JÚPITER', bonus:'+40% escudo',    glow:'rgba(255,170,120,.55)' },
+  { id:'saturno', nombre:'SATURNO', bonus:'+20% velocidad', glow:'rgba(240,220,160,.55)' },
+  { id:'neptuno', nombre:'NEPTUNO', bonus:'+35% overdrive', glow:'rgba(90,150,255,.55)' }
+];
+
+let bandoElegido = null;
+
+/* ---------- Detección de dispositivo ---------- */
+function esMovil() {
+  const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const ua = /Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile/i.test(navigator.userAgent);
+  const chico = window.matchMedia('(max-width: 820px)').matches;
+  return (touch && chico) || ua;
+}
+
+/* ---------- PANTALLA 1: REGISTRO ---------- */
+function generarCodigo() {
+  const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const nums = '23456789';
+  let a = '', b = '';
+  for (let i = 0; i < 3; i++) a += letras[Math.floor(Math.random() * letras.length)];
+  for (let i = 0; i < 4; i++) b += nums[Math.floor(Math.random() * nums.length)];
+  return a + '-' + b;
+}
+
+/* ---------- TABLA DE USUARIOS (nombre <-> código) ----------
+   TODO LOCAL, para probar. Cuando pase a backend, solo se cambian
+   estas 3 funciones por llamadas fetch a la API. */
+const DB_KEY = 'nv_usuarios';
+
+/* Pilotos sembrados: existen SIEMPRE, en cualquier navegador.
+   Sirve para probar sin depender del localStorage de una máquina. */
+const USUARIOS_SEMILLA = {
+  'DEIVY':      { codigo: 'TGT-6456', fecha: 0 },
+  'PRIMERAVEZ': { codigo: 'TPG-5256', fecha: 0 }
+};
+
+function leerUsuarios() {
+  let db = {};
+  try { db = JSON.parse(localStorage.getItem(DB_KEY) || '{}'); } catch (e) { db = {}; }
+  // Mezclamos las semillas sin pisar lo que ya haya guardado el usuario
+  for (const nombre in USUARIOS_SEMILLA) {
+    if (!db[nombre]) db[nombre] = USUARIOS_SEMILLA[nombre];
+  }
+  return db;
+}
+function guardarUsuarios(db) {
+  try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) {}
+}
+function buscarPorCodigo(codigo) {
+  const db = leerUsuarios();
+  const norm = String(codigo || '').trim().toUpperCase();
+  for (const nombre in db) {
+    const v = db[nombre];
+    // Acepta formato nuevo {codigo,fecha} y viejo "TGT-1234"
+    const c = (typeof v === 'string') ? v : (v && v.codigo);
+    if (c && String(c).toUpperCase() === norm) {
+      return { nombre, codigo: c, fecha: (v && v.fecha) || Date.now() };
+    }
+  }
+  return null;
+}
+
+/* ---------- Navegación entre pasos del registro ---------- */
+function elegirCamino(cual) {
+  document.getElementById('reg-paso1').classList.add('hidden');
+  document.getElementById('reg-volver').classList.remove('hidden');
+  if (cual === 'nuevo') {
+    document.getElementById('reg-paso-nuevo').classList.remove('hidden');
+    document.getElementById('reg-sub').textContent = 'Creá tu código de piloto.';
+    setTimeout(() => document.getElementById('reg-nombre').focus(), 80);
+  } else {
+    document.getElementById('reg-paso-codigo').classList.remove('hidden');
+    document.getElementById('reg-sub').textContent = 'Entrá con tu código.';
+    setTimeout(() => document.getElementById('reg-codigo-input').focus(), 80);
+  }
+}
+
+function volverPaso1() {
+  document.getElementById('reg-paso-nuevo').classList.add('hidden');
+  document.getElementById('reg-paso-codigo').classList.add('hidden');
+  document.getElementById('reg-paso1').classList.remove('hidden');
+  document.getElementById('reg-volver').classList.add('hidden');
+  document.getElementById('reg-sub').textContent = 'Identificate, piloto.';
+  const hint = document.getElementById('reg-hint');
+  hint.textContent = 'Sin nombre no hay código. Sin código no hay misión.';
+  hint.style.color = '';
+}
+
+function avisar(msg, ok) {
+  const hint = document.getElementById('reg-hint');
+  hint.textContent = msg;
+  hint.style.color = ok ? '#00ff96' : '#ff4d6d';
+  setTimeout(() => { hint.style.color = ''; }, 2600);
+}
+
+function registrarPiloto() {
+  const input = document.getElementById('reg-nombre');
+  // Anti doble-disparo: si ya se generó un código, no volver a procesar
+  if (input.disabled) return;
+  const nombre = (input.value || '').trim().toUpperCase();
+
+  if (nombre.length < 2) {
+    input.style.borderColor = '#ff4d6d';
+    input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
+    avisar('Necesitás al menos 2 letras, piloto.', false);
+    setTimeout(() => {
+      input.style.borderColor = '';
+      input.style.boxShadow = '';
+    }, 1200);
+    return;
+  }
+
+  const db = leerUsuarios();
+
+  // El nombre ya existe: devolvemos SU código, no generamos otro.
+  // OJO: versiones viejas guardaban el código como string plano
+  // ("DEIVY": "TGT-6456"). Aceptamos los dos formatos y migramos.
+  if (db[nombre]) {
+    const prev = db[nombre];
+    const codigoPrevio = (typeof prev === 'string') ? prev : (prev && prev.codigo);
+    if (codigoPrevio) {
+      if (typeof prev === 'string') {
+        db[nombre] = { codigo: codigoPrevio, fecha: Date.now() };
+        guardarUsuarios(db);
+      }
+      mostrarCodigo(codigoPrevio, nombre);
+      try {
+        localStorage.setItem('nv_piloto', JSON.stringify({ nombre, codigo: codigoPrevio, fecha: Date.now() }));
+      } catch (e) {}
+      avisar('Ese nombre ya estaba registrado. Este es tu código.', true);
+      return;
+    }
+  }
+
+  // Código nuevo, garantizando que no choque con uno existente
+  let codigo = generarCodigo();
+  let intentos = 0;
+  while (buscarPorCodigo(codigo) && intentos < 50) {
+    codigo = generarCodigo();
+    intentos++;
+  }
+
+  db[nombre] = { codigo, fecha: Date.now() };
+  guardarUsuarios(db);
+  try {
+    localStorage.setItem('nv_piloto', JSON.stringify({ nombre, codigo, fecha: Date.now() }));
+  } catch (e) {}
+
+  mostrarCodigo(codigo, nombre);
+  avisar('Código generado. Guardalo bien.', true);
+}
+
+function mostrarCodigo(codigo, nombre) {
+  document.getElementById('reg-codigo').textContent = codigo;
+  document.getElementById('reg-codigo-box').classList.remove('hidden');
+  document.getElementById('reg-continuar').classList.remove('hidden');
+  document.getElementById('reg-nombre').disabled = true;
+  document.getElementById('reg-btn').style.display = 'none';
+  document.getElementById('reg-codigo-input').disabled = true;
+  document.getElementById('reg-entrar-btn').style.display = 'none';
+}
+
+function copiarCodigo() {
+  const codigo = document.getElementById('reg-codigo').textContent;
+  const btn = document.getElementById('reg-copiar');
+  const listo = () => {
+    btn.textContent = '¡COPIADO!';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'COPIAR'; btn.classList.remove('ok'); }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(codigo).then(listo).catch(() => {
+      const r = document.createRange();
+      r.selectNodeContents(document.getElementById('reg-codigo'));
+      const s = window.getSelection();
+      s.removeAllRanges(); s.addRange(r);
+      avisar('Seleccionado. Copiá con Ctrl+C.', true);
+    });
+  } else {
+    const r = document.createRange();
+    r.selectNodeContents(document.getElementById('reg-codigo'));
+    const s = window.getSelection();
+    s.removeAllRanges(); s.addRange(r);
+    avisar('Seleccionado. Copiá con Ctrl+C.', true);
+  }
+}
+
+function entrarConCodigo() {
+  const input = document.getElementById('reg-codigo-input');
+  const codigo = (input.value || '').trim().toUpperCase();
+
+  if (codigo.length < 6) {
+    input.style.borderColor = '#ff4d6d';
+    input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
+    avisar('El código tiene el formato ABC-1234.', false);
+    setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 1200);
+    return;
+  }
+
+  const piloto = buscarPorCodigo(codigo);
+  if (!piloto) {
+    input.style.borderColor = '#ff4d6d';
+    input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
+    avisar('Ese código no existe en este dispositivo.', false);
+    setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 1400);
+    return;
+  }
+
+  try {
+    localStorage.setItem('nv_piloto', JSON.stringify({
+      nombre: piloto.nombre, codigo: piloto.codigo, fecha: piloto.fecha || Date.now()
+    }));
+  } catch (e) {}
+
+  avisar('Bienvenido de vuelta, ' + piloto.nombre + '.', true);
+  setTimeout(() => irABandos(), 700);
+}
+
+function irABandos() {
+  document.getElementById('screen-registro').classList.add('hidden');
+
+  // BANDO FIJO: si el piloto ya eligió planeta, no se le vuelve a preguntar.
+  // Va directo a controles. Solo ve la pantalla de planetas si toca
+  // "CAMBIAR DE BANDO" (o si nunca eligió).
+  const guardado = leerPiloto();
+  if (guardado && guardado.bando && BANDOS.some(b => b.id === guardado.bando)) {
+    bandoElegido = guardado.bando;
+    document.getElementById('screen-bandos').classList.add('hidden');
+    document.getElementById('overlay').classList.remove('hidden');
+    mostrarControles();
+    return;
+  }
+
+  document.getElementById('screen-bandos').classList.remove('hidden');
+  dibujarPlanetas();
+}
+
+/* ---------- Perfil del piloto (nombre, código, bando, récord) ---------- */
+function leerPiloto() {
+  try { return JSON.parse(localStorage.getItem('nv_piloto') || 'null'); } catch (e) { return null; }
+}
+function guardarPiloto(obj) {
+  try { localStorage.setItem('nv_piloto', JSON.stringify(obj)); } catch (e) {}
+}
+
+/* Vuelve a la pantalla de planetas para cambiar de bando a propósito. */
+function cambiarDeBando() {
+  const p = leerPiloto();
+  if (p) { delete p.bando; guardarPiloto(p); }
+  bandoElegido = null;
+  document.getElementById('overlay').classList.add('hidden');
+  document.getElementById('gameover').classList.add('hidden');
+  document.getElementById('screen-bandos').classList.remove('hidden');
+  dibujarPlanetas();
+  document.querySelectorAll('.planeta').forEach(el => el.classList.remove('sel'));
+  document.getElementById('bando-continuar').classList.add('hidden');
+}
+
+/* ---------- PANTALLA 2: PLANETAS ---------- */
+function dibujarPlanetas() {
+  const cont = document.getElementById('planetas');
+  if (cont.dataset.listo) return;
+  cont.dataset.listo = '1';
+
+  BANDOS.forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'planeta';
+    el.dataset.id = b.id;
+    el.style.setProperty('--glow', b.glow);
+    el.innerHTML =
+      '<div class="orb orb-' + b.id + '">' +
+        '<div class="cuerpo"></div>' +
+        '<div class="detalle"></div>' +
+        (b.id === 'saturno' ? '<div class="anillo"></div>' : '') +
+      '</div>' +
+      '<div class="p-nombre">' + b.nombre + '</div>' +
+      '<div class="p-bonus">' + b.bonus + '</div>';
+    el.onclick = () => elegirBando(b.id, el);
+    cont.appendChild(el);
+  });
+}
+
+function elegirBando(id, el) {
+  bandoElegido = id;
+  document.querySelectorAll('.planeta').forEach(p => p.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('bando-continuar').classList.remove('hidden');
+  try {
+    const p = JSON.parse(localStorage.getItem('nv_piloto') || '{}');
+    p.bando = id;
+    localStorage.setItem('nv_piloto', JSON.stringify(p));
+  } catch (e) {}
+}
+
+function irAControles() {
+  document.getElementById('screen-bandos').classList.add('hidden');
+  document.getElementById('overlay').classList.remove('hidden');
+  mostrarControles();
+}
+
+/* ---------- PANTALLA 3: CONTROLES ---------- */
+function mostrarControles() {
+  const movil = esMovil();
+  document.getElementById('ctrl-desktop').classList.toggle('hidden', movil);
+  document.getElementById('ctrl-movil').classList.toggle('hidden', !movil);
+}
+
+/* ---------- Arranque ---------- */
+window.addEventListener('DOMContentLoaded', () => {
+  mostrarControles();
+
+  // Si ya hay un piloto guardado, lo mandamos directo al juego.
+  // Si además ya eligió bando, ni siquiera pasa por los planetas.
+  try {
+    const p = leerPiloto();
+    if (p && p.nombre && p.codigo) {
+      // Nos aseguramos de que esté en la tabla de usuarios
+      const db = leerUsuarios();
+      if (!db[p.nombre]) {
+        db[p.nombre] = { codigo: p.codigo, fecha: p.fecha || Date.now() };
+        guardarUsuarios(db);
+      }
+      document.getElementById('screen-registro').classList.add('hidden');
+
+      if (p.bando && BANDOS.some(b => b.id === p.bando)) {
+        // Bando ya elegido: directo a controles
+        bandoElegido = p.bando;
+        document.getElementById('screen-bandos').classList.add('hidden');
+        document.getElementById('overlay').classList.remove('hidden');
+        mostrarControles();
+      } else {
+        document.getElementById('screen-bandos').classList.remove('hidden');
+        dibujarPlanetas();
+      }
+    }
+  } catch (e) {}
+});
