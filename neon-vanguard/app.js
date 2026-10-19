@@ -320,7 +320,7 @@ function updatePlayer(dt) {
     p.orbAng += dt * 3.2; p.orbGolpe -= dt;
     for (let k = 0; k < nOrb; k++) {
       const oa = p.orbAng + k * TAU / nOrb, ox = p.x + Math.cos(oa) * 46, oy = p.y + Math.sin(oa) * 46;
-      for (let i = eBullets.length - 1; i >= 0; i--) { const b = eBullets[i]; if ((b.x - ox) ** 2 + (b.y - oy) ** 2 < (b.r + 9) ** 2) { spawnParticles(b.x, b.y, 5, { color: '#f0dca0', speed: 140, life: 0.25, size: 2.5 }); eBullets.splice(i, 1); } }
+      for (let i = eBullets.length - 1; i >= 0; i--) { const b = eBullets[i]; if ((b.x - ox) ** 2 + (b.y - oy) ** 2 < (b.r + 9) ** 2) { spawnParticles(b.x, b.y, 5, { color: '#b98cff', speed: 140, life: 0.25, size: 2.5 }); eBullets.splice(i, 1); } }
       for (let j = enemies.length - 1; j >= 0; j--) { const e = enemies[j]; if ((e.x - ox) ** 2 + (e.y - oy) ** 2 < (e.r + 9) ** 2) { e.hp -= 70 * dt; e.hitFlash = 0.06; if (e.hp <= 0) killEnemy(j, true); } }
     }
   }
@@ -424,15 +424,15 @@ function firePlayer() {
    para que el dibujo sepa qué silueta usar. */
 const ENEMY_TYPES = {
   // VENUS — AVISPA: lenta, blindada, aguanta mucho. Pica de cerca.
-  venus:   { hp: 55,  r: 16, speed: 78,  color: '#ffc46e', score: 140, dmg: 14, fireRate: 0,    contact: true,  bando: 'venus' },
+  venus:   { hp: 55,  r: 16, speed: 78,  color: '#ffd23f', score: 140, dmg: 14, fireRate: 0,    contact: true,  bando: 'venus' },
   // MARTE — FILO: rapidísima y agresiva, dispara seguido.
-  marte:   { hp: 26,  r: 12, speed: 205, color: '#ff6e46', score: 160, dmg: 9,  fireRate: 1.25, contact: true,  bando: 'marte' },
+  marte:   { hp: 26,  r: 12, speed: 205, color: '#ff2e4d', score: 160, dmg: 9,  fireRate: 1.25, contact: true,  bando: 'marte' },
   // JÚPITER — COLOSO: enorme, escudo alto, se come los golpes.
-  jupiter: { hp: 165, r: 26, speed: 52,  color: '#ffaa78', score: 380, dmg: 22, fireRate: 2.5,  contact: true,  bando: 'jupiter' },
+  jupiter: { hp: 165, r: 26, speed: 52,  color: '#ff8a1e', score: 380, dmg: 22, fireRate: 2.5,  contact: true,  bando: 'jupiter' },
   // SATURNO — ANILLADA: ágil, esquiva en círculos, el anillo la protege.
-  saturno: { hp: 62,  r: 15, speed: 148, color: '#f0dca0', score: 240, dmg: 11, fireRate: 1.5,  contact: true,  bando: 'saturno' },
+  saturno: { hp: 62,  r: 15, speed: 148, color: '#b98cff', score: 240, dmg: 11, fireRate: 1.5,  contact: true,  bando: 'saturno' },
   // NEPTUNO — ESPECTRAL: overdrive, ráfagas cortas y fuertes.
-  neptuno: { hp: 44,  r: 14, speed: 132, color: '#5a96ff', score: 210, dmg: 12, fireRate: 1.7,  contact: true,  bando: 'neptuno' },
+  neptuno: { hp: 44,  r: 14, speed: 132, color: '#2f6bff', score: 210, dmg: 12, fireRate: 1.7,  contact: true,  bando: 'neptuno' },
   // BESTIAS DEL ESPACIO: no son de ningún planeta
   medusa:    { hp: 75,  r: 22, speed: 55,  color: '#7affd6', score: 320, dmg: 14, fireRate: 3.0, contact: true, bando: 'bestia' },
   larva:     { hp: 14,  r: 9,  speed: 235, color: '#b6ff4d', score: 70,  dmg: 8,  fireRate: 0,   contact: true, bando: 'bestia' },
@@ -714,11 +714,11 @@ function dropPowerup(x, y) {
 /* ===== NÚCLEOS DE PLANETA: cada nave suelta el núcleo de su planeta y sube una habilidad (hasta nivel 5) ===== */
 const PLANETAS_MEJORA = ['venus', 'marte', 'jupiter', 'saturno', 'neptuno'];
 const MEJORAS = {
-  venus:   { nombre: 'DAÑO',         icono: '⚔', color: '#ffc46e' },
-  marte:   { nombre: 'CADENCIA',     icono: '»', color: '#ff6e46' },
-  jupiter: { nombre: 'BLINDAJE',     icono: '⛨', color: '#ffaa78' },
-  saturno: { nombre: 'ANILLO',       icono: '◎', color: '#f0dca0' },
-  neptuno: { nombre: 'MULTIDISPARO', icono: '⋔', color: '#5a96ff' }
+  venus:   { nombre: 'DAÑO',         icono: '⚔', color: '#ffd23f' },
+  marte:   { nombre: 'CADENCIA',     icono: '»', color: '#ff2e4d' },
+  jupiter: { nombre: 'BLINDAJE',     icono: '⛨', color: '#ff8a1e' },
+  saturno: { nombre: 'ANILLO',       icono: '◎', color: '#b98cff' },
+  neptuno: { nombre: 'MULTIDISPARO', icono: '⋔', color: '#2f6bff' }
 };
 const MEJORA_MAX = 5;
 function dropNucleo(x, y, planeta) {
@@ -855,7 +855,7 @@ function updateBullets(dt) {
     if (ast) { golpearAsteroide(ast, b.dmg, b.x, b.y); if (b.explota) explotarPlasma(b); bullets.splice(i, 1); continue; }
     // escudo de orbes del jefe de Saturno
     let paradaOrbe = false;
-    for (const e of enemies) if (e.jefe === 'saturno' && e.orbes) for (const o of e.orbes) if ((b.x - o.x) ** 2 + (b.y - o.y) ** 2 < (b.r + 11) ** 2) { paradaOrbe = true; spawnParticles(b.x, b.y, 3, { color: '#f0dca0', speed: 120, life: 0.2, size: 2 }); break; }
+    for (const e of enemies) if (e.jefe === 'saturno' && e.orbes) for (const o of e.orbes) if ((b.x - o.x) ** 2 + (b.y - o.y) ** 2 < (b.r + 11) ** 2) { paradaOrbe = true; spawnParticles(b.x, b.y, 3, { color: '#b98cff', speed: 120, life: 0.2, size: 2 }); break; }
     if (paradaOrbe) { bullets.splice(i, 1); continue; }
     // el cuerpo de la serpiente cósmica bloquea las balas (hay que darle en la cabeza)
     let bloqueada = false;
@@ -889,7 +889,7 @@ function updateBullets(dt) {
       const na = va + Math.max(-b.guiaJ * dt, Math.min(b.guiaJ * dt, Math.atan2(Math.sin(obj - va), Math.cos(obj - va)))); b.vx = Math.cos(na) * v; b.vy = Math.sin(na) * v; }
     if (b.mina !== undefined) { b.mina -= dt; if (b.mina <= 0) { // la mina explota en 8 balas
       for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; eBullets.push({ x: b.x, y: b.y, vx: Math.cos(a) * 230, vy: Math.sin(a) * 230, r: 5, dmg: 9, life: 1.6, color: '#ffd27a' }); }
-      spawnRing(b.x, b.y, '#ffc46e', 60, 400, 3); eBullets.splice(i, 1); continue; } }
+      spawnRing(b.x, b.y, '#ffd23f', 60, 400, 3); eBullets.splice(i, 1); continue; } }
     b.x += b.vx * dt; b.y += b.vy * dt;
     b.life -= dt;
     if (chocaAsteroide(b.x, b.y, b.r)) { spawnParticles(b.x, b.y, 3, { color: '#9aa6b8', speed: 90, life: 0.25, size: 2 }); eBullets.splice(i, 1); continue; }
@@ -1170,226 +1170,164 @@ function estelaNave(x, y, len, color, pulse) {
   ctx.fill();
 }
 
-/* VENUS — AVISPA: cuerpo rechoncho, dos aguijones laterales, blindaje visible */
+/* Cada planeta tiene una nave de forma y color propios, imposibles de confundir:
+   VENUS   = AVISPA   · insecto dorado: cabeza con ojos, alas que zumban, abdomen a rayas y aguijón (sin motores)
+   MARTE   = TENAZA   · pinza carmesí de dos cuchillas con un arco eléctrico entre las puntas
+   JÚPITER = COLOSO   · fortaleza hexagonal naranja con bandas, torretas y escudo
+   SATURNO = PLATILLO · disco violeta con cúpula y un gran anillo inclinado que gira
+   NEPTUNO = MANTA    · raya fantasmal azul, alas curvas muy anchas y cola de látigo */
+
+/* VENUS — AVISPA */
 function dibujarAvispa(e, col, flash) {
-  const r = e.r;
-  const pulse = 0.8 + Math.sin(G.time * 22 + e.enginePulse) * 0.2;
-  // motor
-  estelaNave(-r * 0.9, 0, r * 1.5, 'rgba(255,196,110,0.9)', pulse);
-  // alas laterales en flecha
-  ctx.fillStyle = flash ? '#fff' : 'rgba(255,196,110,0.55)';
-  for (const s of [-1, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(r * 0.2, s * r * 0.35);
-    ctx.lineTo(-r * 0.5, s * r * 1.15);
-    ctx.lineTo(-r * 0.85, s * r * 0.95);
-    ctx.lineTo(-r * 0.2, s * r * 0.3);
-    ctx.closePath();
-    ctx.fill();
+  const r = e.r, t = G.time + (e.enginePulse || 0);
+  const oro = flash ? '#fff' : col, negro = flash ? '#fff' : '#2a1d05';
+  // alas: dos pares translúcidos que zumban
+  const zumbido = 0.55 + Math.abs(Math.sin(t * 46)) * 0.45;
+  ctx.save(); ctx.shadowBlur = 0;
+  for (const s of [-1, 1]) for (const [ox, rot, lx] of [[0.05, 0.5, 0.95], [-0.2, 0.95, 0.7]]) {
+    ctx.save(); ctx.translate(r * ox, s * r * 0.15); ctx.rotate(s * (Math.PI / 2 + rot - 0.35));
+    ctx.scale(1, zumbido);
+    ctx.fillStyle = 'rgba(235,245,255,0.38)'; ctx.strokeStyle = 'rgba(255,255,255,0.65)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(r * lx * 0.55, 0, r * lx * 0.55, r * 0.22, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.restore();
   }
-  // cuerpo principal (rombo alargado)
-  ctx.fillStyle = flash ? '#fff' : col;
-  ctx.beginPath();
-  ctx.moveTo(r * 1.05, 0);
-  ctx.lineTo(r * 0.15, -r * 0.62);
-  ctx.lineTo(-r * 0.85, -r * 0.42);
-  ctx.lineTo(-r * 0.85, r * 0.42);
-  ctx.lineTo(r * 0.15, r * 0.62);
-  ctx.closePath();
-  ctx.fill();
-  // aguijón frontal
-  ctx.fillStyle = flash ? '#fff' : '#fff2c8';
-  ctx.beginPath();
-  ctx.moveTo(r * 1.05, 0);
-  ctx.lineTo(r * 0.55, -r * 0.16);
-  ctx.lineTo(r * 0.55, r * 0.16);
-  ctx.closePath();
-  ctx.fill();
-  // placas de blindaje
-  ctx.strokeStyle = 'rgba(90,50,10,0.65)';
-  ctx.lineWidth = 1.6;
-  for (let i = 0; i < 3; i++) {
-    const px = r * (0.45 - i * 0.32);
-    ctx.beginPath();
-    ctx.moveTo(px, -r * 0.4);
-    ctx.lineTo(px, r * 0.4);
-    ctx.stroke();
-  }
-  // núcleo
-  ctx.fillStyle = '#fff';
-  ctx.beginPath();
-  ctx.arc(r * 0.1, 0, r * 0.2, 0, TAU);
-  ctx.fill();
+  ctx.restore();
+  // abdomen a rayas con aguijón
+  ctx.fillStyle = negro;
+  ctx.beginPath(); ctx.moveTo(-r * 1.05, -r * 0.08); ctx.lineTo(-r * 1.45, 0); ctx.lineTo(-r * 1.05, r * 0.08); ctx.fill();
+  ctx.save(); ctx.beginPath(); ctx.ellipse(-r * 0.55, 0, r * 0.58, r * 0.4, 0, 0, TAU); ctx.fillStyle = oro; ctx.fill(); ctx.clip();
+  ctx.fillStyle = negro; for (const x of [-0.25, -0.58, -0.9]) ctx.fillRect(r * x - r * 0.08, -r, r * 0.15, r * 2);
+  ctx.restore();
+  // tórax
+  ctx.fillStyle = flash ? '#fff' : '#7a5410'; ctx.beginPath(); ctx.arc(r * 0.08, 0, r * 0.27, 0, TAU); ctx.fill();
+  // cabeza con ojos compuestos y antenas
+  ctx.fillStyle = oro; ctx.beginPath(); ctx.arc(r * 0.5, 0, r * 0.25, 0, TAU); ctx.fill();
+  ctx.fillStyle = flash ? '#fff' : '#c0202a';
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(r * 0.56, s * r * 0.14, r * 0.12, r * 0.09, s * 0.5, 0, TAU); ctx.fill(); }
+  ctx.strokeStyle = negro; ctx.lineWidth = 1.4;
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(r * 0.68, s * r * 0.08); ctx.quadraticCurveTo(r * 1.0, s * r * 0.15, r * 1.05, s * r * 0.42); ctx.stroke(); }
 }
 
-/* MARTE — FILO: dardo afilado, dos motores, muy estilizado */
+/* MARTE — TENAZA */
 function dibujarFilo(e, col, flash) {
-  const r = e.r;
-  const pulse = 0.75 + Math.sin(G.time * 34 + e.enginePulse) * 0.25;
-  // doble motor
-  estelaNave(-r * 0.8, -r * 0.3, r * 1.7, 'rgba(255,110,70,0.95)', pulse);
-  estelaNave(-r * 0.8, r * 0.3, r * 1.7, 'rgba(255,110,70,0.95)', pulse);
-  // ala en delta invertida
-  ctx.fillStyle = flash ? '#fff' : 'rgba(255,110,70,0.6)';
-  ctx.beginPath();
-  ctx.moveTo(r * 0.3, 0);
-  ctx.lineTo(-r * 0.9, -r * 1.0);
-  ctx.lineTo(-r * 0.55, 0);
-  ctx.lineTo(-r * 0.9, r * 1.0);
-  ctx.closePath();
-  ctx.fill();
-  // fuselaje en dardo
-  ctx.fillStyle = flash ? '#fff' : col;
-  ctx.beginPath();
-  ctx.moveTo(r * 1.35, 0);
-  ctx.lineTo(-r * 0.15, -r * 0.42);
-  ctx.lineTo(-r * 0.75, -r * 0.22);
-  ctx.lineTo(-r * 0.75, r * 0.22);
-  ctx.lineTo(-r * 0.15, r * 0.42);
-  ctx.closePath();
-  ctx.fill();
-  // línea de energía
-  ctx.strokeStyle = 'rgba(255,240,220,0.9)';
-  ctx.lineWidth = 1.8;
-  ctx.beginPath();
-  ctx.moveTo(r * 1.1, 0);
-  ctx.lineTo(-r * 0.5, 0);
-  ctx.stroke();
-  // cabina
-  ctx.fillStyle = '#fff';
-  ctx.beginPath();
-  ctx.ellipse(r * 0.35, 0, r * 0.26, r * 0.14, 0, 0, TAU);
-  ctx.fill();
+  const r = e.r, t = G.time + (e.enginePulse || 0);
+  const pulse = 0.75 + Math.sin(t * 34) * 0.25;
+  estelaNave(-r * 0.7, -r * 0.22, r * 1.4, 'rgba(255,46,77,0.95)', pulse);
+  estelaNave(-r * 0.7, r * 0.22, r * 1.4, 'rgba(255,46,77,0.95)', pulse);
+  // dos cuchillas curvas hacia delante (la pinza)
+  for (const s of [-1, 1]) {
+    ctx.fillStyle = flash ? '#fff' : col;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.55, s * r * 0.2);
+    ctx.quadraticCurveTo(r * 0.1, s * r * 1.3, r * 1.35, s * r * 0.42);
+    ctx.lineTo(r * 0.95, s * r * 0.2);
+    ctx.quadraticCurveTo(r * 0.25, s * r * 0.42, -r * 0.2, s * r * 0.05);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = flash ? '#fff' : '#ffd0d6'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(-r * 0.4, s * r * 0.25); ctx.quadraticCurveTo(r * 0.15, s * r * 1.0, r * 1.3, s * r * 0.42); ctx.stroke();
+  }
+  // núcleo en rombo oscuro
+  ctx.fillStyle = flash ? '#fff' : '#3a0610';
+  ctx.beginPath(); ctx.moveTo(r * 0.25, 0); ctx.lineTo(-r * 0.3, -r * 0.26); ctx.lineTo(-r * 0.75, 0); ctx.lineTo(-r * 0.3, r * 0.26); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke();
+  // arco eléctrico entre las puntas
+  ctx.save(); ctx.strokeStyle = '#fff'; ctx.shadowBlur = 12; ctx.shadowColor = '#ff8095'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(r * 1.25, -r * 0.38);
+  for (let k = 1; k < 5; k++) ctx.lineTo(r * (1.25 + (Math.random() - 0.5) * 0.25), -r * 0.38 + r * 0.76 * k / 5);
+  ctx.lineTo(r * 1.25, r * 0.38); ctx.stroke(); ctx.restore();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-r * 0.25, 0, r * 0.1, 0, TAU); ctx.fill();
 }
 
-/* JÚPITER — COLOSO: fortaleza hexagonal con torretas y escudo visible */
+/* JÚPITER — COLOSO */
 function dibujarColoso(e, col, flash) {
-  const r = e.r;
-  const pulse = 0.7 + Math.sin(G.time * 14 + e.enginePulse) * 0.3;
-  // 3 motores grandes
-  for (const oy of [-r * 0.45, 0, r * 0.45]) {
-    estelaNave(-r * 0.85, oy, r * 1.3, 'rgba(255,170,120,0.9)', pulse);
-  }
+  const r = e.r, t = G.time + (e.enginePulse || 0);
+  const pulse = 0.7 + Math.sin(t * 14) * 0.3;
+  for (const oy of [-r * 0.45, 0, r * 0.45]) estelaNave(-r * 0.85, oy, r * 1.3, 'rgba(255,138,30,0.9)', pulse);
   // casco hexagonal
   ctx.fillStyle = flash ? '#fff' : col;
   ctx.beginPath();
-  for (let i = 0; i < 6; i++) {
-    const a = i * TAU / 6;
-    const rr = r * (i % 2 ? 0.92 : 1.05);
-    if (i === 0) ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
-    else ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
-  }
-  ctx.closePath();
-  ctx.fill();
-  // placas internas
-  ctx.fillStyle = flash ? '#fff' : 'rgba(120,60,30,0.55)';
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.62, 0, TAU);
-  ctx.fill();
-  // torretas
-  ctx.fillStyle = flash ? '#fff' : '#ffe0c0';
-  for (const s of [-1, 1]) {
-    ctx.beginPath();
-    ctx.arc(r * 0.15, s * r * 0.62, r * 0.2, 0, TAU);
-    ctx.fill();
-    ctx.fillRect(r * 0.15, s * r * 0.62 - r * 0.07, r * 0.55, r * 0.14);
-  }
-  // núcleo brillante
-  ctx.fillStyle = '#fff';
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.24 + Math.sin(G.time * 5) * 2, 0, TAU);
-  ctx.fill();
-  // aro de escudo
-  ctx.strokeStyle = 'rgba(255,200,150,' + (0.35 + Math.sin(G.time * 3) * 0.15) + ')';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 1.22, 0, TAU);
-  ctx.stroke();
-}
-
-/* SATURNO — ANILLADA: cuerpo esbelto con anillo giratorio que la protege */
-function dibujarAnillada(e, col, flash) {
-  const r = e.r;
-  const pulse = 0.8 + Math.sin(G.time * 26 + e.enginePulse) * 0.2;
-  // motor
-  estelaNave(-r * 0.85, 0, r * 1.6, 'rgba(240,220,160,0.9)', pulse);
-  // anillo (elipse que gira con la nave)
-  e.ringSpin += 0.06;
-  ctx.save();
-  ctx.rotate(e.ringSpin);
-  ctx.strokeStyle = flash ? '#fff' : 'rgba(240,220,160,0.85)';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, r * 1.5, r * 0.55, 0, 0, TAU);
-  ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, r * 1.75, r * 0.68, 0, 0, TAU);
-  ctx.stroke();
+  for (let i = 0; i < 6; i++) { const a = i * TAU / 6, rr = r * (i % 2 ? 0.92 : 1.05); i ? ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+  ctx.closePath(); ctx.fill();
+  // bandas como las de Júpiter
+  ctx.save(); ctx.clip(); ctx.shadowBlur = 0;
+  ctx.fillStyle = flash ? '#fff' : 'rgba(110,40,8,0.55)';
+  for (const y of [-0.62, -0.2, 0.28, 0.66]) ctx.fillRect(-r * 1.2, r * y - r * 0.08, r * 2.4, r * 0.15);
   ctx.restore();
-  // fuselaje esbelto
-  ctx.fillStyle = flash ? '#fff' : col;
-  ctx.beginPath();
-  ctx.moveTo(r * 1.15, 0);
-  ctx.lineTo(r * 0.1, -r * 0.5);
-  ctx.lineTo(-r * 0.8, -r * 0.3);
-  ctx.lineTo(-r * 0.8, r * 0.3);
-  ctx.lineTo(r * 0.1, r * 0.5);
-  ctx.closePath();
-  ctx.fill();
-  // franjas
-  ctx.strokeStyle = 'rgba(140,110,50,0.6)';
-  ctx.lineWidth = 1.5;
-  for (let i = 0; i < 2; i++) {
-    const px = r * (0.3 - i * 0.4);
-    ctx.beginPath();
-    ctx.moveTo(px, -r * 0.35);
-    ctx.lineTo(px, r * 0.35);
-    ctx.stroke();
-  }
-  // cabina
-  ctx.fillStyle = '#fff';
-  ctx.beginPath();
-  ctx.arc(r * 0.45, 0, r * 0.18, 0, TAU);
-  ctx.fill();
+  // torretas
+  ctx.fillStyle = flash ? '#fff' : '#ffe2c4';
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(r * 0.15, s * r * 0.62, r * 0.2, 0, TAU); ctx.fill(); ctx.fillRect(r * 0.15, s * r * 0.62 - r * 0.07, r * 0.55, r * 0.14); }
+  // gran mancha (núcleo)
+  ctx.fillStyle = flash ? '#fff' : '#c2361a'; ctx.beginPath(); ctx.ellipse(-r * 0.1, r * 0.05, r * 0.3, r * 0.2, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-r * 0.1, r * 0.05, r * 0.1 + Math.sin(G.time * 5) * 1.5, 0, TAU); ctx.fill();
+  // escudo
+  ctx.strokeStyle = 'rgba(255,170,90,' + (0.35 + Math.sin(G.time * 3) * 0.15) + ')'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(0, 0, r * 1.22, 0, TAU); ctx.stroke();
 }
 
-/* NEPTUNO — ESPECTRAL: ala en flecha, motor de overdrive azul intenso */
+/* SATURNO — PLATILLO */
+function dibujarAnillada(e, col, flash) {
+  const r = e.r, t = G.time + (e.enginePulse || 0);
+  const giro = t * 2.2;
+  // mitad trasera del anillo
+  const anillo = (desde, hasta) => {
+    ctx.save(); ctx.rotate(0.5);
+    ctx.strokeStyle = flash ? '#fff' : col; ctx.lineWidth = 3.2;
+    ctx.beginPath(); ctx.ellipse(0, 0, r * 1.65, r * 0.5, 0, desde, hasta); ctx.stroke();
+    ctx.strokeStyle = 'rgba(230,214,255,0.55)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.ellipse(0, 0, r * 1.9, r * 0.6, 0, desde, hasta); ctx.stroke();
+    // marcas que giran por el anillo
+    ctx.fillStyle = '#fff';
+    for (let k = 0; k < 3; k++) { const a = giro + k * TAU / 3; const sa = Math.sin(a); if ((sa < 0) === (desde > 0)) continue;
+      ctx.beginPath(); ctx.arc(Math.cos(a) * r * 1.65, sa * r * 0.5, 2.2, 0, TAU); ctx.fill(); }
+    ctx.restore();
+  };
+  anillo(Math.PI, TAU);
+  // disco del platillo
+  ctx.fillStyle = flash ? '#fff' : col;
+  ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, TAU); ctx.fill();
+  ctx.fillStyle = flash ? '#fff' : 'rgba(60,20,110,0.55)';
+  ctx.beginPath(); ctx.arc(0, 0, r * 0.62, 0, TAU); ctx.fill();
+  // luces del borde que giran
+  for (let k = 0; k < 8; k++) { const a = -giro + k * TAU / 8;
+    ctx.fillStyle = k % 2 ? '#ffffff' : '#e6d6ff'; ctx.beginPath(); ctx.arc(Math.cos(a) * r * 0.72, Math.sin(a) * r * 0.72, 1.8, 0, TAU); ctx.fill(); }
+  // cúpula
+  const g = ctx.createRadialGradient(-r * 0.12, -r * 0.12, 1, 0, 0, r * 0.38);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(1, flash ? '#fff' : 'rgba(200,170,255,0.9)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r * 0.36, 0, TAU); ctx.fill();
+  // mitad delantera del anillo
+  anillo(0, Math.PI);
+}
+
+/* NEPTUNO — MANTA */
 function dibujarEspectral(e, col, flash) {
-  const r = e.r;
-  const pulse = 0.7 + Math.sin(G.time * 40 + e.enginePulse) * 0.3;
-  // motor overdrive (más largo y brillante)
-  estelaNave(-r * 0.8, 0, r * 2.1, 'rgba(90,150,255,0.95)', pulse);
-  estelaNave(-r * 0.8, 0, r * 1.2, 'rgba(255,255,255,0.7)', pulse);
-  // alas en flecha hacia atrás
-  ctx.fillStyle = flash ? '#fff' : 'rgba(90,150,255,0.55)';
-  for (const s of [-1, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(r * 0.5, s * r * 0.2);
-    ctx.lineTo(-r * 0.95, s * r * 0.95);
-    ctx.lineTo(-r * 0.45, s * r * 0.35);
-    ctx.closePath();
-    ctx.fill();
-  }
-  // fuselaje
+  const r = e.r, t = G.time + (e.enginePulse || 0);
+  const aleteo = Math.sin(t * 5) * 0.12;
+  ctx.save(); ctx.globalAlpha *= 0.82 + Math.sin(t * 3) * 0.12; // fantasmal
+  // cola de látigo
+  ctx.strokeStyle = flash ? '#fff' : col; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-r * 0.5, 0);
+  for (let k = 1; k <= 8; k++) ctx.lineTo(-r * 0.5 - k * r * 0.22, Math.sin(t * 7 - k * 0.8) * r * 0.06 * k);
+  ctx.stroke();
+  // alas curvas muy anchas
   ctx.fillStyle = flash ? '#fff' : col;
   ctx.beginPath();
-  ctx.moveTo(r * 1.25, 0);
-  ctx.lineTo(r * 0.2, -r * 0.45);
-  ctx.lineTo(-r * 0.7, -r * 0.25);
-  ctx.lineTo(-r * 0.7, r * 0.25);
-  ctx.lineTo(r * 0.2, r * 0.45);
-  ctx.closePath();
-  ctx.fill();
-  // núcleo de overdrive
-  ctx.fillStyle = '#fff';
-  ctx.shadowBlur = 20;
-  ctx.shadowColor = '#5a96ff';
-  ctx.beginPath();
-  ctx.arc(r * 0.15, 0, r * 0.22 + Math.sin(G.time * 8) * 2, 0, TAU);
-  ctx.fill();
-  ctx.shadowBlur = 16;
+  ctx.moveTo(r * 0.75, 0);
+  ctx.quadraticCurveTo(r * 0.55, -r * 0.5, r * 0.05, -r * (1.25 + aleteo));
+  ctx.quadraticCurveTo(-r * 0.25, -r * 0.55, -r * 0.6, -r * 0.12);
+  ctx.lineTo(-r * 0.6, r * 0.12);
+  ctx.quadraticCurveTo(-r * 0.25, r * 0.55, r * 0.05, r * (1.25 + aleteo));
+  ctx.quadraticCurveTo(r * 0.55, r * 0.5, r * 0.75, 0);
+  ctx.closePath(); ctx.fill();
+  // vetas luminosas de las alas
+  ctx.strokeStyle = flash ? '#fff' : 'rgba(170,205,255,0.75)'; ctx.lineWidth = 1;
+  for (const s of [-1, 1]) for (const k of [0.45, 0.8]) { ctx.beginPath(); ctx.moveTo(r * 0.3, 0); ctx.quadraticCurveTo(r * 0.1, s * r * 0.4 * k, -r * 0.15, s * r * 1.05 * k); ctx.stroke(); }
+  // aletas cefálicas (los dos cuernos delanteros)
+  ctx.fillStyle = flash ? '#fff' : '#9cc1ff';
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(r * 0.6, s * r * 0.08); ctx.lineTo(r * 1.0, s * r * 0.22); ctx.lineTo(r * 0.55, s * r * 0.22); ctx.closePath(); ctx.fill(); }
+  // ojos
+  ctx.fillStyle = '#fff'; ctx.shadowBlur = 12; ctx.shadowColor = '#9cc1ff';
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(r * 0.45, s * r * 0.14, r * 0.07, 0, TAU); ctx.fill(); }
+  ctx.restore();
 }
 
 function drawEnemies() {
@@ -1445,9 +1383,9 @@ function drawBullets() {
 function drawOrbes() {
   const p = player; if (!p || !p.alive || !p.mej || !p.mej.saturno) return;
   const n = p.mej.saturno;
-  ctx.save(); ctx.strokeStyle = 'rgba(240,220,160,.18)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(p.x, p.y, 46, 0, TAU); ctx.stroke();
+  ctx.save(); ctx.strokeStyle = 'rgba(185,140,255,.2)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(p.x, p.y, 46, 0, TAU); ctx.stroke();
   for (let k = 0; k < n; k++) { const oa = p.orbAng + k * TAU / n;
-    ctx.shadowBlur = 16; ctx.shadowColor = '#f0dca0'; ctx.fillStyle = '#fff3cf';
+    ctx.shadowBlur = 16; ctx.shadowColor = '#b98cff'; ctx.fillStyle = '#fff3cf';
     ctx.beginPath(); ctx.arc(p.x + Math.cos(oa) * 46, p.y + Math.sin(oa) * 46, 6.5, 0, TAU); ctx.fill(); }
   ctx.restore();
 }
@@ -1852,7 +1790,7 @@ function disparoModulos(p, a, od) {
   for (let i = 0; i < m.marte; i++) {
     const lado = i % 2 ? 1 : -1, fila = Math.floor(i / 2);
     const [x, y] = puntoNave(p, 6 - fila * 6, lado * (13 + fila * 4));
-    balaDesde(x, y, a + lado * 0.025, 6, 1250, 2.2, '#ff6e46');
+    balaDesde(x, y, a + lado * 0.025, 6, 1250, 2.2, '#ff2e4d');
   }
   // VENUS: lanza dorada cada pocos disparos (más seguido y más fuerte con el nivel)
   if (m.venus > 0 && p.cuentaDisp % Math.max(2, 6 - m.venus) === 0) {
@@ -1865,7 +1803,7 @@ function disparoModulos(p, a, od) {
     const pares = m.neptuno >= 3 ? 2 : 1;
     for (let k = 0; k < pares; k++) for (const lado of [-1, 1]) {
       const [x, y] = puntoNave(p, -8 - k * 6, lado * (19 + k * 4));
-      const b = balaDesde(x, y, a + lado * (0.12 + k * 0.1), 9 + m.neptuno, 980, 3, '#5a96ff');
+      const b = balaDesde(x, y, a + lado * (0.12 + k * 0.1), 9 + m.neptuno, 980, 3, '#2f6bff');
       if (m.neptuno >= 5) { b.guiado = true; b.life = 2; }
     }
   }
@@ -1874,8 +1812,8 @@ function disparoModulos(p, a, od) {
 // JÚPITER (nivel 3+): al recibir un golpe, el blindaje suelta metralla alrededor
 function ondaMetralla(p) {
   const n = 8 + p.mej.jupiter * 2;
-  for (let i = 0; i < n; i++) { const ang = i / n * TAU; balaDesde(p.x, p.y, ang, 10 + p.mej.jupiter * 2, 700, 3, '#ffaa78').life = 0.6; }
-  spawnRing(p.x, p.y, '#ffaa78', 90, 500, 3);
+  for (let i = 0; i < n; i++) { const ang = i / n * TAU; balaDesde(p.x, p.y, ang, 10 + p.mej.jupiter * 2, 700, 3, '#ff8a1e').life = 0.6; }
+  spawnRing(p.x, p.y, '#ff8a1e', 90, 500, 3);
 }
 
 // dibujo de las piezas (dentro del sistema de la nave: x hacia delante)
@@ -1886,7 +1824,7 @@ function dibujarModulos(p, capa) {
     // JÚPITER: placas de blindaje a los lados del casco
     for (let i = 0; i < m.jupiter; i++) {
       const lado = i % 2 ? 1 : -1, fila = Math.floor(i / 2);
-      ctx.fillStyle = '#b8743f'; ctx.strokeStyle = '#ffaa78'; ctx.shadowColor = '#ffaa78'; ctx.lineWidth = 1.2;
+      ctx.fillStyle = '#b8743f'; ctx.strokeStyle = '#ff8a1e'; ctx.shadowColor = '#ff8a1e'; ctx.lineWidth = 1.2;
       ctx.beginPath(); const x0 = 4 - fila * 8, y0 = lado * 7;
       ctx.moveTo(x0 + 5, y0); ctx.lineTo(x0 - 4, y0 + lado * 7); ctx.lineTo(x0 - 9, y0 + lado * 5); ctx.lineTo(x0 - 2, y0 - lado * 1); ctx.closePath(); ctx.fill(); ctx.stroke();
     }
@@ -1894,23 +1832,23 @@ function dibujarModulos(p, capa) {
     // VENUS: cañón de proa que crece con el nivel
     if (m.venus > 0) {
       const largo = 8 + m.venus * 3;
-      ctx.fillStyle = '#ffd27a'; ctx.shadowColor = '#ffc46e';
+      ctx.fillStyle = '#ffd27a'; ctx.shadowColor = '#ffd23f';
       ctx.fillRect(14, -2 - m.venus * 0.3, largo, 4 + m.venus * 0.6);
       ctx.fillStyle = '#fff4d6'; ctx.beginPath(); ctx.arc(14 + largo, 0, 2.5 + m.venus * 0.4, 0, TAU); ctx.fill();
     }
     // MARTE: ametralladoras a los costados
     for (let i = 0; i < m.marte; i++) {
       const lado = i % 2 ? 1 : -1, fila = Math.floor(i / 2), x = 6 - fila * 6, y = lado * (13 + fila * 4);
-      ctx.fillStyle = '#5a1a12'; ctx.strokeStyle = '#ff6e46'; ctx.shadowColor = '#ff6e46'; ctx.lineWidth = 1.2;
+      ctx.fillStyle = '#5a1a12'; ctx.strokeStyle = '#ff2e4d'; ctx.shadowColor = '#ff2e4d'; ctx.lineWidth = 1.2;
       ctx.fillRect(x - 6, y - 2.2, 9, 4.4); ctx.strokeRect(x - 6, y - 2.2, 9, 4.4);
-      ctx.fillStyle = '#ff6e46'; ctx.fillRect(x + 3, y - 1, 5, 2);
+      ctx.fillStyle = '#ff2e4d'; ctx.fillRect(x + 3, y - 1, 5, 2);
     }
     // NEPTUNO: torretas en las puntas de las alas
     if (m.neptuno > 0) {
       const pares = m.neptuno >= 3 ? 2 : 1;
       for (let k = 0; k < pares; k++) for (const lado of [-1, 1]) {
         const x = -8 - k * 6, y = lado * (19 + k * 4);
-        ctx.fillStyle = '#5a96ff'; ctx.shadowColor = '#5a96ff';
+        ctx.fillStyle = '#2f6bff'; ctx.shadowColor = '#2f6bff';
         ctx.beginPath(); ctx.arc(x, y, 3.4, 0, TAU); ctx.fill();
         ctx.fillRect(x, y - 1, 7, 2);
       }
@@ -2041,11 +1979,11 @@ function dibujarBestia(e, col, flash) {
    JEFES POR PLANETA — cada 5 oleadas sale el jefe de un planeta rival
    ============================================================ */
 const JEFES = {
-  jupiter: { nombre: 'FORTALEZA COLOSO',  color: '#ffaa78', r: 62, vida: 1.30 },
-  marte:   { nombre: 'NODRIZA ENJAMBRE',  color: '#ff6e46', r: 50, vida: 0.90 },
-  venus:   { nombre: 'REINA AVISPA',      color: '#ffc46e', r: 54, vida: 1.00 },
-  saturno: { nombre: 'SEÑOR DEL ANILLO',  color: '#f0dca0', r: 50, vida: 1.00 },
-  neptuno: { nombre: 'ESPECTRO ABISAL',   color: '#5a96ff', r: 52, vida: 0.85 }
+  jupiter: { nombre: 'FORTALEZA COLOSO',  color: '#ff8a1e', r: 62, vida: 1.30 },
+  marte:   { nombre: 'NODRIZA ENJAMBRE',  color: '#ff2e4d', r: 50, vida: 0.90 },
+  venus:   { nombre: 'REINA AVISPA',      color: '#ffd23f', r: 54, vida: 1.00 },
+  saturno: { nombre: 'SEÑOR DEL ANILLO',  color: '#b98cff', r: 50, vida: 1.00 },
+  neptuno: { nombre: 'ESPECTRO ABISAL',   color: '#2f6bff', r: 52, vida: 0.85 }
 };
 function elegirJefe() {
   const mio = (typeof bandoElegido !== 'undefined' && bandoElegido) ? bandoElegido : null;
@@ -2074,20 +2012,20 @@ function iaJefe(e, dt) {
     orbitar(e, dt, 330, 55, 0.25); e.rot = (e.rot || 0) + dt * 0.4;
     if (!(T.torretas > 0)) { T.torretas = mitad ? 1.0 : 1.6;
       for (let k = 0; k < 4; k++) { const ta = e.rot + k * TAU / 4, tx = e.x + Math.cos(ta) * e.r * 0.9, ty = e.y + Math.sin(ta) * e.r * 0.9, a = Math.atan2(p.y - ty, p.x - tx);
-        for (let i = -1; i <= 1; i++) bala(tx, ty, a + i * 0.1, 300, 5, 9, '#ffaa78'); } }
-    if (!(T.onda > 0)) { T.onda = mitad ? 4.5 : 7; for (let k = 0; k < 26; k++) bala(e.x, e.y, k / 26 * TAU + e.rot, 190, 7, 11, '#ffd0a8', 5); spawnRing(e.x, e.y, '#ffaa78', 150, 500, 5); shake(6); }
+        for (let i = -1; i <= 1; i++) bala(tx, ty, a + i * 0.1, 300, 5, 9, '#ff8a1e'); } }
+    if (!(T.onda > 0)) { T.onda = mitad ? 4.5 : 7; for (let k = 0; k < 26; k++) bala(e.x, e.y, k / 26 * TAU + e.rot, 190, 7, 11, '#ffd0a8', 5); spawnRing(e.x, e.y, '#ff8a1e', 150, 500, 5); shake(6); }
   } else if (e.jefe === 'marte') {
     // NODRIZA ENJAMBRE: rápida, suelta drones Filo y embiste en línea recta con aviso
     if (e.carga > 0) { e.carga -= dt; e.vx *= 0.85; e.vy *= 0.85; if (e.carga <= 0) { e.embiste = 0.7; const v = 950; e.vx = Math.cos(e.cargaAng) * v; e.vy = Math.sin(e.cargaAng) * v; } }
     else if (e.embiste > 0) { e.embiste -= dt; }
     else { orbitar(e, dt, 380, 260, 0.9);
       if (!(T.embestida > 0)) { T.embestida = mitad ? 4 : 6; e.carga = 0.8; e.cargaAng = ap; }
-      if (!(T.abanico > 0)) { T.abanico = mitad ? 0.8 : 1.2; for (let i = -2; i <= 2; i++) bala(e.x, e.y, ap + i * 0.14, 340, 5, 9, '#ff6e46'); } }
+      if (!(T.abanico > 0)) { T.abanico = mitad ? 0.8 : 1.2; for (let i = -2; i <= 2; i++) bala(e.x, e.y, ap + i * 0.14, 340, 5, 9, '#ff2e4d'); } }
     if (!(T.drones > 0)) { T.drones = 4; if (cuantosHijos(e) < 6) for (let k = 0; k < 2; k++) { const d = spawnEnemy('marte', e.x + rand(-30, 30), e.y + rand(-30, 30)); d.padre = e; } }
   } else if (e.jefe === 'venus') {
     // REINA AVISPA: avisa con una línea y embiste dejando minas que explotan; trae avispas escolta
     if (e.carga > 0) { e.carga -= dt; e.vx *= 0.85; e.vy *= 0.85; if (e.carga <= 0) { e.embiste = 1.1; e.vx = Math.cos(e.cargaAng) * 650; e.vy = Math.sin(e.cargaAng) * 650; } }
-    else if (e.embiste > 0) { e.embiste -= dt; if (!(T.mina > 0)) { T.mina = mitad ? 0.09 : 0.13; bala(e.x, e.y, 0, 0, 8, 12, '#ffc46e', 4, { mina: 2.2 }); } }
+    else if (e.embiste > 0) { e.embiste -= dt; if (!(T.mina > 0)) { T.mina = mitad ? 0.09 : 0.13; bala(e.x, e.y, 0, 0, 8, 12, '#ffd23f', 4, { mina: 2.2 }); } }
     else { orbitar(e, dt, 300, 120, 0.4); if (!(T.embestida > 0)) { T.embestida = mitad ? 3.2 : 4.5; e.carga = 0.75; e.cargaAng = ap; } }
     if (!(T.escolta > 0)) { T.escolta = 8; if (cuantosHijos(e) < 4) for (let k = 0; k < 2; k++) { const d = spawnEnemy('venus', e.x + rand(-40, 40), e.y + rand(-40, 40)); d.padre = e; } }
   } else if (e.jefe === 'saturno') {
@@ -2095,7 +2033,7 @@ function iaJefe(e, dt) {
     orbitar(e, dt, 420, 150, 0.8); e.anillo = (e.anillo || 0) + dt * (mitad ? 1.4 : 0.9);
     const n = 12; e.orbes = []; for (let k = 0; k < n; k++) { if (k % 4 === 0) continue; // huecos para colarse
       const a = e.anillo + k * TAU / n; e.orbes.push({ x: e.x + Math.cos(a) * 95, y: e.y + Math.sin(a) * 95 }); }
-    if (!(T.espiral > 0)) { T.espiral = 0.11; e.espiral = (e.espiral || 0) + 0.37; if (Math.sin(e.phase * 0.8) > -0.3) for (let k = 0; k < (mitad ? 3 : 2); k++) bala(e.x, e.y, e.espiral + k * TAU / (mitad ? 3 : 2), 210, 5, 8, '#f0dca0', 4); }
+    if (!(T.espiral > 0)) { T.espiral = 0.11; e.espiral = (e.espiral || 0) + 0.37; if (Math.sin(e.phase * 0.8) > -0.3) for (let k = 0; k < (mitad ? 3 : 2); k++) bala(e.x, e.y, e.espiral + k * TAU / (mitad ? 3 : 2), 210, 5, 8, '#b98cff', 4); }
   } else if (e.jefe === 'neptuno') {
     // ESPECTRO ABISAL: se teletransporta, lanza orbes que te persiguen y barre con un rayo
     if (e.fase === 'fuera') { e.alfa = Math.max(0, (e.alfa || 1) - dt * 3); if (e.alfa <= 0) { const a = Math.random() * TAU, d = rand(300, 440); e.x = p.x + Math.cos(a) * d; e.y = p.y + Math.sin(a) * d; e.fase = 'dentro'; } }
@@ -2121,7 +2059,7 @@ function dibujarJefe(e, col, flash) {
   if (e.carga > 0) { const L = 900; ctx.save(); ctx.strokeStyle = 'rgba(255,90,90,' + (0.3 + Math.random() * 0.4) + ')'; ctx.lineWidth = R * 1.4; ctx.globalAlpha = 0.25;
     ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + Math.cos(e.cargaAng) * L, e.y + Math.sin(e.cargaAng) * L); ctx.stroke(); ctx.restore(); }
   if (e.barrido > 0) { const L = rayoHasta(e.x, e.y, e.barridoAng, 1300); ctx.save(); ctx.lineCap = 'round';
-    if (e.barrido > 2.0) { ctx.strokeStyle = 'rgba(120,170,255,.5)'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); } else { ctx.strokeStyle = '#6fa8ff'; ctx.lineWidth = 26; ctx.shadowBlur = 30; ctx.shadowColor = '#5a96ff'; }
+    if (e.barrido > 2.0) { ctx.strokeStyle = 'rgba(120,170,255,.5)'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); } else { ctx.strokeStyle = '#6fa8ff'; ctx.lineWidth = 26; ctx.shadowBlur = 30; ctx.shadowColor = '#2f6bff'; }
     ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + Math.cos(e.barridoAng) * L, e.y + Math.sin(e.barridoAng) * L); ctx.stroke();
     if (e.barrido <= 2.0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 8; ctx.stroke(); } ctx.restore(); }
   // aura del jefe
@@ -2141,13 +2079,12 @@ function dibujarJefe(e, col, flash) {
     ctx.shadowBlur = 26; ctx.shadowColor = col; ctx.fillStyle = col;
     const f = { venus: dibujarAvispa, marte: dibujarFilo, saturno: dibujarAnillada, neptuno: dibujarEspectral }[e.jefe];
     f(falso, col, flash);
-    if (e.jefe === 'venus') { ctx.fillStyle = '#fff2c8'; for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(-R * 0.2, k * R * 0.18); ctx.lineTo(-R * 0.75, k * R * 0.26 - 6); ctx.lineTo(-R * 0.6, k * R * 0.22); ctx.fill(); } } // corona
-    if (e.jefe === 'marte') { ctx.fillStyle = '#ffd0b8'; for (const s of [-1, 1]) ctx.fillRect(-R * 0.4, s * R * 0.75 - 4, R * 0.7, 8); ctx.fillStyle = '#ffeb7a'; for (let k = 0; k < 4; k++) ctx.fillRect(-R * 0.5 + k * 9, -2, 4, 4); }
+    if (e.jefe === 'venus') { ctx.fillStyle = '#fff6c8'; ctx.beginPath(); ctx.moveTo(R * 0.32, -R * 0.2); for (let k = 0; k < 5; k++) { const y = -R * 0.2 + k * R * 0.1; ctx.lineTo(R * 0.18, y + R * 0.05); ctx.lineTo(R * 0.32, y + R * 0.1); } ctx.lineTo(R * 0.36, R * 0.2); ctx.lineTo(R * 0.36, -R * 0.2); ctx.fill(); } // corona de reina
   }
   ctx.restore();
   // escudo de orbes de Saturno
-  if (e.orbes) { ctx.save(); ctx.strokeStyle = 'rgba(240,220,160,.25)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(e.x, e.y, 95, 0, TAU); ctx.stroke();
-    ctx.shadowBlur = 14; ctx.shadowColor = '#f0dca0'; ctx.fillStyle = '#fff1c4'; for (const o of e.orbes) { ctx.beginPath(); ctx.arc(o.x, o.y, 10, 0, TAU); ctx.fill(); } ctx.restore(); }
+  if (e.orbes) { ctx.save(); ctx.strokeStyle = 'rgba(185,140,255,.3)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(e.x, e.y, 95, 0, TAU); ctx.stroke();
+    ctx.shadowBlur = 14; ctx.shadowColor = '#b98cff'; ctx.fillStyle = '#eadcff'; for (const o of e.orbes) { ctx.beginPath(); ctx.arc(o.x, o.y, 10, 0, TAU); ctx.fill(); } ctx.restore(); }
   ctx.restore();
 }
 

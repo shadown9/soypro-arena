@@ -336,8 +336,8 @@ function generarTarjeta(datos) {
 
   // Bando
   const colores = {
-    venus: '#ffc46e', marte: '#ff6e46', jupiter: '#ffaa78',
-    saturno: '#f0dca0', neptuno: '#5a96ff'
+    venus: '#ffd23f', marte: '#ff2e4d', jupiter: '#ff8a1e',
+    saturno: '#b98cff', neptuno: '#2f6bff'
   };
   const col = colores[datos.bando] || '#00ffc8';
   ctx.fillStyle = col;

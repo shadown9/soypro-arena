@@ -9,11 +9,11 @@
 const INTRO = {
   DUR: 5.0,
   BASES: {
-    jupiter: { nombre: 'JÚPITER', color: '#ffaa78', atmo: [255, 196, 140] },
-    saturno: { nombre: 'SATURNO', color: '#f0dca0', atmo: [255, 236, 180] },
-    marte:   { nombre: 'MARTE',   color: '#ff6e46', atmo: [255, 130, 90] },
-    venus:   { nombre: 'VENUS',   color: '#ffc46e', atmo: [255, 220, 150] },
-    neptuno: { nombre: 'NEPTUNO', color: '#5a96ff', atmo: [110, 170, 255] }
+    jupiter: { nombre: 'JÚPITER', color: '#ff8a1e', atmo: [255, 196, 140] },
+    saturno: { nombre: 'SATURNO', color: '#b98cff', atmo: [255, 236, 180] },
+    marte:   { nombre: 'MARTE',   color: '#ff2e4d', atmo: [255, 130, 90] },
+    venus:   { nombre: 'VENUS',   color: '#ffd23f', atmo: [255, 220, 150] },
+    neptuno: { nombre: 'NEPTUNO', color: '#2f6bff', atmo: [110, 170, 255] }
   },
   texturas: {}, galaxia: null, estelas: []
 };

@@ -6,11 +6,11 @@
    ============================================================ */
 
 const BANDOS = [
-  { id:'venus',   nombre:'VENUS',   bonus:'+25% daño',      glow:'rgba(255,196,110,.55)' },
-  { id:'marte',   nombre:'MARTE',   bonus:'+30% cadencia',  glow:'rgba(255,110,70,.55)' },
-  { id:'jupiter', nombre:'JÚPITER', bonus:'+40% escudo',    glow:'rgba(255,170,120,.55)' },
-  { id:'saturno', nombre:'SATURNO', bonus:'+20% velocidad', glow:'rgba(240,220,160,.55)' },
-  { id:'neptuno', nombre:'NEPTUNO', bonus:'+35% overdrive', glow:'rgba(90,150,255,.55)' }
+  { id:'venus',   nombre:'VENUS',   bonus:'+25% daño',      glow:'rgba(255,210,63,.55)' },
+  { id:'marte',   nombre:'MARTE',   bonus:'+30% cadencia',  glow:'rgba(255,46,77,.55)' },
+  { id:'jupiter', nombre:'JÚPITER', bonus:'+40% escudo',    glow:'rgba(255,138,30,.55)' },
+  { id:'saturno', nombre:'SATURNO', bonus:'+20% velocidad', glow:'rgba(185,140,255,.55)' },
+  { id:'neptuno', nombre:'NEPTUNO', bonus:'+35% overdrive', glow:'rgba(47,107,255,.55)' }
 ];
 
 let bandoElegido = null;

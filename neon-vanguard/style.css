@@ -487,11 +487,11 @@ button:active { transform:scale(.98); }
 .pz-pts { text-align: right; font-weight: 900; color: #00f0ff; font-variant-numeric: tabular-nums; }
 
 /* Colores por bando */
-.ban-venus   { color: #ffc46e; }
-.ban-marte   { color: #ff6e46; }
-.ban-jupiter { color: #ffaa78; }
-.ban-saturno { color: #f0dca0; }
-.ban-neptuno { color: #5a96ff; }
+.ban-venus   { color: #ffd23f; }
+.ban-marte   { color: #ff2e4d; }
+.ban-jupiter { color: #ff8a1e; }
+.ban-saturno { color: #b98cff; }
+.ban-neptuno { color: #2f6bff; }
 
 /* --- Guerra de planetas --- */
 .pz-lider {

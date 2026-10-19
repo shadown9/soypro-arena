@@ -29,7 +29,7 @@ const RED = (function () {
   function enviar(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
   function nuevoRemoto(j) {
-    return { id: j.id, nombre: j.nombre, bando: j.bando || 'neptuno', color: j.color || '#5a96ff', buf: [], x: 0, y: 0, a: 0, hp: 100, v: false,
+    return { id: j.id, nombre: j.nombre, bando: j.bando || 'neptuno', color: ({ venus: '#ffd23f', marte: '#ff2e4d', jupiter: '#ff8a1e', saturno: '#b98cff', neptuno: '#2f6bff' })[j.bando] || j.color || '#2f6bff', buf: [], x: 0, y: 0, a: 0, hp: 100, v: false,
              r: RADIO[j.bando] || 17, enginePulse: j.id * 1.7, hitFlash: 0, visto: false };
   }
 
