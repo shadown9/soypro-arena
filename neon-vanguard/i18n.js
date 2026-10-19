@@ -38,7 +38,7 @@ const I18N = {
     c_mover: 'mover', c_apuntar: 'apuntar', c_disparar: 'disparar', c_dash: 'dash', c_od: 'overdrive', c_apuntar_disparar: 'apuntar y disparar',
     k_dedo_izq: 'DEDO IZQ.', k_dedo_der: 'DEDO DER.', k_2izq: '2 TOQUES IZQ.', k_2der: '2 TOQUES DER.',
     start: 'INICIAR MISIÓN', hint_dash: 'Consejo: el dash te da invulnerabilidad por un instante.',
-    b_amigos: '⚔ AMIGOS', b_misiones: '🎯 MISIONES', b_pizarra: '🏆 PIZARRA MUNDIAL', b_bando: '🔄 CAMBIAR DE BANDO', b_instalar: '📲 INSTALAR',
+    b_amigos: '⚔ AMIGOS', b_misiones: '🎯 MISIONES', b_pizarra: '🏆 PIZARRA MUNDIAL', b_bando: '🔄 CAMBIAR DE BANDO', b_bando_lunes: '🔒 CAMBIAR DE BANDO', t_bando_lunes: 'El bando solo se cambia los lunes · abre en {t}', b_instalar: '📲 INSTALAR',
     rotar: '<strong>Mejor de lado</strong> · se juega más cómodo en horizontal', aria_cerrar: 'Cerrar aviso',
     // instalar en iPhone
     ios_t: 'INSTALAR NEON VANGUARD', ios_1: 'Toca <b>Compartir</b> <span class="ico-ios">⬆︎</span> abajo en Safari.', ios_2: 'Elige <b>«Añadir a pantalla de inicio»</b>.',
@@ -135,7 +135,7 @@ const I18N = {
     c_mover: 'move', c_apuntar: 'aim', c_disparar: 'shoot', c_dash: 'dash', c_od: 'overdrive', c_apuntar_disparar: 'aim & shoot',
     k_dedo_izq: 'LEFT THUMB', k_dedo_der: 'RIGHT THUMB', k_2izq: 'DOUBLE TAP LEFT', k_2der: 'DOUBLE TAP RIGHT',
     start: 'START MISSION', hint_dash: 'Tip: dashing makes you invulnerable for an instant.',
-    b_amigos: '⚔ FRIENDS', b_misiones: '🎯 MISSIONS', b_pizarra: '🏆 WORLD LEADERBOARD', b_bando: '🔄 CHANGE FACTION', b_instalar: '📲 INSTALL',
+    b_amigos: '⚔ FRIENDS', b_misiones: '🎯 MISSIONS', b_pizarra: '🏆 WORLD LEADERBOARD', b_bando: '🔄 CHANGE FACTION', b_bando_lunes: '🔒 CHANGE FACTION', t_bando_lunes: 'Factions can only be changed on Mondays · opens in {t}', b_instalar: '📲 INSTALL',
     rotar: '<strong>Better sideways</strong> · it plays best in landscape', aria_cerrar: 'Close',
     ios_t: 'INSTALL NEON VANGUARD', ios_1: 'Tap <b>Share</b> <span class="ico-ios">⬆︎</span> at the bottom of Safari.', ios_2: 'Choose <b>“Add to Home Screen”</b>.',
     ios_3: 'Tap <b>Add</b>. It opens full screen, like an app.', entendido: 'GOT IT',

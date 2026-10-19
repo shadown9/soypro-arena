@@ -85,7 +85,10 @@ async function subirRecord(score, wave, kills, victorias) {
       try { const pend = JSON.parse(localStorage.getItem('nv_pendiente') || 'null'); if (!pend || score > pend.score) localStorage.setItem('nv_pendiente', JSON.stringify({ score, wave, kills, victorias: victorias || 0 })); } catch (e2) {}
       codigoRetirado(); } } return null; }
     const res = await r.json();
-    if (res && res.guerra && typeof pintarGuerraMini === 'function') { guerraCache = res.guerra; pintarGuerraMini(); pintarHudCampeon(); Misiones.revisarLogros(); }
+    if (res && res.guerra && typeof pintarGuerraMini === 'function') {
+      guerraCache = Object.assign(res.guerra, { mi_oro: !!res.oro, mi_bando: res.piloto && res.piloto.bando });
+      adoptarBandoServidor(guerraCache.mi_bando); pintarGuerraMini(); pintarHudCampeon(); Misiones.revisarLogros();
+    }
     // el nombre del ranking manda: si se cambió en el servidor, este dispositivo lo adopta
     try {
       const nuevo = res && res.piloto && res.piloto.nombre;

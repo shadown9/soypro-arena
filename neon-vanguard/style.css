@@ -890,3 +890,6 @@ html.nv-intro #hud .hud-sonido { pointer-events:none; }
 /* teléfono en vertical: los avisos bajan debajo del marcador (--hud-bajo lo calcula red.js) */
 #nv-toast { top:calc(env(safe-area-inset-top, 0px) + var(--hud-bajo, 44px)); }
 @media (orientation: portrait) and (max-width: 600px) { #nv-toast { white-space:normal; text-align:center; width:max-content; max-width:88vw; border-radius:16px; } }
+
+/* cambiar de bando fuera del lunes: candado, apagado (sigue tocable para explicar cuándo abre) */
+.btn-sec.bloqueado { opacity:.7; }

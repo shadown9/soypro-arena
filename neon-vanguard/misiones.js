@@ -75,7 +75,7 @@ const Misiones = (() => {
       conquistador: PLANETAS.filter(p => p !== miBando()).every(p => s.jefesDe.includes(p)),
       oleada10: s.mejorOleada >= 10, oleada20: s.mejorOleada >= 20, combo10: s.mejorCombo >= 10, domador: s.bestias >= 10,
       coleccionista: s.nucleos >= 25, mutante: !!s.mutante, cumplidor: (s.diasCompletos || 0) >= 1, constante: s.dias.length >= 7,
-      cienmil: s.mejorPuntos >= 100000, campeon: !!guerraCache && !!guerraCache.campeon && guerraCache.campeon === miBando()
+      cienmil: s.mejorPuntos >= 100000, campeon: !!guerraCache && !!guerraCache.mi_oro
     };
     for (const L of LOGROS) if (cumple[L.id] && !ya.includes(L.id)) { ya.push(L.id); nuevos.push(L); }
     if (nuevos.length) { guardar('nv_logros', ya); for (const L of nuevos) { avisar(t('t_logro', { i: L.ico, n: t('lg_' + L.id).toUpperCase() }), '#ffd23f'); Audio2.powerup(); } }
@@ -156,7 +156,8 @@ const Toast = (() => {
 /* ---------- GUERRA DE PLANETAS (del servidor) ---------- */
 let guerraCache = null;
 async function cargarGuerra() {
-  try { const r = await fetch(ARENA_LECTURA + '/guerra', { cache: 'no-store' }); if (r.ok) { guerraCache = await r.json(); pintarGuerraMini(); Misiones.revisarLogros(); pintarHudCampeon(); } } catch (e) {}
+  const yo = (leerPiloto() || {}).codigo;
+  try { const r = await fetch(ARENA_LECTURA + '/guerra' + (yo ? '?yo=' + encodeURIComponent(yo) : ''), { cache: 'no-store' }); if (r.ok) { guerraCache = await r.json(); adoptarBandoServidor(guerraCache.mi_bando); pintarGuerraMini(); Misiones.revisarLogros(); pintarHudCampeon(); } } catch (e) {}
 }
 function tiempoRestante(seg) {
   const d = Math.floor(seg / 86400), h = Math.floor(seg % 86400 / 3600), m = Math.floor(seg % 3600 / 60);
@@ -179,10 +180,26 @@ function pintarGuerraMini() {
   el.innerHTML = '<div class="gm-txt">' + t('gm_titulo') + '<br>' + lider + ' · ' + t('cierra_en', { t: tiempoRestante(g.cierra_en) }) +
     (g.campeon ? ' · 🏆 ' + Misiones.NOMBRE[g.campeon] : '') + '</div>' + (g.lider ? barraGuerraHtml(g, false) : '');
 }
+// la insignia 🏆 solo la lleva quien peleó por el planeta campeón esa semana (lo decide el servidor: mi_oro)
 function pintarHudCampeon() {
-  const yo = (leerPiloto() || {}).bando, el = document.getElementById('hud-bando');
-  if (el && guerraCache && guerraCache.campeon && guerraCache.campeon === yo) el.classList.add('campeon'); else if (el) el.classList.remove('campeon');
+  const el = document.getElementById('hud-bando');
+  if (el) el.classList.toggle('campeon', !!(guerraCache && guerraCache.mi_oro));
+  pintarBotonBando();
 }
+/* CAMBIO DE BANDO: solo los lunes (hora de Santo Domingo). El resto de la semana el botón muestra el candado. */
+const bandoBloqueado = () => !!(guerraCache && guerraCache.cambio_abierto === false && (leerPiloto() || {}).bando);
+function pintarBotonBando() {
+  document.querySelectorAll('[onclick="cambiarDeBando()"]').forEach(b => {
+    const no = bandoBloqueado(); b.classList.toggle('bloqueado', no); b.textContent = t(no ? 'b_bando_lunes' : 'b_bando');
+  });
+}
+// el bando que manda es el del servidor (si alguien lo cambió en el teléfono fuera del lunes, vuelve al suyo)
+function adoptarBandoServidor(b) {
+  const p = leerPiloto(); if (!p || !b || p.bando === b) return;
+  p.bando = b; guardarPiloto(p); if (typeof bandoElegido !== 'undefined') bandoElegido = b;
+  const el = document.getElementById('hud-bando'); if (el) el.textContent = nombrePlaneta(b);
+}
+window.addEventListener('nv-idioma', pintarBotonBando);
 function pintarBotonMisiones() {
   const b = document.querySelectorAll('.btn-misiones'); if (!b.length) return;
   const e = Misiones.estado(), n = e.hechas.filter(Boolean).length;

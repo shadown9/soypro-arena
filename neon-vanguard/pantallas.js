@@ -278,6 +278,12 @@ function guardarPiloto(obj) {
 
 /* Vuelve a la pantalla de planetas para cambiar de bando a propósito. */
 function cambiarDeBando() {
+  // solo los lunes: el resto de la semana el bando queda fijo (nadie se pasa al que va ganando)
+  if (typeof bandoBloqueado === 'function' && bandoBloqueado()) {
+    Toast.mostrar(t('t_bando_lunes', { t: tiempoRestante(guerraCache.cambio_abre_en || 0) }), '#ffd23f');
+    if (typeof cargarGuerra === 'function') cargarGuerra();
+    return;
+  }
   const p = leerPiloto();
   if (p) { delete p.bando; guardarPiloto(p); }
   bandoElegido = null;
