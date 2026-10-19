@@ -231,6 +231,8 @@ function entrarConCodigo() {
       }));
     } catch (e) {}
     avisar(t('msg_bienvenido', { n: piloto.nombre }), true);
+    codigoRetirado.hecho = false;
+    if (typeof enviarPendiente === 'function') setTimeout(enviarPendiente, 1500); // la partida que se quedó sin subir
     setTimeout(() => irABandos(), 700);
   };
 

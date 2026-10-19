@@ -28,7 +28,7 @@ const I18N = {
     msg_bienvenido: 'Bienvenido de vuelta, {n}.', msg_incorrectos: 'Nombre o código incorrectos.', msg_comprobando: 'Comprobando…', msg_sin_conexion: 'Sin conexión. Probá de nuevo.',
     // mensajes que llegan del servidor (se traducen al vuelo)
     sv_nombre_usado2: 'Ese nombre ya lo usa otro piloto. Probá con otro.', sv_no_coincide: 'El nombre no coincide con el código.', sv_espera: 'Esperá un momento',
-    sv_codigo_invalido: 'Código inválido', sv_retirado: 'Ese código ya no es válido. Entrá con tu código nuevo.', sv_no_sala: 'No hay ninguna sala con ese código.', sv_duelo_lleno: 'Ese duelo ya tiene sus dos pilotos.', sv_sala_llena: 'La sala está llena.',
+    sv_codigo_invalido: 'Código inválido', sv_retirado: 'Ese código ya no es válido. Entrá con tu código nuevo.', t_pendiente: '🏆 Tu partida de {s} puntos ya está en el ranking', sv_no_sala: 'No hay ninguna sala con ese código.', sv_duelo_lleno: 'Ese duelo ya tiene sus dos pilotos.', sv_sala_llena: 'La sala está llena.',
     // planetas
     bandos_t1: 'ELEGÍ TU', bandos_t2: 'BANDO', bandos_sub: 'Cada planeta pelea distinto. Elegí bien.',
     pl_venus: 'VENUS', pl_marte: 'MARTE', pl_jupiter: 'JÚPITER', pl_saturno: 'SATURNO', pl_neptuno: 'NEPTUNO',
@@ -123,7 +123,7 @@ const I18N = {
     msg_seleccionado: 'Selected. Copy it with Ctrl+C.', msg_escribi_nombre: 'Type your pilot name.', msg_formato_codigo: 'Codes look like ABC-1234.',
     msg_bienvenido: 'Welcome back, {n}.', msg_incorrectos: 'Wrong name or code.', msg_comprobando: 'Checking…', msg_sin_conexion: 'No connection. Try again.',
     sv_nombre_usado2: 'Another pilot already uses that name. Try another one.', sv_no_coincide: "The name doesn't match the code.", sv_espera: 'Wait a moment',
-    sv_codigo_invalido: 'Invalid code', sv_retirado: 'That code is no longer valid. Sign in with your new code.', sv_no_sala: "There's no room with that code.", sv_duelo_lleno: 'That duel already has its two pilots.', sv_sala_llena: 'The room is full.',
+    sv_codigo_invalido: 'Invalid code', sv_retirado: 'That code is no longer valid. Sign in with your new code.', t_pendiente: '🏆 Your {s}-point match is now on the leaderboard', sv_no_sala: "There's no room with that code.", sv_duelo_lleno: 'That duel already has its two pilots.', sv_sala_llena: 'The room is full.',
     bandos_t1: 'CHOOSE YOUR', bandos_t2: 'FACTION', bandos_sub: 'Each planet fights differently. Choose wisely.',
     pl_venus: 'VENUS', pl_marte: 'MARS', pl_jupiter: 'JUPITER', pl_saturno: 'SATURN', pl_neptuno: 'NEPTUNE',
     bonus_venus: '+25% damage', bonus_marte: '+30% fire rate', bonus_jupiter: '+40% shield', bonus_saturno: '+20% speed', bonus_neptuno: '+35% overdrive',

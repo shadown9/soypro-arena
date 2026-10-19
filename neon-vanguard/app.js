@@ -1106,11 +1106,12 @@ function drawPlayer() {
   const flash = p.hitFlash > 0;
 
   // ---- SUPERMUTACIONES: un anillo de energía del color de cada planeta girando alrededor ----
-  if (p.mut) { let k = 0;
-    for (const pl of PLANETAS_MEJORA) { if (!p.mut[pl]) continue; const R = 34 + k * 5, c = MEJORAS[pl].color, g = G.time * (k % 2 ? -1.6 : 2.2);
-      ctx.save(); ctx.strokeStyle = c; ctx.shadowBlur = 14; ctx.shadowColor = c; ctx.lineWidth = 2; ctx.globalAlpha *= 0.85;
-      for (let q = 0; q < 3; q++) { ctx.beginPath(); ctx.arc(0, 0, R, g + q * TAU / 3, g + q * TAU / 3 + 1.1); ctx.stroke(); }
-      ctx.restore(); k++; } }
+  if (p.mut) { // un solo anillo fino: un tramo del color de cada planeta mutado (antes eran 5 anillos que tapaban la nave)
+    const lista = PLANETAS_MEJORA.filter(pl => p.mut[pl]), n = lista.length, g = G.time * 1.8, hueco = n > 1 ? 0.18 : 0;
+    ctx.save(); ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.globalAlpha *= 0.9;
+    lista.forEach((pl, k) => { const c = MEJORAS[pl].color, a0 = g + k * TAU / n + hueco / 2, a1 = g + (k + 1) * TAU / n - hueco / 2;
+      ctx.strokeStyle = c; ctx.shadowBlur = 10; ctx.shadowColor = c; ctx.beginPath(); ctx.arc(0, 0, 33, a0, a1); ctx.stroke(); });
+    ctx.restore(); }
 
   // ---- TU NAVE ES LA DE TU PLANETA (diseño del Jefe), con aura propia para distinguirte siempre ----
   const MIA = NAVE_IMG[p.bando];
@@ -1303,10 +1304,10 @@ function hornearBrillo(im, color, blur) {
 }
 // dibuja la imagen con su brillo horneado en el mismo sitio y tamaño que la imagen limpia
 function dibujarConBrillo(N, flash, x, y, L, h, brillo) {
-  const B = brillo || N.brillo;
-  if (flash || !B) { ctx.drawImage(flash ? N.blanco : N.im, x, y, L, h); return; }
-  const sx = L / N.im.width, sy = h / N.im.height, sb = ctx.shadowBlur; ctx.shadowBlur = 0;
-  ctx.drawImage(B, x - B.pad * sx, y - B.pad * sy, B.width * sx, B.height * sy);
+  const B = brillo || N.brillo, sb = ctx.shadowBlur; ctx.shadowBlur = 0;
+  if (B) { const sx = L / N.im.width, sy = h / N.im.height; ctx.drawImage(B, x - B.pad * sx, y - B.pad * sy, B.width * sx, B.height * sy); }
+  else ctx.drawImage(N.im, x, y, L, h);
+  if (flash) { const ga = ctx.globalAlpha; ctx.globalAlpha = ga * 0.55; ctx.drawImage(N.blanco, x, y, L, h); ctx.globalAlpha = ga; } // destello: se ve el golpe sin perder la nave
   ctx.shadowBlur = sb;
 }
 // tu nave brilla en cian (y magenta en overdrive), como siempre

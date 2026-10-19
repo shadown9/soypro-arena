@@ -79,7 +79,10 @@ async function subirRecord(score, wave, kills, victorias) {
         logros: (typeof Misiones !== 'undefined') ? Misiones.logros() : []
       })
     });
-    if (!r.ok) { if (r.status === 403) { const e = await r.json().catch(() => ({})); if (e.error === CODIGO_RETIRADO_SV) codigoRetirado(); } return null; }
+    if (!r.ok) { if (r.status === 403) { const e = await r.json().catch(() => ({})); if (e.error === CODIGO_RETIRADO_SV) {
+      // el código cambió: la partida queda guardada y se envía sola al entrar con el código nuevo
+      try { const pend = JSON.parse(localStorage.getItem('nv_pendiente') || 'null'); if (!pend || score > pend.score) localStorage.setItem('nv_pendiente', JSON.stringify({ score, wave, kills, victorias: victorias || 0 })); } catch (e2) {}
+      codigoRetirado(); } } return null; }
     const res = await r.json();
     if (res && res.guerra && typeof pintarGuerraMini === 'function') { guerraCache = res.guerra; pintarGuerraMini(); pintarHudCampeon(); Misiones.revisarLogros(); }
     // el nombre del ranking manda: si se cambió en el servidor, este dispositivo lo adopta
@@ -470,4 +473,12 @@ async function buscarEnPizarra() {
     out.innerHTML = '<span class="pz-msg">' + t('pz_esta', { n: escaparHtml(d.piloto.nombre), p: d.puesto, t: d.total }) + '</span>' +
       '<div class="pz-tabla">' + filaPizarra(Object.assign({ puesto: d.puesto }, d.piloto), false) + '</div>';
   } catch (e) { out.innerHTML = '<span class="pz-msg">' + t('msg_sin_conexion') + '</span>'; }
+}
+
+/* partida que no pudo subir (porque el código había cambiado): se envía al entrar con el código nuevo */
+async function enviarPendiente() {
+  let pend = null; try { pend = JSON.parse(localStorage.getItem('nv_pendiente') || 'null'); } catch (e) {}
+  if (!pend || !pend.score) return;
+  const res = await subirRecord(pend.score, pend.wave, pend.kills, pend.victorias);
+  if (res && res.ok) { try { localStorage.removeItem('nv_pendiente'); } catch (e) {} if (typeof Toast !== 'undefined') Toast.mostrar(t('t_pendiente', { s: fmt(pend.score) }), '#00ffa8'); }
 }
