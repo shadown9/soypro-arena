@@ -453,7 +453,7 @@ const ENEMY_TYPES = {
   neptuno: { hp: 44,  r: 14, speed: 132, color: '#2f6bff', score: 210, dmg: 12, fireRate: 1.7,  contact: true,  bando: 'neptuno' },
   // BESTIAS DEL ESPACIO: no son de ningún planeta
   medusa:    { hp: 75,  r: 22, speed: 55,  color: '#c48cff', score: 320, dmg: 14, fireRate: 3.0, contact: true, bando: 'bestia' },
-  larva:     { hp: 14,  r: 9,  speed: 235, color: '#b6ff4d', score: 70,  dmg: 8,  fireRate: 0,   contact: true, bando: 'bestia' },
+  larva:     { hp: 14,  r: 9,  speed: 235, color: '#7ad7ff', score: 70,  dmg: 8,  fireRate: 0,   contact: true, bando: 'bestia' },
   serpiente: { hp: 130, r: 15, speed: 175, color: '#ff4fd8', score: 560, dmg: 18, fireRate: 0,   contact: true, bando: 'bestia' },
   ojo:       { hp: 150, r: 24, speed: 45,  color: '#6dffa8', score: 500, dmg: 30, fireRate: 4.2, contact: true, bando: 'bestia' },
   // BESTIAS QUE APRENDEN (llegan según tu forma de jugar)
@@ -1348,7 +1348,8 @@ const JEFE_IMG = {};
 //   tonos = variaciones de color (grados de tono) para que no salgan todas iguales; reina = el tono de la gigante del modo en línea
 const BESTIA_IMG = {}, BESTIA_ARTE = { medusa: { eje: -0.43, ancho: 4.7, cx: 0.69, cy: 0.36, tonos: [0, 35, -45], reina: 150 },
   ojo: { eje: 0, ancho: 7.6, cx: 0.494, cy: 0.432, tonos: [0, 40, -50], reina: 120 },
-  espino: { eje: 0, ancho: 3.3, cx: 0.514, cy: 0.463, tonos: [0, 35, -45] } };
+  espino: { eje: 0, ancho: 3.3, cx: 0.514, cy: 0.463, tonos: [0, 35, -45] },
+  larva: { eje: Math.PI, ancho: 4.6, cx: 0.38, cy: 0.53, tonos: [0, 35, -45] } };
 // misma figura con otro tono (rotación de tono como el filtro hue-rotate, hecha a mano para que funcione en todos los teléfonos)
 function girarTono(im, grados) {
   const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
@@ -2295,6 +2296,13 @@ function dibujarBestia(e, col, flash) {
     // aviso de descarga
     if (e.carga > 0) { ctx.strokeStyle = 'rgba(200,255,240,' + (0.4 + Math.random() * 0.5) + ')'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(0, 0, 210 * (1 - e.carga / 0.7), 0, TAU); ctx.stroke(); }
+  } else if (e.type === 'larva' && BESTIA_IMG.larva) {
+    // diseño del Jefe (larva alada del enjambre): va de frente hacia donde vuela y aletea
+    const S = BESTIA_IMG.larva;
+    if (e._tono == null) e._tono = Math.floor(Math.random() * S.variantes.length);
+    ctx.translate(e.x, e.y); ctx.rotate(Math.atan2(e.vy, e.vx) - S.eje);
+    const L = e.r * S.ancho, h = S.im.height * L / S.im.width * (1 + Math.sin((e.wobble || 0) * 3 + G.time * 26) * 0.07);
+    dibujarConBrillo({ im: S.variantes[e._tono], blanco: S.blanco }, flash, -L * S.cx, -h * S.cy, L, h);
   } else if (e.type === 'larva') {
     ctx.translate(e.x, e.y); ctx.rotate(Math.atan2(e.vy, e.vx));
     ctx.shadowBlur = 12; ctx.shadowColor = col; ctx.fillStyle = flash ? '#fff' : col;
