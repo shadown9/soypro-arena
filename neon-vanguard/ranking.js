@@ -79,7 +79,7 @@ async function subirRecord(score, wave, kills, victorias) {
         logros: (typeof Misiones !== 'undefined') ? Misiones.logros() : []
       })
     });
-    if (!r.ok) return null;
+    if (!r.ok) { if (r.status === 403) { const e = await r.json().catch(() => ({})); if (e.error === CODIGO_RETIRADO_SV) codigoRetirado(); } return null; }
     const res = await r.json();
     if (res && res.guerra && typeof pintarGuerraMini === 'function') { guerraCache = res.guerra; pintarGuerraMini(); pintarHudCampeon(); Misiones.revisarLogros(); }
     // el nombre del ranking manda: si se cambió en el servidor, este dispositivo lo adopta

@@ -408,3 +408,19 @@ window.addEventListener('nv-idioma', () => {
   const c = document.getElementById('planetas');
   if (c && c.dataset.listo) { const sel = bandoElegido; c.dataset.listo = ''; c.innerHTML = ''; dibujarPlanetas(); if (sel) document.querySelectorAll('.planeta').forEach(el => { if (el.dataset.id === sel) el.classList.add('sel'); }); }
 });
+
+/* El dueño cambió su código de piloto: el viejo ya no vale. Este teléfono lo olvida y abre «YA TENGO CÓDIGO»
+   con el nombre ya puesto, para entrar con el código nuevo (no se pierde nada: el piloto está en el servidor). */
+const CODIGO_RETIRADO_SV = 'Ese código ya no es válido. Entrá con tu código nuevo.';
+function codigoRetirado() {
+  if (codigoRetirado.hecho) return; codigoRetirado.hecho = true;
+  const p = leerPiloto() || {};
+  try { localStorage.removeItem('nv_piloto'); localStorage.removeItem('nv_recordado'); } catch (e) {}
+  if (typeof G !== 'undefined' && G.running) G.running = false;
+  ['overlay', 'gameover', 'screen-bandos', 'screen-pizarra', 'screen-misiones', 'screen-amigos'].forEach(id => { const e = document.getElementById(id); if (e) e.classList.add('hidden'); });
+  document.getElementById('screen-registro').classList.remove('hidden');
+  elegirCamino('codigo');
+  const n = document.getElementById('reg-nombre-entrar'); if (n && p.nombre) n.value = p.nombre;
+  const c = document.getElementById('reg-codigo-input'); if (c) c.value = '';
+  avisar(t('sv_retirado'), false);
+}

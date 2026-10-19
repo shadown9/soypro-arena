@@ -87,7 +87,7 @@ const RED = (function () {
     else if (m.t === 'marcador') { marc = m; if (typeof privadaMarcador === 'function') privadaMarcador(m, miId); }
     else if (m.t === 'fin') { if (typeof privadaFin === 'function') privadaFin(m, miId); }
     else if (m.t === 'revancha') { if (typeof privadaRevancha === 'function') privadaRevancha(m); }
-    else if (m.t === 'err') { cerrandoAdrede = true; try { ws.close(); } catch (e) {} } // nombre/código no coinciden: se juega sin conexión
+    else if (m.t === 'err') { cerrandoAdrede = true; try { ws.close(); } catch (e) {} if (m.msg === CODIGO_RETIRADO_SV) codigoRetirado(); } // nombre/código no coinciden: se juega sin conexión
   }
 
   // las balas de otro jugador salen de su nave con su arma
