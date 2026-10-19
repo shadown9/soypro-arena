@@ -459,7 +459,7 @@ const ENEMY_TYPES = {
   // BESTIAS QUE APRENDEN (llegan según tu forma de jugar)
   coraza:    { hp: 170, r: 22, speed: 62,  color: '#4dd2ff', score: 520, dmg: 18, fireRate: 3.0, contact: true, bando: 'bestia' }, // contra el que se queda quieto
   acechador: { hp: 60,  r: 15, speed: 240, color: '#d9c2ff', score: 460, dmg: 16, fireRate: 3.2, contact: true, bando: 'bestia' }, // contra el que huye
-  espino:    { hp: 95,  r: 20, speed: 78,  color: '#ff9640', score: 440, dmg: 14, fireRate: 2.4, contact: true, bando: 'bestia' }  // contra el que pelea pegado
+  espino:    { hp: 95,  r: 20, speed: 78,  color: '#ff6bd6', score: 440, dmg: 14, fireRate: 2.4, contact: true, bando: 'bestia' }  // contra el que pelea pegado
 };
 
 // Lista de bandos enemigos (todos menos el tuyo se pueden cruzar)
@@ -1342,7 +1342,8 @@ const JEFE_IMG = {};
 //   eje = hacia dónde mira la imagen (de la cola a la cabeza), ancho = ancho dibujado en radios, cx/cy = centro del cuerpo en la imagen
 //   tonos = variaciones de color (grados de tono) para que no salgan todas iguales; reina = el tono de la gigante del modo en línea
 const BESTIA_IMG = {}, BESTIA_ARTE = { medusa: { eje: -0.43, ancho: 4.7, cx: 0.69, cy: 0.36, tonos: [0, 35, -45], reina: 150 },
-  ojo: { eje: 0, ancho: 7.6, cx: 0.494, cy: 0.432, tonos: [0, 40, -50], reina: 120 } };
+  ojo: { eje: 0, ancho: 7.6, cx: 0.494, cy: 0.432, tonos: [0, 40, -50], reina: 120 },
+  espino: { eje: 0, ancho: 3.3, cx: 0.514, cy: 0.463, tonos: [0, 35, -45] } };
 // misma figura con otro tono (rotación de tono como el filtro hue-rotate, hecha a mano para que funcione en todos los teléfonos)
 function girarTono(im, grados) {
   const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
@@ -2256,8 +2257,8 @@ function iaBestia(e, i, dt, d, nx, ny) {
     const quiere = d > 150 ? 1 : 0.15;
     e.vx = lerp(e.vx, nx * e.speed * quiere, dt * 2); e.vy = lerp(e.vy, ny * e.speed * quiere, dt * 2);
     if (e.carga > 0) { e.carga -= dt; e.vx *= 0.85; e.vy *= 0.85;
-      if (e.carga <= 0) { e.fireCd = e.fireRate; spawnRing(e.x, e.y, '#ff9640', 120, 500, 4);
-        for (let k = 0; k < 16; k++) { const a = k / 16 * TAU + e.phase; eBullets.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r, vx: Math.cos(a) * 340, vy: Math.sin(a) * 340, r: 4, dmg: 10, life: 0.9, color: '#ffb36b' }); } } }
+      if (e.carga <= 0) { e.fireCd = e.fireRate; spawnRing(e.x, e.y, '#ff6bd6', 120, 500, 4);
+        for (let k = 0; k < 16; k++) { const a = k / 16 * TAU + e.phase; eBullets.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r, vx: Math.cos(a) * 340, vy: Math.sin(a) * 340, r: 4, dmg: 10, life: 0.9, color: '#ff9be6' }); } } }
     else if (e.fireCd <= 0 && d < 190) e.carga = 0.5;
   }
   return false;
@@ -2365,6 +2366,13 @@ function dibujarBestia(e, col, flash) {
     ctx.fillStyle = flash ? '#fff' : col;
     ctx.beginPath(); ctx.moveTo(e.r * 1.3, 0); ctx.lineTo(-e.r * 0.2, -e.r * 0.75); ctx.lineTo(-e.r * 0.6, 0); ctx.lineTo(-e.r * 0.2, e.r * 0.75); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#ff2bd6'; ctx.shadowColor = '#ff2bd6'; for (const k of [-1, 1]) { ctx.beginPath(); ctx.arc(e.r * 0.45, k * e.r * 0.22, 2.6, 0, TAU); ctx.fill(); }
+  } else if (e.type === 'espino' && BESTIA_IMG.espino) {
+    // diseño del Jefe: gira despacio; antes de explotar se hincha, vibra y se enciende
+    const S = BESTIA_IMG.espino, c = e.carga > 0 ? 1 - e.carga / 0.5 : 0;
+    if (e._tono == null) e._tono = Math.floor(Math.random() * S.variantes.length);
+    ctx.translate(e.x + (c ? (Math.random() - 0.5) * 4 * c : 0), e.y + (c ? (Math.random() - 0.5) * 4 * c : 0)); ctx.rotate((e.phase || G.time) * 0.8);
+    const L = e.r * S.ancho * (1 + c * 0.3), h = S.im.height * L / S.im.width;
+    dibujarConBrillo({ im: S.variantes[e._tono], blanco: S.blanco }, flash || (c > 0 && Math.sin(G.time * 40) > 0.3), -L * S.cx, -h * S.cy, L, h);
   } else if (e.type === 'espino') {
     // núcleo con púas que crecen cuando va a explotar
     ctx.translate(e.x, e.y); ctx.rotate(e.phase * 0.8);
