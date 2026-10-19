@@ -157,8 +157,9 @@ const Audio2 = {
     coraza:    { f: [92, 100, 62],  dur: 1.1,  formantes: [[380, 4, 1.4], [900, 5, 0.9]], gruñido: 0.9, gruñidoHz: 22, aliento: 0.12, alientoHz: 1200, vol: 0.65 },
     acechador: { f: [700, 1600, 520], dur: 0.55, formantes: [[1500, 5, 1.3], [2900, 6, 0.8]], gruñido: 0.7, gruñidoHz: 45, vib: 25, vibHz: 9, aliento: 0.12, alientoHz: 3200, vol: 0.55 }
   },
+  GRITOS_ON: false, // apagados: los sintetizados sonaban a caricatura; vuelven con gritos grabados (CC0)
   gritar(tipo, D, k, muerte) {
-    const v = this.VOCES[tipo]; if (!v || !this.libre('grito', 420)) return; // nunca varios gritos encima: sería ruido
+    const v = this.VOCES[tipo]; if (!this.GRITOS_ON || !v || !this.libre('grito', 420)) return; // nunca varios gritos encima: sería ruido
     const f = muerte ? [v.f[0] * 1.15, v.f[0] * 1.3, v.f[v.f.length - 1] * 0.5] : v.f; // al morir: grito que se apaga hacia abajo
     this.grito(D, Object.assign({}, v, { f: f.map(x => x * k), dur: v.dur * (k < 1 ? 1.6 : 1) * (muerte ? 1.15 : 1),
       formantes: v.formantes.map(([a, q, g]) => [a * (k < 1 ? 0.75 : 1), q, g]), vol: v.vol * (k < 1 ? 1.25 : 1) }));
