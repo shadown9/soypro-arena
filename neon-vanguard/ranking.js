@@ -104,6 +104,16 @@ async function abrirPizarra() {
 
   const data = await leerPizarra(20);
 
+  // ranking conectado pero todavía vacío: invitar a ser el primero
+  if (data && data.ok && data.top && !data.top.length) {
+    cont.innerHTML =
+      '<div class="pz-vacio">' +
+        '<strong>Todavía no hay récords</strong>' +
+        '<span>¡Jugá una partida y sé el primer piloto de la pizarra mundial!</span>' +
+      '</div>';
+    estado.textContent = '0 pilotos en la arena';
+    return;
+  }
   if (!data || !data.top || !data.top.length) {
     cont.innerHTML =
       '<div class="pz-vacio">' +
