@@ -11,6 +11,7 @@ const RED = (function () {
   const RADIO = { venus: 18, marte: 15, jupiter: 22, saturno: 17, neptuno: 17 };
   const DIBUJO = { venus: 'dibujarAvispa', marte: 'dibujarFilo', jupiter: 'dibujarColoso', saturno: 'dibujarAnillada', neptuno: 'dibujarEspectral' };
   let ws = null, conectado = false, miId = 0, envAcc = 0, cerrandoAdrede = false;
+  let totalLinea = 0; // personas reales conectadas ahora (Neon Vanguard en todas las salas + ProArena), lo manda el servidor
   let bestia = null, golpeAcum = 0, golpeT = 0; // BESTIA ERRANTE compartida (la mueve el servidor)
   const COLOR_BESTIA = { medusa: '#7affd6', ojo: '#ff3355', serpiente: '#ff4fd8' };
   let sala = null, pedido = null, marc = null; // SALA PRIVADA: {codigo, modo, meta}; pedido = {crear} o {sala}
@@ -53,6 +54,7 @@ const RED = (function () {
     else if (m.t === 'sale') { remotos.delete(m.id); }
     else if (m.t === 's') {
       const ahora = performance.now();
+      if (m.n) totalLinea = m.n;
       if (m.b && bestia) { bestia.buf.push({ t: ahora, x: m.b[0], y: m.b[1], hp: m.b[2], a: m.b[3] }); if (bestia.buf.length > 12) bestia.buf.shift(); }
       for (const [id, x, y, a, hp, od, v] of m.j) {
         if (id === miId) continue;
@@ -226,7 +228,11 @@ const RED = (function () {
       }
       let vivos = 1; for (const r of remotos.values()) if (r.visto) vivos++;
       ctx.save(); ctx.font = '800 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(0,240,255,.85)';
-      if (sala) ctx.fillText(textoMarcador(), W / 2, 18); else ctx.fillText(t('rd_linea', { n: vivos }), W / 2, 18);
+      if (sala) ctx.fillText(textoMarcador(), W / 2, 18);
+      else { // en línea (personas reales) · en combate (todas las naves de tu batalla)
+        let naves = 1 + enemies.length + (bestia ? 1 : 0); for (const r of remotos.values()) if (r.v && r.visto) naves++;
+        ctx.fillText(t('rd_linea', { n: Math.max(totalLinea, vivos) }) + '   ·   ' + t('rd_combate', { n: naves }), W / 2, 18);
+      }
       ctx.restore();
       if (sala && !remotos.size) { // sola en la sala: esperando rival
         ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.shadowBlur = 14; ctx.shadowColor = '#00f0ff';

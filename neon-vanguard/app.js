@@ -1124,7 +1124,7 @@ function drawPlayer() {
     ctx.beginPath(); ctx.arc(0, 0, 25, G.time * 2 + Math.PI, G.time * 2 + Math.PI + 1.6); ctx.stroke();
     const L = 15 * (NAVE_LARGO[p.bando] || 3), h = MIA.im.height * L / MIA.im.width * (NAVE_ANCHO[p.bando] || 1);
     ctx.shadowBlur = 20; ctx.shadowColor = mainColor;
-    ctx.drawImage(flash ? MIA.blanco : MIA.im, -L * 0.6, -h / 2, L, h);
+    dibujarConBrillo(MIA, flash, -L * 0.6, -h / 2, L, h, brilloJugador(MIA, od));
     ctx.restore();
   } else {
   // ---- ESTELAS DE MOTOR (doble, pulsantes) ----
@@ -1294,6 +1294,27 @@ function estelaNave(x, y, len, color, pulse) {
 
 /* NAVES DE LOS PLANETAS: dibujos detallados (naves/<planeta>.png, mirando hacia +X) del diseño que eligió el Jefe.
    Mientras cargan, o si fallan, se usa el dibujo vectorial de abajo. */
+// el resplandor de cada nave se hornea una vez en su imagen (antes se calculaba en cada dibujo y frenaba el teléfono)
+const COLOR_NAVE = { venus: '#ffd23f', marte: '#ff2e4d', jupiter: '#ff8a1e', saturno: '#b98cff', neptuno: '#2f6bff' };
+function hornearBrillo(im, color, blur) {
+  const pad = Math.ceil(blur * 1.4), c = document.createElement('canvas'); c.width = im.width + pad * 2; c.height = im.height + pad * 2;
+  const g = c.getContext('2d'); g.shadowBlur = blur; g.shadowColor = color; g.drawImage(im, pad, pad); g.shadowBlur = 0; g.drawImage(im, pad, pad);
+  c.pad = pad; return c;
+}
+// dibuja la imagen con su brillo horneado en el mismo sitio y tamaño que la imagen limpia
+function dibujarConBrillo(N, flash, x, y, L, h, brillo) {
+  const B = brillo || N.brillo;
+  if (flash || !B) { ctx.drawImage(flash ? N.blanco : N.im, x, y, L, h); return; }
+  const sx = L / N.im.width, sy = h / N.im.height, sb = ctx.shadowBlur; ctx.shadowBlur = 0;
+  ctx.drawImage(B, x - B.pad * sx, y - B.pad * sy, B.width * sx, B.height * sy);
+  ctx.shadowBlur = sb;
+}
+// tu nave brilla en cian (y magenta en overdrive), como siempre
+function brilloJugador(N, od) {
+  const k = od ? 'brilloOd' : 'brilloCian';
+  if (!N[k]) N[k] = hornearBrillo(N.im, od ? '#ff2bd6' : '#00f0ff', 150);
+  return N[k];
+}
 const NAVE_IMG = {}, NAVE_LARGO = { venus: 2.9, marte: 3.3, jupiter: 3.0, saturno: 3.2, neptuno: 3.0 };
 const NAVE_ANCHO = { marte: 2.0 }; // la de Marte era muy fina (parecía un cohete): más ancha
 ['venus', 'marte', 'jupiter', 'saturno', 'neptuno'].forEach(k => {
@@ -1301,7 +1322,7 @@ const NAVE_ANCHO = { marte: 2.0 }; // la de Marte era muy fina (parecía un cohe
   im.onload = () => {
     const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
     const g = c.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
-    NAVE_IMG[k] = { im, blanco: c }; // la silueta blanca es el destello al recibir un disparo
+    NAVE_IMG[k] = { im, blanco: c, brillo: hornearBrillo(im, COLOR_NAVE[k], 120) }; // la silueta blanca es el destello al recibir un disparo
   };
   im.src = 'naves/' + k + '.png?v=1';
 });
@@ -1312,14 +1333,14 @@ const JEFE_IMG = {};
   im.onload = () => {
     const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
     const g = c.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
-    JEFE_IMG[k] = { im, blanco: c };
+    JEFE_IMG[k] = { im, blanco: c, brillo: hornearBrillo(im, COLOR_NAVE[k], 80) };
   };
   im.src = 'naves/jefe-' + k + '.png?v=1';
 });
 function naveSprite(k, e, flash) {
   const N = NAVE_IMG[k]; if (!N) return false;
   const L = e.r * NAVE_LARGO[k], h = N.im.height * L / N.im.width * (NAVE_ANCHO[k] || 1);
-  ctx.drawImage(flash ? N.blanco : N.im, -L * 0.6, -h / 2, L, h); // las llamas van detrás: el casco queda centrado
+  dibujarConBrillo(N, flash, -L * 0.6, -h / 2, L, h); // las llamas van detrás: el casco queda centrado
   return true;
 }
 
@@ -1545,21 +1566,28 @@ function drawEnemies() {
   }
 }
 
+/* BRILLO NEÓN HORNEADO: cada punto luminoso (color + tamaño + brillo) se dibuja una sola vez con su resplandor
+   y luego se reutiliza como imagen. Se ve igual que antes, pero el teléfono no recalcula el brillo 60 veces por segundo. */
+const PUNTOS = new Map();
+function puntoBrillo(color, r, blur) {
+  const rr = Math.max(1, Math.round(r * 2) / 2), k = color + '|' + rr + '|' + blur;
+  let c = PUNTOS.get(k);
+  if (!c) {
+    const S = 3, pad = blur * 1.6, lado = Math.ceil((rr + pad) * 2 * S);
+    c = document.createElement('canvas'); c.width = c.height = lado;
+    const g = c.getContext('2d'); g.scale(S, S); g.shadowBlur = blur * S; g.shadowColor = color; g.fillStyle = color;
+    g.beginPath(); g.arc(lado / S / 2, lado / S / 2, rr, 0, TAU); g.fill(); g.fill(); // dos pasadas: el halo queda igual de intenso que el original
+    c.mitad = lado / S / 2;
+    if (PUNTOS.size > 400) PUNTOS.clear();
+    PUNTOS.set(k, c);
+  }
+  return c;
+}
+function dibujarPunto(x, y, r, color, blur) { const c = puntoBrillo(color, r, blur); ctx.drawImage(c, x - c.mitad, y - c.mitad, c.mitad * 2, c.mitad * 2); }
+
 function drawBullets() {
-  for (const b of bullets) {
-    ctx.save();
-    ctx.shadowBlur = 14; ctx.shadowColor = b.color;
-    ctx.fillStyle = b.color;
-    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill();
-    ctx.restore();
-  }
-  for (const b of eBullets) {
-    ctx.save();
-    ctx.shadowBlur = 12; ctx.shadowColor = b.color;
-    ctx.fillStyle = b.color;
-    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill();
-    ctx.restore();
-  }
+  for (const b of bullets) dibujarPunto(b.x, b.y, b.r, b.color, 14);
+  for (const b of eBullets) dibujarPunto(b.x, b.y, b.r, b.color, 12);
 }
 
 function drawOrbes() {
@@ -1618,10 +1646,11 @@ function drawPowerups() {
 }
 
 function drawEffects() {
+  ctx.shadowBlur = 0;
   for (const pt of particles) {
     const a = clamp(pt.life / pt.maxLife, 0, 1);
     ctx.globalAlpha = a;
-    if (pt.glow) { ctx.shadowBlur = 10; ctx.shadowColor = pt.color; }
+    if (pt.glow) { dibujarPunto(pt.x, pt.y, pt.size * a, pt.color, 10); continue; } // brillo horneado: igual de luminoso, sin frenar el teléfono
     ctx.fillStyle = pt.color;
     ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size * a, 0, TAU); ctx.fill();
   }
@@ -2390,7 +2419,7 @@ function dibujarJefe(e, col, flash) {
     ctx.shadowBlur = 30; ctx.shadowColor = col;
     const brillo = { saturno: 1.9, neptuno: 1.35, marte: 1.15 }[e.jefe]; // las más oscuras resaltan sobre el espacio
     if (brillo && !flash) ctx.filter = 'brightness(' + brillo + ')';
-    ctx.drawImage(flash ? J.blanco : J.im, -L * 0.55, -h / 2, L, h);
+    dibujarConBrillo(J, flash, -L * 0.55, -h / 2, L, h);
     ctx.filter = 'none';
   } else if (e.jefe === 'jupiter') { ctx.rotate(e.rot || 0);
     ctx.shadowBlur = 24; ctx.shadowColor = col; ctx.fillStyle = col; dibujarColoso(falso, col, flash);
