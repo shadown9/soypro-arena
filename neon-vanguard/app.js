@@ -7,6 +7,11 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 let W = 0, H = 0, DPR = 1;
+/* MUNDO ABIERTO: el espacio no tiene bordes; la cámara sigue a la nave.
+   Todo lo del juego vive en coordenadas de mundo; el fondo, el HUD y los joysticks, en pantalla. */
+const CAM = { x: 0, y: 0 };
+const vistaX0 = () => CAM.x - W / 2, vistaY0 = () => CAM.y - H / 2;
+function fueraDeVista(x, y, m) { return x < CAM.x - W / 2 - m || x > CAM.x + W / 2 + m || y < CAM.y - H / 2 - m || y > CAM.y + H / 2 + m; }
 
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -132,8 +137,16 @@ function touchMove(e) {
   const r = canvas.getBoundingClientRect();
   for (const t of e.changedTouches) {
     const x = t.clientX - r.left, y = t.clientY - r.top;
-    if (t.identifier === touch.moveId) { touch.moveX = x; touch.moveY = y; }
-    else if (t.identifier === touch.aimId) { touch.aimX = x; touch.aimY = y; }
+    if (t.identifier === touch.moveId) {
+      touch.moveX = x; touch.moveY = y;
+      // joystick flotante: si el dedo se pasa del borde, el centro lo sigue (cambiar de dirección es inmediato)
+      const dx = x - touch.moveOx, dy = y - touch.moveOy, m = Math.hypot(dx, dy), lim = JOY_MAX * 1.4;
+      if (m > lim) { touch.moveOx = x - dx / m * lim; touch.moveOy = y - dy / m * lim; }
+    } else if (t.identifier === touch.aimId) {
+      touch.aimX = x; touch.aimY = y;
+      const dx = x - touch.aimOx, dy = y - touch.aimOy, m = Math.hypot(dx, dy), lim = 70;
+      if (m > lim) { touch.aimOx = x - dx / m * lim; touch.aimOy = y - dy / m * lim; }
+    }
   }
   e.preventDefault();
 }
@@ -299,13 +312,26 @@ function updatePlayer(dt) {
   }
 
   p.x += p.vx * dt; p.y += p.vy * dt;
-  p.x = clamp(p.x, p.r, W - p.r);
-  p.y = clamp(p.y, p.r, H - p.r);
+  // sin paredes: el espacio es abierto; la cámara sigue a la nave, adelantada hacia donde apunta
+  const adel = Math.min(W, H) * 0.12;
+  const cx = p.x + Math.cos(p.angle) * adel, cy = p.y + Math.sin(p.angle) * adel;
+  CAM.x += (cx - CAM.x) * Math.min(1, dt * 6); CAM.y += (cy - CAM.y) * Math.min(1, dt * 6);
 
   // apuntado: joystick derecho si está activo, si no el mouse
+  // En táctil: si el dedo derecho está quieto se mantiene la última dirección (antes saltaba a un punto fijo);
+  // sin dedo derecho, la nave mira hacia donde se mueve. El giro táctil es rápido pero suavizado.
   const ja = joyAim();
-  if (ja !== null) p.angle = ja;
-  else p.angle = Math.atan2(mouse.y - p.y, mouse.x - p.x);
+  let objetivo;
+  if (ja !== null) { objetivo = ja; p.ultimoApunte = ja; }
+  else if (touch.activo) {
+    if (touch.aimId !== null && p.ultimoApunte !== undefined) objetivo = p.ultimoApunte;
+    else if (Math.hypot(ax, ay) > 0.2) objetivo = Math.atan2(ay, ax);
+    else objetivo = p.angle;
+  } else objetivo = Math.atan2(mouse.y + vistaY0() - p.y, mouse.x + vistaX0() - p.x);
+  if (touch.activo) {
+    const d = Math.atan2(Math.sin(objetivo - p.angle), Math.cos(objetivo - p.angle));
+    p.angle += d * Math.min(1, dt * 24);
+  } else p.angle = objetivo;
 
   // trail
   p.trail.push({ x: p.x, y: p.y, life: 1 });
@@ -433,10 +459,13 @@ function spawnFromEdge(type) {
   else if (roll < 0.99) side = 3;   // izquierda
   else side = 2;                    // abajo (raro)
   let x, y, pad = 70;
-  if (side === 0) { x = rand(W * 0.1, W * 0.9); y = -pad; }
-  else if (side === 1) { x = W + pad; y = rand(H * 0.1, H * 0.75); }
-  else if (side === 2) { x = rand(W * 0.1, W * 0.9); y = H + pad; }
-  else { x = -pad; y = rand(H * 0.1, H * 0.75); }
+  // desde fuera de lo que se ve (cualquier lado: el espacio es abierto)
+  side = Math.floor(Math.random() * 4);
+  const x0 = vistaX0(), y0 = vistaY0();
+  if (side === 0) { x = x0 + rand(W * 0.1, W * 0.9); y = y0 - pad; }
+  else if (side === 1) { x = x0 + W + pad; y = y0 + rand(H * 0.1, H * 0.9); }
+  else if (side === 2) { x = x0 + rand(W * 0.1, W * 0.9); y = y0 + H + pad; }
+  else { x = x0 - pad; y = y0 + rand(H * 0.1, H * 0.9); }
   spawnEnemy(type, x, y);
 }
 
@@ -444,6 +473,11 @@ function updateEnemies(dt) {
   const p = player;
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
+    // en el espacio abierto nadie se pierde: si un enemigo queda muy lejos, vuelve por fuera de la vista
+    if (e.type !== 'boss' && Math.hypot(e.x - p.x, e.y - p.y) > Math.hypot(W, H) * 1.1) {
+      const a = Math.random() * TAU, d = Math.hypot(W, H) / 2 + 80;
+      e.x = p.x + Math.cos(a) * d; e.y = p.y + Math.sin(a) * d;
+    }
     e.hitFlash -= dt;
     e.spawnAnim -= dt;
     e.phase += dt;
@@ -528,7 +562,7 @@ function enemyShoot(e, count) {
 function spawnBoss() {
   const hp = 900 + (G.wave - 1) * 420;
   const boss = {
-    type: 'boss', x: W / 2, y: -120, vx: 0, vy: 0, r: 52,
+    type: 'boss', x: CAM.x, y: vistaY0() - 120, vx: 0, vy: 0, r: 52,
     hp, maxHp: hp, speed: 70, color: '#ff2bd6', score: 3000, dmg: 26,
     fireCd: 1.5, fireRate: 1.1, angle: 0, hitFlash: 0, phase: 0,
     spawnAnim: 1.2, entering: true, pattern: 0, patternTimer: 0, wobble: 0
@@ -538,7 +572,7 @@ function spawnBoss() {
   Audio2.boss();
   shake(20);
   G.flash = 0.5; G.flashColor = '255,43,214';
-  addFloater(W / 2, H / 2, 'JEFE', '#ff2bd6', 40);
+  addFloater(CAM.x, CAM.y, 'JEFE', '#ff2bd6', 40);
   return boss;
 }
 
@@ -550,13 +584,15 @@ function updateBoss(e, dt) {
   e.angle = Math.atan2(dy, dx);
 
   if (e.entering) {
-    e.y += 90 * dt;
-    if (e.y >= 140) { e.y = 140; e.entering = false; }
+    // entra desde arriba de la vista hasta su sitio sobre el jugador
+    const meta = p.y - H / 2 + 140;
+    e.y += (90 + Math.max(0, meta - e.y) * 0.8) * dt; e.x += (p.x - e.x) * Math.min(1, dt * 2);
+    if (e.y >= meta) { e.y = meta; e.entering = false; }
     return;
   }
 
-  const targetX = W / 2 + Math.sin(e.phase * 0.6) * (W * 0.28);
-  const targetY = 140 + Math.sin(e.phase * 0.9) * 40;
+  const targetX = p.x + Math.sin(e.phase * 0.6) * (W * 0.28);
+  const targetY = p.y - H / 2 + 140 + Math.sin(e.phase * 0.9) * 40;
   e.vx = lerp(e.vx, (targetX - e.x) * 1.6, dt * 2);
   e.vy = lerp(e.vy, (targetY - e.y) * 1.6, dt * 2);
   e.x += e.vx * dt; e.y += e.vy * dt;
@@ -722,7 +758,7 @@ function startWave(n) {
     };
     spawnNext();
   }
-  addFloater(W / 2, H * 0.35, 'OLEADA ' + n, '#00f0ff', 34);
+  addFloater(CAM.x, CAM.y - H * 0.15, 'OLEADA ' + n, '#00f0ff', 34);
   Audio2.tone(440, 0.15, 'sine', 0.2, 660);
 }
 
@@ -745,7 +781,7 @@ function updateBullets(dt) {
     const b = bullets[i];
     b.x += b.vx * dt; b.y += b.vy * dt;
     b.life -= dt;
-    if (b.life <= 0 || b.x < -40 || b.x > W + 40 || b.y < -40 || b.y > H + 40) {
+    if (b.life <= 0 || fueraDeVista(b.x, b.y, 40)) {
       bullets.splice(i, 1); continue;
     }
     // colisión con enemigos
@@ -772,7 +808,7 @@ function updateBullets(dt) {
     const b = eBullets[i];
     b.x += b.vx * dt; b.y += b.vy * dt;
     b.life -= dt;
-    if (b.life <= 0 || b.x < -50 || b.x > W + 50 || b.y < -50 || b.y > H + 50) {
+    if (b.life <= 0 || fueraDeVista(b.x, b.y, 220)) {
       eBullets.splice(i, 1); continue;
     }
     if (p.alive && p.invuln <= 0 && dist2(b, p) < (b.r + p.r) * (b.r + p.r)) {
@@ -815,22 +851,22 @@ function drawBackground(dt) {
   ctx.fillRect(0, 0, W, H);
 
   // estrellas parallax
+  // cada estrella se desplaza según su profundidad: al moverte se nota el espacio
   for (const s of G.stars) {
-    s.y += s.z * 30 * dt;
-    if (s.y > H) { s.y = -4; s.x = rand(0, W); }
+    const sx = ((s.x - CAM.x * s.z * 0.6) % W + W) % W, sy = ((s.y - CAM.y * s.z * 0.6) % H + H) % H;
     ctx.globalAlpha = 0.25 + s.z * 0.6;
     ctx.fillStyle = 'rgba(' + s.hue + ',1)';
-    ctx.fillRect(s.x, s.y, s.size, s.size);
+    ctx.fillRect(sx, sy, s.size, s.size);
   }
   ctx.globalAlpha = 1;
 
   // grid neón
-  G.gridOffset = (G.gridOffset + dt * 22) % 60;
+  const gx = ((-CAM.x) % 60 + 60) % 60, gy = ((-CAM.y) % 60 + 60) % 60;
   ctx.strokeStyle = 'rgba(0,240,255,0.055)';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  for (let x = 0; x < W; x += 60) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
-  for (let y = -60 + G.gridOffset; y < H; y += 60) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+  for (let x = gx; x < W; x += 60) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+  for (let y = gy; y < H; y += 60) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
   ctx.stroke();
 }
 
@@ -1290,7 +1326,7 @@ function drawEnemies() {
       ctx.restore();
 
       const bw = 300, bh = 10;
-      const bx = W / 2 - bw / 2, by = 70;
+      const bx = vistaX0() + W / 2 - bw / 2, by = vistaY0() + 70; // fija en pantalla
       ctx.fillStyle = 'rgba(255,255,255,0.1)';
       ctx.fillRect(bx, by, bw, bh);
       ctx.fillStyle = '#ff2bd6';
@@ -1487,12 +1523,16 @@ function loop(now) {
   ctx.save();
   ctx.translate(G.shakeX, G.shakeY);
   drawBackground(dt);
+  ctx.save();
+  ctx.translate(Math.round(W / 2 - CAM.x), Math.round(H / 2 - CAM.y));
   drawPowerups();
   drawBullets();
   drawEnemies();
   drawPlayer();
   drawEffects();
   ctx.restore();
+  ctx.restore();
+  drawFlechasEnemigos();
 
   // flash de pantalla
   if (G.flash > 0) {
@@ -1551,6 +1591,7 @@ function resetGame() {
 function startGame() {
   Audio2.init();
   resetGame();
+  CAM.x = player.x; CAM.y = player.y;
   G.running = true; G.over = false;
   el.overlay.classList.add('hidden');
   el.gameover.classList.add('hidden');
@@ -1647,3 +1688,21 @@ resize();
 initStars();
 player = createPlayer();
 requestAnimationFrame(loop);
+
+/* ---------- flechas en el borde: enemigos fuera de la vista ---------- */
+function drawFlechasEnemigos() {
+  const m = 26;
+  for (const e of enemies) {
+    if (!fueraDeVista(e.x, e.y, 0)) continue;
+    const dx = e.x - CAM.x, dy = e.y - CAM.y;
+    const k = Math.min((W / 2 - m) / Math.abs(dx || 1e-6), (H / 2 - m) / Math.abs(dy || 1e-6));
+    const x = W / 2 + dx * k, y = H / 2 + dy * k, a = Math.atan2(dy, dx);
+    const lejos = Math.min(1, Math.hypot(dx, dy) / (Math.max(W, H) * 1.5));
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+    ctx.globalAlpha = 0.85 - lejos * 0.5;
+    ctx.fillStyle = e.type === 'boss' ? '#ff2bd6' : '#ff5a6e';
+    ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
+    ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-6, -7); ctx.lineTo(-3, 0); ctx.lineTo(-6, 7); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+}
