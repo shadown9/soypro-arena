@@ -472,7 +472,12 @@ const ENEMY_TYPES = {
   // SATURNO — ANILLADA: ágil, esquiva en círculos, el anillo la protege.
   saturno: { hp: 62,  r: 15, speed: 148, color: '#f0dca0', score: 240, dmg: 11, fireRate: 1.5,  contact: true,  bando: 'saturno' },
   // NEPTUNO — ESPECTRAL: overdrive, ráfagas cortas y fuertes.
-  neptuno: { hp: 44,  r: 14, speed: 132, color: '#5a96ff', score: 210, dmg: 12, fireRate: 1.7,  contact: true,  bando: 'neptuno' }
+  neptuno: { hp: 44,  r: 14, speed: 132, color: '#5a96ff', score: 210, dmg: 12, fireRate: 1.7,  contact: true,  bando: 'neptuno' },
+  // BESTIAS DEL ESPACIO: no son de ningún planeta
+  medusa:    { hp: 75,  r: 22, speed: 55,  color: '#7affd6', score: 320, dmg: 14, fireRate: 3.0, contact: true, bando: 'bestia' },
+  larva:     { hp: 14,  r: 9,  speed: 235, color: '#b6ff4d', score: 70,  dmg: 8,  fireRate: 0,   contact: true, bando: 'bestia' },
+  serpiente: { hp: 130, r: 15, speed: 175, color: '#ff4fd8', score: 560, dmg: 18, fireRate: 0,   contact: true, bando: 'bestia' },
+  ojo:       { hp: 150, r: 24, speed: 45,  color: '#ff3355', score: 500, dmg: 30, fireRate: 4.2, contact: true, bando: 'bestia' }
 };
 
 // Lista de bandos enemigos (todos menos el tuyo se pueden cruzar)
@@ -545,6 +550,9 @@ function updateEnemies(dt) {
     const nx = dx / d, ny = dy / d;
     e.angle = Math.atan2(dy, dx);
 
+    if (ENEMY_TYPES[e.type] && ENEMY_TYPES[e.type].bando === 'bestia') {
+      if (iaBestia(e, i, dt, d, nx, ny)) continue; // true = murió en la embestida
+    } else
     // ---- IA POR NAVES DE PLANETA ----
     if (e.type === 'venus') {
       // AVISPA: avanza recto y sin dudar, aguanta todo. Pica de frente.
@@ -586,7 +594,7 @@ function updateEnemies(dt) {
       // empuje
       e.vx -= nx * 260; e.vy -= ny * 260;
       // Las naves ligeras (Marte y Venus) se destruyen al embestir
-      if (e.type === 'marte' || e.type === 'venus') { killEnemy(i, false); continue; }
+      if (e.type === 'marte' || e.type === 'venus' || e.type === 'larva') { killEnemy(i, false); continue; }
     }
   }
 }
@@ -719,7 +727,7 @@ function killEnemy(index, byPlayer = true) {
     if (isBoss) { dropPowerup(e.x - 40, e.y); dropPowerup(e.x + 40, e.y); dropNucleo(e.x, e.y + 40, PLANETAS_MEJORA[randInt(0, 4)]); }
     else {
       G.sinMejora = (G.sinMejora || 0) + 1;
-      if (Math.random() < 0.30 || G.sinMejora >= 6) { dropNucleo(e.x, e.y, ENEMY_TYPES[e.type] ? e.type : PLANETAS_MEJORA[randInt(0, 4)]); G.sinMejora = 0; }
+      if (Math.random() < 0.30 || G.sinMejora >= 6) { dropNucleo(e.x, e.y, PLANETAS_MEJORA.includes(e.type) ? e.type : PLANETAS_MEJORA[randInt(0, 4)]); G.sinMejora = 0; }
       else if (Math.random() < 0.12) dropPowerup(e.x, e.y); // a veces vida, overdrive o un arma especial
     }
   }
@@ -838,8 +846,8 @@ function startWave(n) {
       // te atacan naves de Venus, Júpiter, Saturno o Neptuno.
       const miBando = (typeof bandoElegido !== 'undefined' && bandoElegido) ? bandoElegido : null;
       const pool = miBando ? BANDOS_ENEMIGOS.filter(b => b !== miBando) : BANDOS_ENEMIGOS;
-      const type = pool[Math.floor(Math.random() * pool.length)];
-      spawnFromEdge(type);
+      if (n >= 2 && Math.random() < 0.22) spawnBestia(n);
+      else spawnFromEdge(pool[Math.floor(Math.random() * pool.length)]);
       spawned++;
       setTimeout(spawnNext, Math.max(260, 700 - n * 22));
     };
@@ -879,6 +887,11 @@ function updateBullets(dt) {
       if (b.explota && b.life <= 0) explotarPlasma(b);
       bullets.splice(i, 1); continue;
     }
+    // el cuerpo de la serpiente cósmica bloquea las balas (hay que darle en la cabeza)
+    let bloqueada = false;
+    for (const e of enemies) if (e.cuerpo) for (let k = 2; k < e.cuerpo.length; k++) { const c = e.cuerpo[k];
+      if ((b.x - c.x) ** 2 + (b.y - c.y) ** 2 < (b.r + c.r) ** 2) { spawnParticles(b.x, b.y, 3, { color: '#ff9cec', speed: 120, life: 0.2, size: 2 }); bloqueada = true; break; } }
+    if (bloqueada && !b.explota) { bullets.splice(i, 1); continue; }
     // colisión con enemigos
     for (let j = enemies.length - 1; j >= 0; j--) {
       const e = enemies[j];
@@ -1448,6 +1461,8 @@ function drawEnemies() {
       continue;
     }
 
+    if (ENEMY_TYPES[e.type] && ENEMY_TYPES[e.type].bando === 'bestia') { dibujarBestia(e, col, flash); continue; }
+
     ctx.save();
     ctx.translate(e.x, e.y);
     ctx.rotate(e.angle);
@@ -1951,4 +1966,122 @@ function dibujarModulos(p, capa) {
     }
   }
   ctx.restore();
+}
+
+/* ============================================================
+   BESTIAS DEL ESPACIO (no pertenecen a ningún planeta)
+   ============================================================ */
+function spawnBestia(n) {
+  const r = Math.random();
+  if (r < 0.32) { // enjambre de larvas desde un mismo punto
+    const a = Math.random() * TAU, d = Math.hypot(W, H) / 2 + 60, cx = player.x + Math.cos(a) * d, cy = player.y + Math.sin(a) * d;
+    const cuantas = 5 + Math.floor(Math.random() * 4);
+    for (let k = 0; k < cuantas; k++) spawnEnemy('larva', cx + rand(-40, 40), cy + rand(-40, 40));
+  } else spawnFromEdge(r < 0.58 ? 'medusa' : r < 0.8 ? 'serpiente' : 'ojo');
+}
+
+// devuelve true si la bestia murió (embestida)
+function iaBestia(e, i, dt, d, nx, ny) {
+  const p = player;
+  if (e.type === 'medusa') {
+    // flota despacio meciéndose; si estás cerca carga una descarga eléctrica en anillo
+    const meceo = Math.sin(e.phase * 1.4) * 0.6;
+    e.vx = lerp(e.vx, (nx + -ny * meceo) * e.speed, dt * 1.5);
+    e.vy = lerp(e.vy, (ny + nx * meceo) * e.speed, dt * 1.5);
+    if (e.carga > 0) { e.carga -= dt; e.vx *= 0.9; e.vy *= 0.9;
+      if (e.carga <= 0) { spawnRing(e.x, e.y, '#7affd6', 210, 520, 6); spawnParticles(e.x, e.y, 24, { color: '#c8fff0', speed: 300, life: 0.4, size: 2.5 });
+        if (p.alive && d < 210 + p.r) damagePlayer(e.dmg); e.fireCd = e.fireRate; } }
+    else if (e.fireCd <= 0 && d < 240) e.carga = 0.7; // aviso: se ilumina antes de descargar
+  } else if (e.type === 'larva') {
+    // enjambre: corren hacia ti con temblor, rodeándote
+    const giro = Math.sin(e.wobble * 2.3 + e.orbitR) * 1.1;
+    e.vx = lerp(e.vx, (nx * Math.cos(giro) - ny * Math.sin(giro)) * e.speed, dt * 5);
+    e.vy = lerp(e.vy, (nx * Math.sin(giro) + ny * Math.cos(giro)) * e.speed, dt * 5);
+  } else if (e.type === 'serpiente') {
+    // serpentea hacia ti; el cuerpo sigue a la cabeza
+    const ond = Math.sin(e.phase * 3) * 0.9;
+    e.vx = lerp(e.vx, (nx * Math.cos(ond) - ny * Math.sin(ond)) * e.speed, dt * 3);
+    e.vy = lerp(e.vy, (nx * Math.sin(ond) + ny * Math.cos(ond)) * e.speed, dt * 3);
+    e.angle = Math.atan2(e.vy, e.vx);
+    if (!e.cuerpo) { e.cuerpo = []; for (let k = 0; k < 16; k++) e.cuerpo.push({ x: e.x, y: e.y, r: Math.max(6, 14 - k * 0.5) }); }
+    let prev = { x: e.x, y: e.y };
+    for (const c of e.cuerpo) { const dx = c.x - prev.x, dy = c.y - prev.y, dd = Math.hypot(dx, dy) || 1;
+      if (dd > 13) { c.x = prev.x + dx / dd * 13; c.y = prev.y + dy / dd * 13; } prev = c;
+      if (p.alive && p.invuln <= 0 && (c.x - p.x) ** 2 + (c.y - p.y) ** 2 < (c.r + p.r) ** 2) damagePlayer(10); }
+  } else if (e.type === 'ojo') {
+    // se mantiene a distancia, te mira, carga un rayo y lo dispara en línea recta
+    const quiere = d > 430 ? 1 : d < 330 ? -1 : 0;
+    e.vx = lerp(e.vx, nx * quiere * e.speed, dt * 2); e.vy = lerp(e.vy, ny * quiere * e.speed, dt * 2);
+    if (e.laser > 0) { e.laser -= dt;
+      if (e.laser <= 0.35 && !e.disparado) { e.disparado = true; shake(10); Audio2.tone(140, 0.4, 'sawtooth', 0.25, 60); }
+      if (e.disparado && p.alive && p.invuln <= 0) { // ¿estás dentro del rayo?
+        const ux = Math.cos(e.laserAng), uy = Math.sin(e.laserAng), px = p.x - e.x, py = p.y - e.y, t = px * ux + py * uy;
+        if (t > 0 && t < 1500 && Math.abs(px * uy - py * ux) < 18 + p.r) damagePlayer(e.dmg); }
+      if (e.laser <= 0) { e.fireCd = e.fireRate; e.disparado = false; }
+    } else if (e.fireCd <= 0 && d < 800) { e.laser = 1.45; e.laserAng = Math.atan2(p.y - e.y, p.x - e.x); } // 1,1 s de aviso + 0,35 s de rayo
+  }
+  return false;
+}
+
+function dibujarBestia(e, col, flash) {
+  ctx.save();
+  if (e.type === 'medusa') {
+    const pul = 1 + Math.sin(e.phase * 4) * 0.08, R = e.r * pul;
+    ctx.translate(e.x, e.y);
+    // tentáculos ondulantes
+    ctx.strokeStyle = flash ? '#fff' : 'rgba(122,255,214,.55)'; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = col;
+    for (let k = 0; k < 7; k++) { const x0 = (k - 3) * R * 0.28; ctx.beginPath(); ctx.moveTo(x0, R * 0.2);
+      for (let s = 1; s <= 6; s++) ctx.lineTo(x0 + Math.sin(e.phase * 3 + k + s * 0.9) * 5, R * 0.2 + s * R * 0.32); ctx.stroke(); }
+    // campana translúcida
+    const g = ctx.createRadialGradient(0, -R * 0.3, 2, 0, 0, R);
+    g.addColorStop(0, flash ? '#fff' : 'rgba(220,255,245,.9)'); g.addColorStop(0.6, 'rgba(122,255,214,.45)'); g.addColorStop(1, 'rgba(122,255,214,.08)');
+    ctx.fillStyle = g; ctx.shadowBlur = 24; ctx.beginPath(); ctx.ellipse(0, 0, R, R * 0.8, 0, Math.PI, 0); ctx.quadraticCurveTo(0, R * 0.45, -R, 0); ctx.fill();
+    // aviso de descarga
+    if (e.carga > 0) { ctx.strokeStyle = 'rgba(200,255,240,' + (0.4 + Math.random() * 0.5) + ')'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, 210 * (1 - e.carga / 0.7), 0, TAU); ctx.stroke(); }
+  } else if (e.type === 'larva') {
+    ctx.translate(e.x, e.y); ctx.rotate(Math.atan2(e.vy, e.vx));
+    ctx.shadowBlur = 12; ctx.shadowColor = col; ctx.fillStyle = flash ? '#fff' : col;
+    for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(-k * 6, Math.sin(e.wobble * 3 + k) * 1.5, e.r * (1 - k * 0.22), 0, TAU); ctx.fill(); }
+    ctx.strokeStyle = col; ctx.lineWidth = 1.2; // patitas
+    for (const s of [-1, 1]) for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.moveTo(-k * 5, 0); ctx.lineTo(-k * 5 - 3, s * (8 + Math.sin(e.wobble * 8 + k) * 2)); ctx.stroke(); }
+    ctx.fillStyle = '#1b2a00'; ctx.beginPath(); ctx.arc(4, -2.5, 1.6, 0, TAU); ctx.arc(4, 2.5, 1.6, 0, TAU); ctx.fill();
+  } else if (e.type === 'serpiente') {
+    if (e.cuerpo) for (let k = e.cuerpo.length - 1; k >= 0; k--) { const c = e.cuerpo[k], t = k / e.cuerpo.length;
+      ctx.shadowBlur = 12; ctx.shadowColor = col; ctx.fillStyle = flash ? '#fff' : 'hsl(' + (310 - t * 50) + ',90%,' + (60 - t * 20) + '%)';
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.arc(c.x, c.y, c.r * 0.45, 0, TAU); ctx.fill(); }
+    ctx.translate(e.x, e.y); ctx.rotate(e.angle);
+    ctx.shadowBlur = 20; ctx.shadowColor = col; ctx.fillStyle = flash ? '#fff' : col;
+    ctx.beginPath(); ctx.ellipse(0, 0, e.r * 1.25, e.r, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#ffd1f6'; ctx.lineWidth = 2.5; // mandíbulas
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(e.r * 0.9, s * e.r * 0.4); ctx.quadraticCurveTo(e.r * 1.8, s * e.r * (0.9 + Math.sin(e.phase * 10) * 0.3), e.r * 2, s * e.r * 0.15); ctx.stroke(); }
+    ctx.fillStyle = '#fff'; ctx.shadowBlur = 0; ctx.beginPath(); ctx.arc(e.r * 0.4, -e.r * 0.45, 3.5, 0, TAU); ctx.arc(e.r * 0.4, e.r * 0.45, 3.5, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#20001a'; ctx.beginPath(); ctx.arc(e.r * 0.5, -e.r * 0.45, 1.8, 0, TAU); ctx.arc(e.r * 0.5, e.r * 0.45, 1.8, 0, TAU); ctx.fill();
+  } else if (e.type === 'ojo') {
+    // rayo: aviso fino y luego disparo grueso
+    if (e.laser > 0) { const L = 1500, ux = Math.cos(e.laserAng), uy = Math.sin(e.laserAng);
+      ctx.save(); ctx.lineCap = 'round';
+      if (!e.disparado) { ctx.strokeStyle = 'rgba(255,51,85,' + (0.25 + Math.random() * 0.35) + ')'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); }
+      else { ctx.strokeStyle = '#ff5c7a'; ctx.lineWidth = 30; ctx.shadowBlur = 40; ctx.shadowColor = '#ff3355'; }
+      ctx.beginPath(); ctx.moveTo(e.x + ux * e.r, e.y + uy * e.r); ctx.lineTo(e.x + ux * L, e.y + uy * L); ctx.stroke();
+      if (e.disparado) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(e.x + ux * e.r, e.y + uy * e.r); ctx.lineTo(e.x + ux * L, e.y + uy * L); ctx.stroke(); }
+      ctx.restore(); }
+    ctx.translate(e.x, e.y);
+    ctx.shadowBlur = 26; ctx.shadowColor = col;
+    const g = ctx.createRadialGradient(-e.r * 0.3, -e.r * 0.3, 3, 0, 0, e.r);
+    g.addColorStop(0, flash ? '#fff' : '#fff6f0'); g.addColorStop(0.75, '#f3c9c9'); g.addColorStop(1, '#a3203a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, e.r, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(190,20,50,.55)'; ctx.lineWidth = 1; ctx.shadowBlur = 0; // venas
+    for (let k = 0; k < 7; k++) { const a = k / 7 * TAU + 0.3; ctx.beginPath(); ctx.moveTo(Math.cos(a) * e.r, Math.sin(a) * e.r);
+      ctx.quadraticCurveTo(Math.cos(a + 0.3) * e.r * 0.7, Math.sin(a + 0.3) * e.r * 0.7, Math.cos(a) * e.r * 0.5, Math.sin(a) * e.r * 0.5); ctx.stroke(); }
+    const mira = e.laser > 0 ? e.laserAng : e.angle, ix = Math.cos(mira) * e.r * 0.38, iy = Math.sin(mira) * e.r * 0.38;
+    ctx.fillStyle = e.laser > 0 ? '#ff1f45' : col; ctx.shadowBlur = 14; ctx.shadowColor = col;
+    ctx.beginPath(); ctx.arc(ix, iy, e.r * 0.45, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#0a0004'; ctx.shadowBlur = 0; ctx.beginPath(); ctx.arc(ix * 1.1, iy * 1.1, e.r * (e.laser > 0 ? 0.12 : 0.22), 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(ix - 4, iy - 4, 2.5, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+  if (e.hp < e.maxHp && e.type !== 'larva') { const bw = e.r * 2.2; ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x - bw / 2, e.y - e.r - 12, bw, 4);
+    ctx.fillStyle = e.color; ctx.fillRect(e.x - bw / 2, e.y - e.r - 12, bw * (e.hp / e.maxHp), 4); }
 }
