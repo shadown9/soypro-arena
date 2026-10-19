@@ -232,9 +232,9 @@ function entrarConCodigo() {
   // primero en este dispositivo; si no, en el ranking mundial (así el código sirve en cualquier teléfono o PC)
   const local = buscarPorCodigo(codigo);
   if (local) return entrar(local);
-  if (typeof ARENA_API === 'undefined') return fallo('Ese código no existe.');
+  if (typeof ARENA_API === 'undefined' && typeof ARENA_LECTURA === 'undefined') return fallo('Ese código no existe.');
   avisar('Buscando tu piloto…', true);
-  fetch(ARENA_API + (ARENA_API.endsWith('/api/arena') ? '/piloto/' : '/piloto/') + encodeURIComponent(codigo))
+  fetch((typeof ARENA_LECTURA !== 'undefined' ? ARENA_LECTURA : ARENA_API) + '/piloto/' + encodeURIComponent(codigo))
     .then(r => r.ok ? r.json() : null)
     .then(d => {
       if (d && d.existe && d.piloto) entrar({ nombre: d.piloto.nombre, codigo: d.piloto.codigo, bando: d.piloto.bando });

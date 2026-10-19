@@ -649,3 +649,9 @@ button:active { transform:scale(.98); }
 /* ===== MODO DEMOSTRACIÓN (portada): solo la partida, sin menús ni marcadores ===== */
 .nv-demo .overlay, .nv-demo #hud, .nv-demo #rotar, .nv-demo #fps { display:none !important; }
 .nv-demo, .nv-demo body { cursor:default; }
+
+/* pizarra: la lista larga se desliza dentro de .pizarra-lista, sin barra visible; cabecera fija */
+.pizarra-lista { scrollbar-width:none; }
+.pizarra-lista::-webkit-scrollbar { display:none; }
+.pizarra-lista .pz-head { position:sticky; top:0; z-index:1; background:rgba(8,10,24,.96); }
+.pz-mio { margin-top:6px; }

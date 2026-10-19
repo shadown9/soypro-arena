@@ -22,6 +22,10 @@ const ARENA_API = (function () {
   return 'https://juego.soyproarena.com/api/nv';
 })();
 
+/* La pizarra y la búsqueda de pilotos SIEMPRE leen el ranking mundial real
+   (en local solo se GUARDAN las partidas en pruebas, para no ensuciar el real). */
+const ARENA_LECTURA = (location.port === '7788') ? ARENA_API : 'https://juego.soyproarena.com/api/nv';
+
 /* URL pública que se comparte en la tarjeta (para que otros entren) */
 const ARENA_URL_PUBLICA = (function () {
   try {
@@ -92,7 +96,7 @@ async function subirRecord(score, wave, kills, victorias) {
 /* ---------- Leer pizarra mundial ---------- */
 async function leerPizarra(limite) {
   try {
-    const r = await fetch(ARENA_API + '/leaderboard?limite=' + (limite || 20));
+    const r = await fetch(ARENA_LECTURA + '/leaderboard?limite=' + (limite || 100));
     if (!r.ok) return null;
     return await r.json();
   } catch (e) {
@@ -110,7 +114,7 @@ async function abrirPizarra() {
   cont.innerHTML = '<div class="pz-cargando">Consultando el ranking mundial…</div>';
   estado.textContent = '';
 
-  const data = await leerPizarra(20);
+  const data = await leerPizarra(100);
 
   // ranking conectado pero todavía vacío: invitar a ser el primero
   if (data && data.ok && data.top && !data.top.length) {
@@ -156,6 +160,23 @@ async function abrirPizarra() {
             '</div>';
   });
   html += '</div>';
+
+  // si no estoy en la lista, mi fila va al final con mi puesto
+  if (miCodigo && !data.top.some(p => p.codigo === miCodigo)) {
+    try {
+      const r = await fetch(ARENA_LECTURA + '/piloto/' + encodeURIComponent(miCodigo));
+      const yo = r.ok ? await r.json() : null;
+      if (yo && yo.existe && yo.piloto) {
+        html += '<div class="pz-tabla pz-mio"><div class="pz-fila pz-yo">' +
+                  '<span class="pz-pos">' + yo.puesto + '</span>' +
+                  '<span class="pz-nom">' + escaparHtml(yo.piloto.nombre) + '</span>' +
+                  '<span class="pz-ban ban-' + (yo.piloto.bando || 'x') + '">' + (yo.piloto.bando || '—').toUpperCase() + '</span>' +
+                  '<span class="pz-vic">' + Number(yo.piloto.victorias || 0) + '</span>' +
+                  '<span class="pz-pts">' + Number(yo.piloto.score).toLocaleString('es') + '</span>' +
+                '</div></div>';
+      }
+    } catch (e) {}
+  }
 
   // GUERRA DE PLANETAS: ordenada por victorias y luego por puntos.
   // El primero es el planeta que va ganando.
