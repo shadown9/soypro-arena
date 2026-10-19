@@ -21,12 +21,17 @@ function amMsg(t) { const m = document.getElementById('am-msg'); if (m) m.textCo
 
 function crearSala(modo) {
   const p = leerPiloto(); if (!p || !p.codigo) { amMsg('Primero crea tu piloto.'); return; }
-  Audio2.init(); amMsg('Creando la sala…'); RED.privada({ crear: modo });
+  Audio2.init(); amMsg('Creando la sala…'); RED.privada({ crear: modo }); vigilarConexion();
 }
 function unirseSala() {
   const c = (document.getElementById('am-codigo').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (c.length !== 4) { amMsg('El código tiene 4 letras o números.'); return; }
-  Audio2.init(); amMsg('Entrando a la sala ' + c + '…'); RED.privada({ sala: c });
+  Audio2.init(); amMsg('Entrando a la sala ' + c + '…'); RED.privada({ sala: c }); vigilarConexion();
+}
+// si en 8 s no hay respuesta del servidor, se avisa (sin quedarse colgado)
+function vigilarConexion() {
+  clearTimeout(vigilarConexion.t);
+  vigilarConexion.t = setTimeout(() => { if (!RED.sala && !document.getElementById('screen-amigos').classList.contains('hidden')) amMsg('No se pudo conectar con la sala. Revisa tu internet y prueba otra vez.'); }, 8000);
 }
 function errorSala(msg) { amMsg(msg); abrirAmigos(); }
 
