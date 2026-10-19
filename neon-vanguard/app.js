@@ -226,6 +226,7 @@ function spawnRing(x, y, color, maxR = 80, speed = 400, width = 3) {
 }
 
 function addFloater(x, y, text, color = '#ffb020', size = 16) {
+  if (NV_DEMO) return; // en la portada (demo) sin textos encima
   floaters.push({ x, y, text, color, size, life: 1, vy: -60 });
 }
 
