@@ -48,10 +48,7 @@ const DB_KEY = 'nv_usuarios';
 
 /* Pilotos sembrados: existen SIEMPRE, en cualquier navegador.
    Sirve para probar sin depender del localStorage de una máquina. */
-const USUARIOS_SEMILLA = {
-  'DEIVY':      { codigo: 'TGT-6456', fecha: 0 },
-  'PRIMERAVEZ': { codigo: 'TPG-5256', fecha: 0 }
-};
+const USUARIOS_SEMILLA = {}; // sin pilotos fijos: los códigos reales nunca van dentro del juego publicado
 
 function leerUsuarios() {
   let db = {};
@@ -133,7 +130,7 @@ function registrarPiloto() {
 
   // El nombre ya existe: devolvemos SU código, no generamos otro.
   // OJO: versiones viejas guardaban el código como string plano
-  // ("DEIVY": "TGT-6456"). Aceptamos los dos formatos y migramos.
+  // ("NOMBRE": "ABC-1234"). Aceptamos los dos formatos y migramos.
   if (db[nombre]) {
     const prev = db[nombre];
     const codigoPrevio = (typeof prev === 'string') ? prev : (prev && prev.codigo);
@@ -216,23 +213,36 @@ function entrarConCodigo() {
     return;
   }
 
-  const piloto = buscarPorCodigo(codigo);
-  if (!piloto) {
+  const fallo = (msg) => {
     input.style.borderColor = '#ff4d6d';
     input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
-    avisar('Ese código no existe en este dispositivo.', false);
+    avisar(msg, false);
     setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 1400);
-    return;
-  }
+  };
+  const entrar = (piloto) => {
+    try {
+      localStorage.setItem('nv_piloto', JSON.stringify({
+        nombre: piloto.nombre, codigo: piloto.codigo, bando: piloto.bando || undefined, fecha: piloto.fecha || Date.now()
+      }));
+    } catch (e) {}
+    avisar('Bienvenido de vuelta, ' + piloto.nombre + '.', true);
+    setTimeout(() => irABandos(), 700);
+  };
 
-  try {
-    localStorage.setItem('nv_piloto', JSON.stringify({
-      nombre: piloto.nombre, codigo: piloto.codigo, fecha: piloto.fecha || Date.now()
-    }));
-  } catch (e) {}
+  // primero en este dispositivo; si no, en el ranking mundial (así el código sirve en cualquier teléfono o PC)
+  const local = buscarPorCodigo(codigo);
+  if (local) return entrar(local);
+  if (typeof ARENA_API === 'undefined') return fallo('Ese código no existe.');
+  avisar('Buscando tu piloto…', true);
+  fetch(ARENA_API + (ARENA_API.endsWith('/api/arena') ? '/piloto/' : '/piloto/') + encodeURIComponent(codigo))
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if (d && d.existe && d.piloto) entrar({ nombre: d.piloto.nombre, codigo: d.piloto.codigo, bando: d.piloto.bando });
+      else fallo('Ese código no existe.');
+    })
+    .catch(() => fallo('Sin conexión. Probá de nuevo.'));
+  return;
 
-  avisar('Bienvenido de vuelta, ' + piloto.nombre + '.', true);
-  setTimeout(() => irABandos(), 700);
 }
 
 function irABandos() {
@@ -326,6 +336,10 @@ function mostrarControles() {
 
 /* ---------- Arranque ---------- */
 window.addEventListener('DOMContentLoaded', () => {
+  if (new URLSearchParams(location.search).has('demo')) { // portada: sin pantallas de registro ni menús
+    bandoElegido = BANDOS[Math.floor(Math.random() * BANDOS.length)].id;
+    return;
+  }
   mostrarControles();
 
   // Si ya hay un piloto guardado, lo mandamos directo al juego.

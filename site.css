@@ -139,3 +139,4 @@ footer{border-top:1px solid var(--line);background:#050706}
 @media (max-width:760px){.nv{grid-template-columns:1fr;padding:24px}.nv-art{min-height:130px;order:-1}}
 
 .nv-art{padding:0;border-radius:16px;overflow:hidden;border:1px solid rgba(0,240,255,.18)}.nv-art canvas.nv-batalla{position:absolute;inset:0;width:100%;height:100%;display:block}
+.nv-art iframe.nv-demo{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;pointer-events:none;background:#05060d}

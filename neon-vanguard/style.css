@@ -645,3 +645,7 @@ button:active { transform:scale(.98); }
 }
 .pz-tabla, #pizarra-lista { scrollbar-width:none; }
 .pz-tabla::-webkit-scrollbar, #pizarra-lista::-webkit-scrollbar { display:none; }
+
+/* ===== MODO DEMOSTRACIÓN (portada): solo la partida, sin menús ni marcadores ===== */
+.nv-demo .overlay, .nv-demo #hud, .nv-demo #rotar, .nv-demo #fps { display:none !important; }
+.nv-demo, .nv-demo body { cursor:default; }

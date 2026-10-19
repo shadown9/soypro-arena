@@ -75,7 +75,15 @@ async function subirRecord(score, wave, kills, victorias) {
       })
     });
     if (!r.ok) return null;
-    return await r.json();
+    const res = await r.json();
+    // el nombre del ranking manda: si se cambió en el servidor, este dispositivo lo adopta
+    try {
+      const nuevo = res && res.piloto && res.piloto.nombre;
+      if (nuevo && nuevo !== p.nombre && res.piloto.codigo === String(p.codigo).toUpperCase()) {
+        const lp = JSON.parse(localStorage.getItem('nv_piloto') || '{}'); lp.nombre = nuevo; localStorage.setItem('nv_piloto', JSON.stringify(lp));
+      }
+    } catch (e) {}
+    return res;
   } catch (e) {
     return null; // hub caído: seguimos en local
   }

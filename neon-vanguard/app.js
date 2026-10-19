@@ -7,6 +7,9 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 let W = 0, H = 0, DPR = 1;
+/* MODO DEMOSTRACIÓN (?demo): la portada del juego. Se juega solo con las naves reales de cada planeta,
+   sin menús, sin sonido, sin morir y sin enviar nada al ranking. */
+const NV_DEMO = new URLSearchParams(location.search).has('demo');
 /* MUNDO ABIERTO: el espacio no tiene bordes; la cámara sigue a la nave.
    Todo lo del juego vive en coordenadas de mundo; el fondo, el HUD y los joysticks, en pantalla. */
 const CAM = { x: 0, y: 0 };
@@ -294,6 +297,21 @@ function updatePlayer(dt) {
     if (mag > 0) { ax /= mag; ay /= mag; }
   }
 
+  let demoBlanco = null;
+  if (NV_DEMO) {
+    p.hp = p.maxHp; // en la demo no se muere
+    let mejor = 1e9;
+    for (const e of enemies) { const d = Math.hypot(e.x - p.x, e.y - p.y); if (d < mejor) { mejor = d; demoBlanco = e; } }
+    if (demoBlanco) {
+      // orbita alrededor del enemigo más cercano a media distancia, como un piloto de verdad
+      const dx = demoBlanco.x - p.x, dy = demoBlanco.y - p.y, d = Math.hypot(dx, dy) || 1, ideal = Math.min(W, H) * 0.32;
+      const radial = (d - ideal) / ideal, giro = Math.sin(G.time * 0.35) > 0 ? 1 : -1;
+      ax = dx / d * radial + (-dy / d) * giro * 0.9; ay = dy / d * radial + (dx / d) * giro * 0.9;
+      const m = Math.hypot(ax, ay) || 1; ax /= m; ay /= m;
+    }
+    mouse.down = !!demoBlanco;
+  }
+
   if (p.dashTime > 0) {
     p.dashTime -= dt;
     p.vx = p.dashDir.x * 1150;
@@ -328,7 +346,8 @@ function updatePlayer(dt) {
     else if (Math.hypot(ax, ay) > 0.2) objetivo = Math.atan2(ay, ax);
     else objetivo = p.angle;
   } else objetivo = Math.atan2(mouse.y + vistaY0() - p.y, mouse.x + vistaX0() - p.x);
-  if (touch.activo) {
+  if (NV_DEMO) objetivo = demoBlanco ? Math.atan2(demoBlanco.y - p.y, demoBlanco.x - p.x) : p.angle;
+  if (touch.activo || NV_DEMO) {
     const d = Math.atan2(Math.sin(objetivo - p.angle), Math.cos(objetivo - p.angle));
     p.angle += d * Math.min(1, dt * 24);
   } else p.angle = objetivo;
@@ -1484,8 +1503,10 @@ function updateHUD(dt) {
 /* ---------- loop ---------- */
 let lastT = 0, fpsAcc = 0, fpsFrames = 0;
 
+let demoUltimo = 0;
 function loop(now) {
   requestAnimationFrame(loop);
+  if (NV_DEMO) { if (now - demoUltimo < 31) return; demoUltimo = now; } // la portada va a 30 fotos/s: ahorra batería
   const rawDt = Math.min((now - lastT) / 1000, 0.05);
   lastT = now;
 
@@ -1599,6 +1620,7 @@ function startGame() {
 }
 
 function gameOver() {
+  if (NV_DEMO) { startGame(); return; } // la demo nunca termina ni toca el ranking
   G.running = false; G.over = true;
   el.finalScore.textContent = G.score.toLocaleString('es');
   el.finalWave.textContent = G.wave;
@@ -1705,4 +1727,11 @@ function drawFlechasEnemigos() {
     ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-6, -7); ctx.lineTo(-3, 0); ctx.lineTo(-6, 7); ctx.closePath(); ctx.fill();
     ctx.restore();
   }
+}
+
+/* ---------- arranque de la demostración ---------- */
+if (NV_DEMO) {
+  document.documentElement.classList.add('nv-demo');
+  Audio2.enabled = false;
+  window.addEventListener('load', () => { setTimeout(() => { try { startGame(); } catch (e) {} }, 60); });
 }
