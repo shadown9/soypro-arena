@@ -1642,7 +1642,7 @@ function gameOver() {
   if (typeof subirRecord === 'function') {
     subirRecord(scoreFinal, waveFinal, killsFinal, victoriasFinal).then(res => {
       if (res && res.puesto && puestoEl) {
-        puestoEl.textContent = 'PUESTO #' + res.puesto + ' EN EL MUNDO';
+        puestoEl.textContent = 'PUESTO #' + res.puesto + (res.total ? ' DE ' + res.total : '') + ' EN EL MUNDO';
         puestoEl.classList.remove('hidden');
       }
       const p = (typeof leerPiloto === 'function') ? leerPiloto() : {};

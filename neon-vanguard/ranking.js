@@ -94,9 +94,9 @@ async function subirRecord(score, wave, kills, victorias) {
 }
 
 /* ---------- Leer pizarra mundial ---------- */
-async function leerPizarra(limite) {
+async function leerPizarra(limite, yo) {
   try {
-    const r = await fetch(ARENA_LECTURA + '/leaderboard?limite=' + (limite || 100));
+    const r = await fetch(ARENA_LECTURA + '/leaderboard?limite=' + (limite || 100) + (yo ? '&yo=' + encodeURIComponent(yo) : ''));
     if (!r.ok) return null;
     return await r.json();
   } catch (e) {
@@ -112,9 +112,11 @@ async function abrirPizarra() {
   const estado = document.getElementById('pizarra-estado');
   document.getElementById('screen-pizarra').classList.remove('hidden');
   cont.innerHTML = '<div class="pz-cargando">Consultando el ranking mundial…</div>';
+  document.getElementById('pz-resultado').innerHTML = ''; document.getElementById('pizarra-yo').textContent = '';
   estado.textContent = '';
 
-  const data = await leerPizarra(100);
+  const miP = (typeof leerPiloto === 'function') ? leerPiloto() : null;
+  const data = await leerPizarra(100, miP && miP.codigo);
 
   // ranking conectado pero todavía vacío: invitar a ser el primero
   if (data && data.ok && data.top && !data.top.length) {
@@ -149,7 +151,7 @@ async function abrirPizarra() {
           '</div>';
 
   data.top.forEach(p => {
-    const yo = (p.codigo === miCodigo) ? ' pz-yo' : '';
+    const yo = p.yo ? ' pz-yo' : '';
     const medalla = p.puesto === 1 ? '🥇' : p.puesto === 2 ? '🥈' : p.puesto === 3 ? '🥉' : p.puesto;
     html += '<div class="pz-fila' + yo + '">' +
               '<span class="pz-pos">' + medalla + '</span>' +
@@ -162,21 +164,7 @@ async function abrirPizarra() {
   html += '</div>';
 
   // si no estoy en la lista, mi fila va al final con mi puesto
-  if (miCodigo && !data.top.some(p => p.codigo === miCodigo)) {
-    try {
-      const r = await fetch(ARENA_LECTURA + '/piloto/' + encodeURIComponent(miCodigo));
-      const yo = r.ok ? await r.json() : null;
-      if (yo && yo.existe && yo.piloto) {
-        html += '<div class="pz-tabla pz-mio"><div class="pz-fila pz-yo">' +
-                  '<span class="pz-pos">' + yo.puesto + '</span>' +
-                  '<span class="pz-nom">' + escaparHtml(yo.piloto.nombre) + '</span>' +
-                  '<span class="pz-ban ban-' + (yo.piloto.bando || 'x') + '">' + (yo.piloto.bando || '—').toUpperCase() + '</span>' +
-                  '<span class="pz-vic">' + Number(yo.piloto.victorias || 0) + '</span>' +
-                  '<span class="pz-pts">' + Number(yo.piloto.score).toLocaleString('es') + '</span>' +
-                '</div></div>';
-      }
-    } catch (e) {}
-  }
+  if (data.mi && !data.top.some(p => p.yo)) html += '<div class="pz-tabla pz-mio">' + filaPizarra(data.mi, true) + '</div>';
 
   // GUERRA DE PLANETAS: ordenada por victorias y luego por puntos.
   // El primero es el planeta que va ganando.
@@ -209,6 +197,7 @@ async function abrirPizarra() {
 
   cont.innerHTML = html;
   estado.textContent = data.total_pilotos + (data.total_pilotos === 1 ? ' piloto' : ' pilotos') + ' en la arena';
+  document.getElementById('pizarra-yo').innerHTML = data.mi ? 'TU PUESTO: <strong>#' + data.mi.puesto + '</strong> de ' + data.total_pilotos + ' · ' + Number(data.mi.score).toLocaleString('es') + ' pts' : (miP && miP.codigo ? 'Jugá una partida para entrar en el ranking' : '');
 }
 
 function cerrarPizarra() {
@@ -382,10 +371,10 @@ function generarTarjeta(datos) {
   const qrY = 740;
   dibujarQR(ctx, ARENA_URL_PUBLICA, qrX, qrY, qrTam);
 
-  // Código de piloto
+  // (el código del piloto NO va en la tarjeta: es su llave para entrar)
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.font = 'bold 28px monospace';
-  ctx.fillText(datos.codigo || '', W / 2, 990);
+  ctx.font = 'bold 26px Arial, sans-serif';
+  ctx.fillText('soyproarena.com/neon-vanguard', W / 2, 990);
 
   // Llamado a la acción
   ctx.fillStyle = 'rgba(0,255,200,0.85)';
@@ -450,4 +439,32 @@ async function compartirTarjeta() {
 
   // 3) WhatsApp web
   window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
+}
+
+/* fila de la pizarra (lista, mi fila y resultado de búsqueda) */
+function filaPizarra(p, yo) {
+  const medalla = p.puesto === 1 ? '🥇' : p.puesto === 2 ? '🥈' : p.puesto === 3 ? '🥉' : p.puesto;
+  return '<div class="pz-fila' + (yo ? ' pz-yo' : '') + '">' +
+    '<span class="pz-pos">' + medalla + '</span>' +
+    '<span class="pz-nom">' + escaparHtml(p.nombre) + '</span>' +
+    '<span class="pz-ban ban-' + (p.bando || 'x') + '">' + (p.bando || '—').toUpperCase() + '</span>' +
+    '<span class="pz-vic">' + Number(p.victorias || 0) + '</span>' +
+    '<span class="pz-pts">' + Number(p.score).toLocaleString('es') + '</span>' +
+  '</div>';
+}
+
+/* buscar el puesto de un piloto con su código (el tuyo o el de un amigo) */
+async function buscarEnPizarra() {
+  const inp = document.getElementById('pz-buscar'), out = document.getElementById('pz-resultado');
+  const codigo = (inp.value || '').trim().toUpperCase();
+  if (codigo.length < 6) { out.innerHTML = '<span class="pz-msg">El código tiene el formato ABC-1234.</span>'; return; }
+  out.innerHTML = '<span class="pz-msg">Buscando…</span>';
+  try {
+    const r = await fetch(ARENA_LECTURA + '/piloto/' + encodeURIComponent(codigo));
+    const d = r.ok ? await r.json() : null;
+    if (!d || !d.existe) { out.innerHTML = '<span class="pz-msg">No hay ningún piloto con ese código.</span>'; return; }
+    if (!d.puesto) { out.innerHTML = '<span class="pz-msg">' + escaparHtml(d.piloto.nombre) + ' todavía no tiene puntaje: le falta jugar.</span>'; return; }
+    out.innerHTML = '<span class="pz-msg"><strong>' + escaparHtml(d.piloto.nombre) + '</strong> está en el puesto <strong>#' + d.puesto + '</strong> de ' + d.total + '</span>' +
+      '<div class="pz-tabla">' + filaPizarra(Object.assign({ puesto: d.puesto }, d.piloto), false) + '</div>';
+  } catch (e) { out.innerHTML = '<span class="pz-msg">Sin conexión. Probá de nuevo.</span>'; }
 }

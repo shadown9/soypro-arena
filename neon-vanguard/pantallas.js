@@ -86,7 +86,7 @@ function elegirCamino(cual) {
     setTimeout(() => document.getElementById('reg-nombre').focus(), 80);
   } else {
     document.getElementById('reg-paso-codigo').classList.remove('hidden');
-    document.getElementById('reg-sub').textContent = 'Entrá con tu código.';
+    document.getElementById('reg-sub').textContent = 'Entrá con tu nombre y código.';
     setTimeout(() => document.getElementById('reg-codigo-input').focus(), 80);
   }
 }
@@ -128,24 +128,13 @@ function registrarPiloto() {
 
   const db = leerUsuarios();
 
-  // El nombre ya existe: devolvemos SU código, no generamos otro.
-  // OJO: versiones viejas guardaban el código como string plano
-  // ("NOMBRE": "ABC-1234"). Aceptamos los dos formatos y migramos.
+  // El nombre ya existe en este dispositivo: NUNCA mostramos su código (es su contraseña).
   if (db[nombre]) {
-    const prev = db[nombre];
-    const codigoPrevio = (typeof prev === 'string') ? prev : (prev && prev.codigo);
-    if (codigoPrevio) {
-      if (typeof prev === 'string') {
-        db[nombre] = { codigo: codigoPrevio, fecha: Date.now() };
-        guardarUsuarios(db);
-      }
-      mostrarCodigo(codigoPrevio, nombre);
-      try {
-        localStorage.setItem('nv_piloto', JSON.stringify({ nombre, codigo: codigoPrevio, fecha: Date.now() }));
-      } catch (e) {}
-      avisar('Ese nombre ya estaba registrado. Este es tu código.', true);
-      return;
-    }
+    input.style.borderColor = '#ff4d6d';
+    input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
+    avisar('Ese nombre ya está registrado. Entrá con tu nombre y código.', false);
+    setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 1600);
+    return;
   }
 
   // Código nuevo, garantizando que no choque con uno existente
@@ -156,14 +145,35 @@ function registrarPiloto() {
     intentos++;
   }
 
-  db[nombre] = { codigo, fecha: Date.now() };
-  guardarUsuarios(db);
-  try {
-    localStorage.setItem('nv_piloto', JSON.stringify({ nombre, codigo, fecha: Date.now() }));
-  } catch (e) {}
+  input.disabled = true;
+  avisar('Reservando tu nombre…', true);
+  reservarNombre(codigo, nombre).then(r => {
+    if (r && r.error) {
+      input.disabled = false;
+      input.style.borderColor = '#ff4d6d'; input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
+      avisar(r.error, false);
+      setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 1600);
+      return;
+    }
+    const final = (r && r.nombre) || nombre;
+    db[final] = { codigo, fecha: Date.now() };
+    guardarUsuarios(db);
+    try { localStorage.setItem('nv_piloto', JSON.stringify({ nombre: final, codigo, fecha: Date.now() })); } catch (e) {}
+    mostrarCodigo(codigo, final);
+    avisar('Código generado. Guardalo bien.', true);
+  });
+}
 
-  mostrarCodigo(codigo, nombre);
-  avisar('Código generado. Guardalo bien.', true);
+/* reserva el nombre en el ranking mundial: si es de otra persona, hay que elegir otro.
+   Sin conexión se sigue igual (el nombre se confirma en la primera partida). */
+async function reservarNombre(codigo, nombre) {
+  if (typeof ARENA_API === 'undefined' || ARENA_API.endsWith('/api/arena')) return {};
+  try {
+    const r = await fetch(ARENA_API + '/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codigo, nombre }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 409 || r.status === 403) return { error: d.error || 'Ese nombre ya lo usa otro piloto.' };
+    return r.ok ? d : {};
+  } catch (e) { return {}; }
 }
 
 function mostrarCodigo(codigo, nombre) {
@@ -203,22 +213,14 @@ function copiarCodigo() {
 
 function entrarConCodigo() {
   const input = document.getElementById('reg-codigo-input');
+  const inNom = document.getElementById('reg-nombre-entrar');
   const codigo = (input.value || '').trim().toUpperCase();
-
-  if (codigo.length < 6) {
-    input.style.borderColor = '#ff4d6d';
-    input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
-    avisar('El código tiene el formato ABC-1234.', false);
-    setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 1200);
-    return;
-  }
-
-  const fallo = (msg) => {
-    input.style.borderColor = '#ff4d6d';
-    input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
-    avisar(msg, false);
-    setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 1400);
-  };
+  const nombre = (inNom.value || '').trim().toUpperCase();
+  const marcar = (el) => { el.style.borderColor = '#ff4d6d'; el.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
+    setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1400); };
+  if (nombre.length < 2) { marcar(inNom); avisar('Escribí tu nombre de piloto.', false); return; }
+  if (codigo.length < 6) { marcar(input); avisar('El código tiene el formato ABC-1234.', false); return; }
+  const fallo = (msg) => { marcar(inNom); marcar(input); avisar(msg, false); };
   const entrar = (piloto) => {
     try {
       localStorage.setItem('nv_piloto', JSON.stringify({
@@ -229,20 +231,17 @@ function entrarConCodigo() {
     setTimeout(() => irABandos(), 700);
   };
 
-  // primero en este dispositivo; si no, en el ranking mundial (así el código sirve en cualquier teléfono o PC)
-  const local = buscarPorCodigo(codigo);
-  if (local) return entrar(local);
-  if (typeof ARENA_API === 'undefined' && typeof ARENA_LECTURA === 'undefined') return fallo('Ese código no existe.');
-  avisar('Buscando tu piloto…', true);
-  fetch((typeof ARENA_LECTURA !== 'undefined' ? ARENA_LECTURA : ARENA_API) + '/piloto/' + encodeURIComponent(codigo))
-    .then(r => r.ok ? r.json() : null)
-    .then(d => {
-      if (d && d.existe && d.piloto) entrar({ nombre: d.piloto.nombre, codigo: d.piloto.codigo, bando: d.piloto.bando });
-      else fallo('Ese código no existe.');
-    })
+  // el servidor comprueba que nombre y código coincidan (como usuario y contraseña)
+  if (typeof ARENA_LECTURA === 'undefined' || ARENA_LECTURA.endsWith('/api/arena')) {
+    const local = buscarPorCodigo(codigo); // hub de Shadow: solo en este dispositivo
+    if (local && String(local.nombre).toUpperCase() === nombre) return entrar(local);
+    return fallo('Nombre o código incorrectos.');
+  }
+  avisar('Comprobando…', true);
+  fetch(ARENA_LECTURA + '/entrar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, codigo }) })
+    .then(r => r.json().then(d => ({ ok: r.ok, d })).catch(() => ({ ok: false, d: {} })))
+    .then(({ ok, d }) => { if (ok && d.piloto) entrar(d.piloto); else fallo((d && d.error) || 'Nombre o código incorrectos.'); })
     .catch(() => fallo('Sin conexión. Probá de nuevo.'));
-  return;
-
 }
 
 function irABandos() {

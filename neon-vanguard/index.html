@@ -12,7 +12,7 @@
 <meta property="og:type" content="website"><meta property="og:url" content="https://soyproarena.com/neon-vanguard/">
 <meta property="og:title" content="Neon Vanguard · Shooter arcade gratis"><meta property="og:description" content="Elige tu planeta, sobrevive a las oleadas y sube en el ranking mundial. Gratis en el navegador.">
 <meta property="og:image" content="https://soyproarena.com/neon-vanguard/portada.jpg"><meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="style.css?v=52">
+<link rel="stylesheet" href="style.css?v=55">
 </head>
 <body>
 <div id="game-wrap">
@@ -52,7 +52,7 @@
         </button>
         <button class="btn-camino" onclick="elegirCamino('codigo')">
           <span class="camino-t">YA TENGO CÓDIGO</span>
-          <span class="camino-s">Entrá con tu código</span>
+          <span class="camino-s">Entrá con tu nombre y código</span>
         </button>
       </div>
 
@@ -74,7 +74,8 @@
       <!-- PASO 2B: ya tengo código -->
       <div id="reg-paso-codigo" class="reg-paso hidden">
         <div class="reg-form">
-          <input id="reg-codigo-input" type="text" maxlength="8" placeholder="TU CÓDIGO (EJ: ABC-1234)" autocomplete="off" spellcheck="false">
+          <input id="reg-nombre-entrar" type="text" maxlength="16" placeholder="TU NOMBRE DE PILOTO" autocomplete="username" spellcheck="false">
+          <input id="reg-codigo-input" type="text" maxlength="8" placeholder="TU CÓDIGO (EJ: ABC-1234)" autocomplete="current-password" spellcheck="false">
           <button id="reg-entrar-btn" onclick="entrarConCodigo()">ENTRAR</button>
         </div>
       </div>
@@ -126,6 +127,9 @@
     <div class="panel panel-wide">
       <h1 class="title">PIZARRA<span>MUNDIAL</span></h1>
       <p class="subtitle" id="pizarra-estado">Los mejores pilotos de la galaxia.</p>
+      <p class="pz-tu" id="pizarra-yo"></p>
+      <div class="pz-busca"><input id="pz-buscar" type="text" maxlength="8" placeholder="BUSCAR POR CÓDIGO" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')buscarEnPizarra()"><button class="btn-sec" onclick="buscarEnPizarra()">BUSCAR</button></div>
+      <div id="pz-resultado" class="pz-resultado"></div>
       <div id="pizarra-lista" class="pizarra-lista"></div>
       <button class="btn-sec" onclick="cerrarPizarra()">← VOLVER</button>
     </div>
@@ -167,8 +171,8 @@
   <p><strong>GIRÁ EL CELULAR</strong><br>Se juega en horizontal</p>
 </div>
 
-<script src="pantallas.js?v=52" charset="utf-8"></script>
-<script src="ranking.js?v=52" charset="utf-8"></script>
-<script src="app.js?v=52" charset="utf-8"></script>
+<script src="pantallas.js?v=55" charset="utf-8"></script>
+<script src="ranking.js?v=55" charset="utf-8"></script>
+<script src="app.js?v=55" charset="utf-8"></script>
 </body>
 </html>
