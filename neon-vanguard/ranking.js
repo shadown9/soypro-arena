@@ -413,6 +413,14 @@ async function compartirTarjeta() {
     'Récord: ' + Number(rec.score || 0).toLocaleString('es') + ' pts\n' +
     '¿Me superás? ' + ARENA_URL_PUBLICA;
 
+  // 0) Dentro de la app de ProArena el navegador interno no sabe compartir:
+  //    se lo pedimos a la app, que abre el menú nativo del teléfono con la imagen y el texto.
+  const enApp = new URLSearchParams(location.search).has('app') && window.parent !== window;
+  if (enApp && !(navigator.canShare && navigator.share)) {
+    window.parent.postMessage({ nv: 'compartir', texto, imagen: (img && img.src && img.src.startsWith('data:image/png')) ? img.src : '' }, '*');
+    return;
+  }
+
   // 1) Intento compartir la imagen nativa (móvil)
   try {
     if (img && img.src && navigator.canShare) {
@@ -423,9 +431,13 @@ async function compartirTarjeta() {
         return;
       }
     }
-  } catch (e) { /* sigue al plan B */ }
+  } catch (e) { if (e && e.name === 'AbortError') return; /* sigue al plan B */ }
 
-  // 2) Copiar el texto al portapapeles
+  // 1b) Si no puede adjuntar la imagen, compartir al menos el texto con el menú del teléfono
+  try { if (navigator.share) { await navigator.share({ title: 'NEON VANGUARD', text: texto }); return; } }
+  catch (e) { if (e && e.name === 'AbortError') return; }
+
+  // 2) Copiar el texto al portapapeles (último recurso: solo si el aparato no sabe compartir)
   try {
     await navigator.clipboard.writeText(texto);
     const btn = document.getElementById('tarjeta-compartir');
