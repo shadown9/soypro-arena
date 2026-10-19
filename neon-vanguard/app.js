@@ -276,6 +276,8 @@ function createPlayer() {
     overdrive: 0, odActive: 0,
     weapon: 1, weaponTimer: 0,
     dmgMult: b.dmg, odMult: b.od,
+    dmgBase: b.dmg, fireRateBase: 0.115 * b.fire,
+    mej: { venus: 0, marte: 0, jupiter: 0, saturno: 0, neptuno: 0 }, orbAng: 0, orbGolpe: 0,
     trail: [], hitFlash: 0, alive: true
   };
 }
@@ -314,8 +316,8 @@ function updatePlayer(dt) {
 
   if (p.dashTime > 0) {
     p.dashTime -= dt;
-    p.vx = p.dashDir.x * 1150;
-    p.vy = p.dashDir.y * 1150;
+    p.vx = p.dashDir.x * 1400;
+    p.vy = p.dashDir.y * 1400;
     p.invuln = Math.max(p.invuln, 0.05);
     if (Math.random() < 0.9) {
       spawnParticles(p.x, p.y, 2, { color: '#00f0ff', speed: 90, life: 0.35, size: 4, gravity: 0, drag: 0.9 });
@@ -352,8 +354,20 @@ function updatePlayer(dt) {
     p.angle += d * Math.min(1, dt * 24);
   } else p.angle = objetivo;
 
-  // trail
-  p.trail.push({ x: p.x, y: p.y, life: 1 });
+  // ANILLO DE SATURNO: orbes que giran alrededor de la nave
+  const nOrb = p.mej ? p.mej.saturno : 0;
+  if (nOrb > 0) {
+    p.orbAng += dt * 3.2; p.orbGolpe -= dt;
+    for (let k = 0; k < nOrb; k++) {
+      const oa = p.orbAng + k * TAU / nOrb, ox = p.x + Math.cos(oa) * 46, oy = p.y + Math.sin(oa) * 46;
+      for (let i = eBullets.length - 1; i >= 0; i--) { const b = eBullets[i]; if ((b.x - ox) ** 2 + (b.y - oy) ** 2 < (b.r + 9) ** 2) { spawnParticles(b.x, b.y, 5, { color: '#f0dca0', speed: 140, life: 0.25, size: 2.5 }); eBullets.splice(i, 1); } }
+      for (let j = enemies.length - 1; j >= 0; j--) { const e = enemies[j]; if ((e.x - ox) ** 2 + (e.y - oy) ** 2 < (e.r + 9) ** 2) { e.hp -= 70 * dt; e.hitFlash = 0.06; if (e.hp <= 0) killEnemy(j, true); } }
+    }
+  }
+
+  // estela: nace en las turbinas (detrás) y solo cuando la nave avanza hacia donde mira
+  const avance = p.vx * Math.cos(p.angle) + p.vy * Math.sin(p.angle);
+  if (avance > 30) p.trail.push({ x: p.x - Math.cos(p.angle) * 14, y: p.y - Math.sin(p.angle) * 14, life: 1 });
   if (p.trail.length > 14) p.trail.shift();
   for (const t of p.trail) t.life -= dt * 3.2;
 
@@ -372,9 +386,9 @@ function updatePlayer(dt) {
     const dm = Math.hypot(ax, ay);
     if (dm > 0) { p.dashDir = { x: ax, y: ay }; }
     else { p.dashDir = { x: Math.cos(p.angle), y: Math.sin(p.angle) }; }
-    p.dashTime = 0.16; p.dashCd = 0.75; p.invuln = 0.3;
+    p.dashTime = 0.26; p.dashCd = 0.8; p.invuln = 0.45; // dash largo: ~360 px
     Audio2.dash();
-    spawnRing(p.x, p.y, '#00f0ff', 70, 500, 3);
+    spawnRing(p.x, p.y, '#00f0ff', 110, 560, 4); shake(5);
   }
 
   // overdrive (Shift o doble toque en la mitad derecha)
@@ -390,7 +404,7 @@ function updatePlayer(dt) {
   // disparo
   if (mouse.down && p.fireCd <= 0) {
     firePlayer();
-    const rate = p.odActive > 0 ? p.fireRate * 0.55 : p.fireRate;
+    const rate = (p.odActive > 0 ? p.fireRate * 0.55 : p.fireRate) * (p.weapon === 5 ? 2.2 : p.weapon === 6 ? 3 : p.weapon === 4 ? 1.3 : 1);
     p.fireCd = rate;
   }
 }
@@ -403,14 +417,24 @@ function firePlayer() {
   const od = p.odActive > 0;
 
   const makeBullet = (ang, dmg, speed, size, color) => {
-    bullets.push({
+    const b = {
       x: muzzleX, y: muzzleY,
       vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
       r: size, dmg: dmg * (p.dmgMult || 1), life: 1.6, color, pierce: od ? 1 : 0, hitSet: new Set()
-    });
+    };
+    bullets.push(b); return b;
   };
 
-  if (p.weapon === 2) {
+  if (p.weapon === 4) {
+    // RAYO: rapidísimo y atraviesa hasta 4 naves
+    const b = makeBullet(a, 26, 1600, 3, '#7dfcff'); b.pierce = 3; b.rayo = true;
+  } else if (p.weapon === 5) {
+    // MISILES: dos cohetes que buscan al enemigo más cercano
+    for (const s of [-1, 1]) { const b = makeBullet(a + s * 0.35, 24, 620, 4, '#ffd23f'); b.guiado = true; b.life = 2.4; }
+  } else if (p.weapon === 6) {
+    // PLASMA: bola lenta que explota y daña todo alrededor
+    const b = makeBullet(a, 42, 560, 9, '#b46bff'); b.explota = 120; b.life = 2;
+  } else if (p.weapon === 2) {
     // escopeta
     for (let i = -2; i <= 2; i++) makeBullet(a + i * 0.11, 14, 900, 3, '#ffb020');
   } else if (p.weapon === 3) {
@@ -420,15 +444,18 @@ function firePlayer() {
     makeBullet(a + 0.16, 16, 1050, 3, '#ff2bd6');
   } else {
     makeBullet(a, od ? 20 : 16, 1000, od ? 5 : 4, od ? '#ff2bd6' : '#00f0ff');
+
     if (od) { makeBullet(a - 0.09, 12, 950, 3, '#ff2bd6'); makeBullet(a + 0.09, 12, 950, 3, '#ff2bd6'); }
   }
+
+  disparoModulos(p, a, od);
 
   spawnParticles(muzzleX, muzzleY, 3, {
     color: od ? '#ff2bd6' : '#00f0ff', speed: 160, life: 0.18, size: 3, dir: a, spread: 0.9
   });
   Audio2.shoot();
   shake(1.2);
-  if (typeof RED !== 'undefined') RED.disparo(p.weapon === 2 ? 2 : p.weapon === 3 ? 3 : od ? 4 : 1);
+  if (typeof RED !== 'undefined') RED.disparo(p.weapon === 2 ? 2 : p.weapon === 3 ? 3 : p.weapon === 4 ? 5 : p.weapon === 5 ? 6 : p.weapon === 6 ? 7 : od ? 4 : 1);
 }
 
 /* ---------- enemigos: NAVES DE CADA PLANETA ----------
@@ -659,6 +686,7 @@ function damagePlayer(amount) {
   if (!p.alive || p.invuln > 0) return;
   p.hp -= amount;
   p.invuln = 0.9;
+  if (p.mej && p.mej.jupiter >= 3) ondaMetralla(p);
   p.hitFlash = 0.3;
   G.combo = 1; G.comboTimer = 0;
   shake(14);
@@ -688,9 +716,12 @@ function killEnemy(index, byPlayer = true) {
     G.score += pts;
     addFloater(e.x, e.y, '+' + pts, G.combo > 3 ? '#ffb020' : '#00f0ff', 14 + Math.min(G.combo, 8));
     player.overdrive = Math.min(100, player.overdrive + (isBoss ? 60 : 7) * (player.odMult || 1));
-    const chance = isBoss ? 1 : 0.14;
-    if (Math.random() < chance) dropPowerup(e.x, e.y);
-    if (isBoss) { dropPowerup(e.x - 40, e.y); dropPowerup(e.x + 40, e.y); }
+    if (isBoss) { dropPowerup(e.x - 40, e.y); dropPowerup(e.x + 40, e.y); dropNucleo(e.x, e.y + 40, PLANETAS_MEJORA[randInt(0, 4)]); }
+    else {
+      G.sinMejora = (G.sinMejora || 0) + 1;
+      if (Math.random() < 0.30 || G.sinMejora >= 6) { dropNucleo(e.x, e.y, ENEMY_TYPES[e.type] ? e.type : PLANETAS_MEJORA[randInt(0, 4)]); G.sinMejora = 0; }
+      else if (Math.random() < 0.12) dropPowerup(e.x, e.y); // a veces vida, overdrive o un arma especial
+    }
   }
 
   if (isBoss) {
@@ -702,26 +733,62 @@ function killEnemy(index, byPlayer = true) {
 }
 
 /* ---------- power-ups ---------- */
-const POWER_TYPES = ['weapon2', 'weapon3', 'heal', 'overdrive'];
+const POWER_TYPES = ['weapon2', 'weapon3', 'weapon4', 'weapon5', 'weapon6', 'escudo', 'heal', 'overdrive'];
+const ARMAS = { 2: ['ESCOPETA', '#ffb020'], 3: ['LÁSER x3', '#ff2bd6'], 4: ['RAYO', '#7dfcff'], 5: ['MISILES', '#ffd23f'], 6: ['PLASMA', '#b46bff'] };
 function dropPowerup(x, y) {
   const type = POWER_TYPES[randInt(0, POWER_TYPES.length - 1)];
-  powerups.push({ x, y, r: 13, type, life: 12, phase: rand(0, TAU), vy: -40 });
+  powerups.push({ x, y, r: 13, type, life: 20, phase: rand(0, TAU), vy: -40 });
+}
+
+/* ===== NÚCLEOS DE PLANETA: cada nave suelta el núcleo de su planeta y sube una habilidad (hasta nivel 5) ===== */
+const PLANETAS_MEJORA = ['venus', 'marte', 'jupiter', 'saturno', 'neptuno'];
+const MEJORAS = {
+  venus:   { nombre: 'DAÑO',         icono: '⚔', color: '#ffc46e' },
+  marte:   { nombre: 'CADENCIA',     icono: '»', color: '#ff6e46' },
+  jupiter: { nombre: 'BLINDAJE',     icono: '⛨', color: '#ffaa78' },
+  saturno: { nombre: 'ANILLO',       icono: '◎', color: '#f0dca0' },
+  neptuno: { nombre: 'MULTIDISPARO', icono: '⋔', color: '#5a96ff' }
+};
+const MEJORA_MAX = 5;
+function dropNucleo(x, y, planeta) {
+  powerups.push({ x, y, r: 14, type: 'nucleo', planeta, life: 20, phase: rand(0, TAU), vy: -40 });
+}
+function aplicarMejora(p, planeta) {
+  const lv = p.mej[planeta];
+  if (planeta === 'venus') p.dmgMult = p.dmgBase * (1 + 0.12 * lv);
+  else if (planeta === 'marte') p.fireRate = p.fireRateBase * Math.pow(0.9, lv);
+  else if (planeta === 'jupiter') { p.maxHp += 15; p.hp = Math.min(p.maxHp, p.hp + 30); }
+  p.r = 15 * escalaNave(p); // la nave crece con sus piezas
 }
 
 function collectPowerup(pu) {
   const p = player;
+  if (pu.type === 'nucleo') {
+    const m = MEJORAS[pu.planeta];
+    if (p.mej[pu.planeta] < MEJORA_MAX) {
+      p.mej[pu.planeta]++; aplicarMejora(p, pu.planeta);
+      addFloater(p.x, p.y - 34, m.icono + ' ' + m.nombre + ' NV.' + p.mej[pu.planeta], m.color, 20);
+    } else { // ya al máximo: se convierte en vida y puntos
+      p.hp = Math.min(p.maxHp, p.hp + 15); G.score += 150;
+      addFloater(p.x, p.y - 34, m.icono + ' MÁXIMO · +15 HP', m.color, 18);
+    }
+    Audio2.powerup();
+    spawnRing(pu.x, pu.y, m.color, 80, 420, 3);
+    spawnParticles(pu.x, pu.y, 18, { color: m.color, speed: 220, life: 0.5, size: 3 });
+    return;
+  }
   if (pu.type === 'heal') {
     p.hp = Math.min(p.maxHp, p.hp + 35);
     addFloater(p.x, p.y - 30, '+35 HP', '#00ffa8', 18);
   } else if (pu.type === 'overdrive') {
     p.overdrive = Math.min(100, p.overdrive + 45 * (p.odMult || 1));
     addFloater(p.x, p.y - 30, '+OVERDRIVE', '#ff2bd6', 18);
-  } else if (pu.type === 'weapon2') {
-    p.weapon = 2; p.weaponTimer = 14;
-    addFloater(p.x, p.y - 30, 'ESCOPETA', '#ffb020', 18);
-  } else if (pu.type === 'weapon3') {
-    p.weapon = 3; p.weaponTimer = 14;
-    addFloater(p.x, p.y - 30, 'LASER x3', '#ff2bd6', 18);
+  } else if (/^weapon[2-6]$/.test(pu.type)) {
+    const n = +pu.type.slice(6); p.weapon = n; p.weaponTimer = 16;
+    addFloater(p.x, p.y - 30, ARMAS[n][0], ARMAS[n][1], 20);
+  } else if (pu.type === 'escudo') {
+    p.invuln = Math.max(p.invuln, 6);
+    addFloater(p.x, p.y - 30, '◈ ESCUDO 6 s', '#00ffa8', 20);
   }
   Audio2.powerup();
   spawnRing(pu.x, pu.y, '#00ffa8', 70, 400, 3);
@@ -738,10 +805,10 @@ function updatePowerups(dt) {
     pu.y += pu.vy * dt;
     // atracción magnética
     const d = Math.hypot(p.x - pu.x, p.y - pu.y);
-    if (d < 160 && p.alive) {
+    if (d < 260 && p.alive) {
       const a = Math.atan2(p.y - pu.y, p.x - pu.x);
-      pu.x += Math.cos(a) * 320 * dt;
-      pu.y += Math.sin(a) * 320 * dt;
+      pu.x += Math.cos(a) * 420 * dt;
+      pu.y += Math.sin(a) * 420 * dt;
     }
     if (d < p.r + pu.r && p.alive) { collectPowerup(pu); powerups.splice(i, 1); continue; }
     if (pu.life <= 0) powerups.splice(i, 1);
@@ -799,9 +866,17 @@ function updateWaves(dt) {
 function updateBullets(dt) {
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
+    if (b.guiado) { // gira hacia el enemigo más cercano
+      let mejor = null, md = 650 * 650;
+      for (const e of enemies) { const d = (e.x - b.x) ** 2 + (e.y - b.y) ** 2; if (d < md) { md = d; mejor = e; } }
+      if (mejor) { const va = Math.atan2(b.vy, b.vx), obj = Math.atan2(mejor.y - b.y, mejor.x - b.x), v = Math.hypot(b.vx, b.vy) * 1.012;
+        const na = va + Math.max(-5 * dt, Math.min(5 * dt, Math.atan2(Math.sin(obj - va), Math.cos(obj - va)))); b.vx = Math.cos(na) * Math.min(v, 950); b.vy = Math.sin(na) * Math.min(v, 950); }
+      if (Math.random() < .6) spawnParticles(b.x, b.y, 1, { color: '#ffb020', speed: 40, life: 0.3, size: 2 });
+    }
     b.x += b.vx * dt; b.y += b.vy * dt;
     b.life -= dt;
     if (b.life <= 0 || fueraDeVista(b.x, b.y, 40)) {
+      if (b.explota && b.life <= 0) explotarPlasma(b);
       bullets.splice(i, 1); continue;
     }
     // colisión con enemigos
@@ -815,7 +890,8 @@ function updateBullets(dt) {
         spawnParticles(b.x, b.y, 4, { color: b.color, speed: 150, life: 0.25, size: 2.5 });
         Audio2.hit();
         if (e.hp <= 0) { killEnemy(j, true); }
-        if (b.pierce > 0) { b.pierce--; }
+        if (b.explota) { explotarPlasma(b); bullets.splice(i, 1); }
+        else if (b.pierce > 0) { b.pierce--; }
         else { bullets.splice(i, 1); }
         break;
       }
@@ -837,6 +913,15 @@ function updateBullets(dt) {
       eBullets.splice(i, 1);
     }
   }
+}
+
+/* plasma: onda que daña a todos los enemigos cercanos */
+function explotarPlasma(b) {
+  spawnRing(b.x, b.y, '#b46bff', b.explota, 380, 5);
+  spawnParticles(b.x, b.y, 26, { color: '#d9a8ff', speed: 300, life: 0.5, size: 4 });
+  shake(6);
+  for (let j = enemies.length - 1; j >= 0; j--) { const e = enemies[j];
+    if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 < (b.explota + e.r) ** 2) { e.hp -= b.dmg * 0.7; e.hitFlash = 0.12; if (e.hp <= 0) killEnemy(j, true); } }
 }
 
 /* ---------- partículas / efectos ---------- */
@@ -923,6 +1008,9 @@ function drawPlayer() {
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.angle);
+  const escNave = escalaNave(p);
+  ctx.scale(escNave, escNave);
+  dibujarModulos(p, 'detras');
 
   const od = p.odActive > 0;
   const mainColor = od ? '#ff2bd6' : '#00f0ff';
@@ -1055,6 +1143,7 @@ function drawPlayer() {
   ctx.shadowColor = '#00ff8c';
   ctx.beginPath(); ctx.arc(-16, 17.5, 1.8, 0, TAU); ctx.fill();
 
+  dibujarModulos(p, 'delante');
   ctx.restore();
   ctx.globalAlpha = 1;
 
@@ -1400,13 +1489,36 @@ function drawBullets() {
   }
 }
 
+function drawOrbes() {
+  const p = player; if (!p || !p.alive || !p.mej || !p.mej.saturno) return;
+  const n = p.mej.saturno;
+  ctx.save(); ctx.strokeStyle = 'rgba(240,220,160,.18)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(p.x, p.y, 46, 0, TAU); ctx.stroke();
+  for (let k = 0; k < n; k++) { const oa = p.orbAng + k * TAU / n;
+    ctx.shadowBlur = 16; ctx.shadowColor = '#f0dca0'; ctx.fillStyle = '#fff3cf';
+    ctx.beginPath(); ctx.arc(p.x + Math.cos(oa) * 46, p.y + Math.sin(oa) * 46, 6.5, 0, TAU); ctx.fill(); }
+  ctx.restore();
+}
+
 function drawPowerups() {
   for (const pu of powerups) {
+    if (pu.type === 'nucleo') { // núcleo de planeta: esfera brillante con el icono de su mejora
+      const m = MEJORAS[pu.planeta], pulse = 1 + Math.sin(pu.phase) * 0.12, parp = pu.life < 4 && Math.floor(pu.life * 6) % 2 === 0;
+      if (parp) continue;
+      ctx.save(); ctx.translate(pu.x, pu.y);
+      ctx.shadowBlur = 24; ctx.shadowColor = m.color;
+      const g = ctx.createRadialGradient(-4, -4, 2, 0, 0, pu.r * pulse);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, m.color); g.addColorStop(1, 'rgba(5,6,13,.85)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, pu.r * pulse, 0, TAU); ctx.fill();
+      ctx.strokeStyle = m.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, pu.r * pulse + 5, pu.phase, pu.phase + 4.2); ctx.stroke();
+      ctx.shadowBlur = 0; ctx.fillStyle = '#05060d'; ctx.font = 'bold 13px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(m.icono, 0, 1); ctx.restore();
+      continue;
+    }
     const pulse = 1 + Math.sin(pu.phase) * 0.15;
     let col = '#00ffa8';
-    if (pu.type === 'weapon2') col = '#ffb020';
-    else if (pu.type === 'weapon3') col = '#ff2bd6';
+    if (/^weapon[2-6]$/.test(pu.type)) col = ARMAS[+pu.type.slice(6)][1];
     else if (pu.type === 'overdrive') col = '#8b5cff';
+    else if (pu.type === 'escudo') col = '#00ffa8';
     ctx.save();
     ctx.translate(pu.x, pu.y);
     ctx.rotate(pu.phase * 0.5);
@@ -1426,7 +1538,7 @@ function drawPowerups() {
     ctx.fillStyle = col;
     ctx.font = 'bold 12px system-ui';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const label = pu.type === 'heal' ? '+' : pu.type === 'overdrive' ? 'O' : pu.type === 'weapon2' ? 'S' : 'L';
+    const label = { heal: '+', overdrive: 'O', escudo: '◈', weapon2: 'S', weapon3: 'L', weapon4: 'R', weapon5: 'M', weapon6: 'P' }[pu.type] || '?';
     ctx.fillText(label, pu.x, pu.y + 1);
     ctx.restore();
   }
@@ -1491,6 +1603,12 @@ function updateHUD(dt) {
     el.bando.textContent = b ? b.nombre : '—';
     el.bando.style.color = b ? b.glow.replace('rgba', 'rgb').replace(',.55)', ')') : '';
   }
+  const hm = document.getElementById('hud-mejoras');
+  if (hm && player.mej) {
+    const arma = player.weapon > 1 && ARMAS[player.weapon] ? '<span style="--c:' + ARMAS[player.weapon][1] + '">' + ARMAS[player.weapon][0] + '<b>' + Math.ceil(player.weaponTimer) + 's</b></span>' : '';
+    const html = arma + PLANETAS_MEJORA.filter(k => player.mej[k] > 0).map(k => '<span style="--c:' + MEJORAS[k].color + '">' + MEJORAS[k].icono + '<b>' + player.mej[k] + '</b></span>').join('');
+    if (hm.innerHTML !== html) hm.innerHTML = html;
+  }
   el.shieldFill.style.width = (player.hp / player.maxHp * 100) + '%';
   el.odFill.style.width = player.overdrive + '%';
   if (G.combo > 1) {
@@ -1552,6 +1670,7 @@ function loop(now) {
   drawBullets();
   drawEnemies();
   if (typeof RED !== 'undefined') RED.dibujar();
+  drawOrbes();
   drawPlayer();
   drawEffects();
   ctx.restore();
@@ -1673,7 +1792,8 @@ function actualizarAvisoRotar() {
   const esCelularReal = (typeof esMovil === 'function') ? esMovil() : (navigator.maxTouchPoints > 0);
   const vertical = window.innerHeight > window.innerWidth;
   const angosto = window.innerWidth <= 760;
-  el.classList.toggle('visible', esCelularReal && vertical && angosto);
+  let cerrado = false; try { cerrado = localStorage.getItem('nv_rotar_no') === '1'; } catch (e) {}
+  el.classList.toggle('visible', esCelularReal && vertical && angosto && !cerrado && !NV_DEMO);
 }
 window.addEventListener('resize', actualizarAvisoRotar);
 window.addEventListener('orientationchange', () => setTimeout(actualizarAvisoRotar, 120));
@@ -1739,4 +1859,96 @@ if (NV_DEMO) {
   document.documentElement.classList.add('nv-demo');
   Audio2.enabled = false;
   window.addEventListener('load', () => { setTimeout(() => { try { startGame(); } catch (e) {} }, 60); });
+}
+
+/* el aviso de girar es solo una sugerencia: se cierra y no vuelve a salir */
+function cerrarAvisoRotar() { try { localStorage.setItem('nv_rotar_no', '1'); } catch (e) {} const el = document.getElementById('rotar'); if (el) el.classList.remove('visible'); }
+
+/* ============================================================
+   PIEZAS QUE SE ACOPLAN A LA NAVE (núcleos de planeta)
+   Cada nivel añade una pieza visible que dispara a su manera, y la nave crece.
+   ============================================================ */
+function nivelesTotales(p) { return p.mej ? p.mej.venus + p.mej.marte + p.mej.jupiter + p.mej.saturno + p.mej.neptuno : 0; }
+function escalaNave(p) { return 1 + Math.min(0.5, nivelesTotales(p) * 0.022); }
+
+function balaDesde(x, y, ang, dmg, vel, tam, color) {
+  const p = player;
+  const b = { x, y, vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel, r: tam, dmg: dmg * (p.dmgMult || 1), life: 1.6, color, pierce: 0, hitSet: new Set() };
+  bullets.push(b); return b;
+}
+// punto de la nave (en coordenadas locales de la nave) pasado al mundo
+function puntoNave(p, lx, ly) { const e = escalaNave(p), c = Math.cos(p.angle), s = Math.sin(p.angle); return [p.x + (lx * c - ly * s) * e, p.y + (lx * s + ly * c) * e]; }
+
+function disparoModulos(p, a, od) {
+  const m = p.mej; if (!m) return;
+  p.cuentaDisp = (p.cuentaDisp || 0) + 1;
+  // MARTE: ametralladoras laterales (una por nivel, alternando lados)
+  for (let i = 0; i < m.marte; i++) {
+    const lado = i % 2 ? 1 : -1, fila = Math.floor(i / 2);
+    const [x, y] = puntoNave(p, 6 - fila * 6, lado * (13 + fila * 4));
+    balaDesde(x, y, a + lado * 0.025, 6, 1250, 2.2, '#ff6e46');
+  }
+  // VENUS: lanza dorada cada pocos disparos (más seguido y más fuerte con el nivel)
+  if (m.venus > 0 && p.cuentaDisp % Math.max(2, 6 - m.venus) === 0) {
+    const [x, y] = puntoNave(p, 26 + m.venus * 2, 0);
+    const b = balaDesde(x, y, a, 26 + 9 * m.venus, 1350, 4 + m.venus * 0.6, '#ffd27a');
+    b.pierce = 1 + Math.floor(m.venus / 2); b.lanza = true;
+  }
+  // NEPTUNO: torretas en las puntas de las alas (1-2 torretas por lado); a nivel 5 se guían solas
+  if (m.neptuno > 0) {
+    const pares = m.neptuno >= 3 ? 2 : 1;
+    for (let k = 0; k < pares; k++) for (const lado of [-1, 1]) {
+      const [x, y] = puntoNave(p, -8 - k * 6, lado * (19 + k * 4));
+      const b = balaDesde(x, y, a + lado * (0.12 + k * 0.1), 9 + m.neptuno, 980, 3, '#5a96ff');
+      if (m.neptuno >= 5) { b.guiado = true; b.life = 2; }
+    }
+  }
+}
+
+// JÚPITER (nivel 3+): al recibir un golpe, el blindaje suelta metralla alrededor
+function ondaMetralla(p) {
+  const n = 8 + p.mej.jupiter * 2;
+  for (let i = 0; i < n; i++) { const ang = i / n * TAU; balaDesde(p.x, p.y, ang, 10 + p.mej.jupiter * 2, 700, 3, '#ffaa78').life = 0.6; }
+  spawnRing(p.x, p.y, '#ffaa78', 90, 500, 3);
+}
+
+// dibujo de las piezas (dentro del sistema de la nave: x hacia delante)
+function dibujarModulos(p, capa) {
+  const m = p.mej; if (!m) return;
+  ctx.save(); ctx.shadowBlur = 10;
+  if (capa === 'detras') {
+    // JÚPITER: placas de blindaje a los lados del casco
+    for (let i = 0; i < m.jupiter; i++) {
+      const lado = i % 2 ? 1 : -1, fila = Math.floor(i / 2);
+      ctx.fillStyle = '#b8743f'; ctx.strokeStyle = '#ffaa78'; ctx.shadowColor = '#ffaa78'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); const x0 = 4 - fila * 8, y0 = lado * 7;
+      ctx.moveTo(x0 + 5, y0); ctx.lineTo(x0 - 4, y0 + lado * 7); ctx.lineTo(x0 - 9, y0 + lado * 5); ctx.lineTo(x0 - 2, y0 - lado * 1); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  } else {
+    // VENUS: cañón de proa que crece con el nivel
+    if (m.venus > 0) {
+      const largo = 8 + m.venus * 3;
+      ctx.fillStyle = '#ffd27a'; ctx.shadowColor = '#ffc46e';
+      ctx.fillRect(14, -2 - m.venus * 0.3, largo, 4 + m.venus * 0.6);
+      ctx.fillStyle = '#fff4d6'; ctx.beginPath(); ctx.arc(14 + largo, 0, 2.5 + m.venus * 0.4, 0, TAU); ctx.fill();
+    }
+    // MARTE: ametralladoras a los costados
+    for (let i = 0; i < m.marte; i++) {
+      const lado = i % 2 ? 1 : -1, fila = Math.floor(i / 2), x = 6 - fila * 6, y = lado * (13 + fila * 4);
+      ctx.fillStyle = '#5a1a12'; ctx.strokeStyle = '#ff6e46'; ctx.shadowColor = '#ff6e46'; ctx.lineWidth = 1.2;
+      ctx.fillRect(x - 6, y - 2.2, 9, 4.4); ctx.strokeRect(x - 6, y - 2.2, 9, 4.4);
+      ctx.fillStyle = '#ff6e46'; ctx.fillRect(x + 3, y - 1, 5, 2);
+    }
+    // NEPTUNO: torretas en las puntas de las alas
+    if (m.neptuno > 0) {
+      const pares = m.neptuno >= 3 ? 2 : 1;
+      for (let k = 0; k < pares; k++) for (const lado of [-1, 1]) {
+        const x = -8 - k * 6, y = lado * (19 + k * 4);
+        ctx.fillStyle = '#5a96ff'; ctx.shadowColor = '#5a96ff';
+        ctx.beginPath(); ctx.arc(x, y, 3.4, 0, TAU); ctx.fill();
+        ctx.fillRect(x, y - 1, 7, 2);
+      }
+    }
+  }
+  ctx.restore();
 }

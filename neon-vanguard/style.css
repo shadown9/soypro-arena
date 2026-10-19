@@ -670,3 +670,38 @@ button:active { transform:scale(.98); }
 @media (orientation: landscape) and (max-height: 500px) { .pz-tu { margin:0 0 6px; } .pz-busca { margin-bottom:4px; } .pz-busca input { padding:7px 10px; } }
 
 #reg-paso-codigo .reg-form { display:flex; flex-direction:column; align-items:center; gap:12px; }
+
+
+/* ===== AVISO DE GIRAR: pequeño y opcional (antes tapaba toda la pantalla) ===== */
+#rotar.visible { display:flex !important; position:absolute; inset:auto 10px auto 10px; top:calc(10px + env(safe-area-inset-top)); bottom:auto;
+  z-index:60; flex-direction:row; align-items:center; gap:10px; padding:9px 12px; border-radius:12px; text-align:left;
+  background:rgba(8,12,28,.92); border:1px solid rgba(0,240,255,.3); box-shadow:0 0 18px rgba(0,240,255,.15);
+  font-size:12px; letter-spacing:.5px; color:#9fb8cc; pointer-events:auto; }
+#rotar.visible .icono { font-size:18px; animation:none; }
+#rotar.visible strong { color:var(--cyan); }
+#rotar-cerrar { margin-left:auto; flex:0 0 auto; width:30px; height:30px; padding:0; border-radius:8px; font-size:14px; letter-spacing:0;
+  background:rgba(255,255,255,.06); color:#cfe6f5; border:1px solid rgba(255,255,255,.15); box-shadow:none; }
+
+/* ===== INICIO: más ancho y más bajo, con menos fondo, para que se vea el juego detrás ===== */
+#overlay { background:radial-gradient(ellipse at center, rgba(5,6,13,.25), rgba(5,6,13,.6)); backdrop-filter:blur(1.5px); }
+#overlay .panel { background:linear-gradient(160deg, rgba(11,16,48,.62), rgba(5,6,13,.58)); max-width:min(96vw, 1180px); }
+@media (orientation: landscape) and (max-height: 500px) {
+  #overlay .panel { width:min(96vw, 1180px); max-width:none; column-gap:5vw; padding:12px 26px; grid-template-columns:1fr 1.1fr; }
+  #overlay .title { font-size:28px; }
+  #overlay .controls { justify-self:center; row-gap:5px; }
+}
+
+/* ===== PIZARRA FIJA: título, tu puesto y buscador quietos; solo se desliza la lista ===== */
+#screen-pizarra { overflow:hidden; }
+#screen-pizarra .panel { display:flex; flex-direction:column; max-height:calc(100dvh - 24px); overflow:hidden; margin:auto; }
+#screen-pizarra .panel > * { flex:0 0 auto; }
+#screen-pizarra .pizarra-lista { flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; }
+.pizarra-lista .pz-head { background:#080b1c !important; box-shadow:0 6px 10px #080b1c; margin-bottom:4px; }
+
+#screen-pizarra .panel > .btn-sec { align-self:center; width:auto; }
+
+/* niveles de mejora (núcleos de planeta) en el marcador */
+.hud-mejoras { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; max-width:180px; }
+.hud-mejoras span { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:7px; font-size:13px; color:var(--c);
+  border:1px solid color-mix(in srgb, var(--c) 55%, transparent); background:rgba(5,6,13,.55); text-shadow:0 0 8px var(--c); }
+.hud-mejoras b { font-size:11px; color:#fff; }

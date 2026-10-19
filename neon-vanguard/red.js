@@ -64,6 +64,9 @@ const RED = (function () {
     if (m.k === 2) for (let i = -2; i <= 2; i++) bala(a + i * 0.11, 5, 900, 3);
     else if (m.k === 3) { bala(a, 8, 1100, 4); bala(a - 0.16, 6, 1050, 3); bala(a + 0.16, 6, 1050, 3); }
     else if (m.k === 4) { bala(a, 10, 1000, 5); bala(a - 0.09, 6, 950, 3); bala(a + 0.09, 6, 950, 3); }
+    else if (m.k === 5) bala(a, 12, 1600, 3);                         // rayo
+    else if (m.k === 6) { bala(a - 0.35, 10, 700, 4); bala(a + 0.35, 10, 700, 4); } // misiles
+    else if (m.k === 7) bala(a, 18, 560, 8);                          // plasma
     else bala(a, 9, 1000, 4);
   }
 

@@ -12,7 +12,7 @@
 <meta property="og:type" content="website"><meta property="og:url" content="https://soyproarena.com/neon-vanguard/">
 <meta property="og:title" content="Neon Vanguard · Shooter arcade gratis"><meta property="og:description" content="Elige tu planeta, sobrevive a las oleadas y sube en el ranking mundial. Gratis en el navegador.">
 <meta property="og:image" content="https://soyproarena.com/neon-vanguard/portada.jpg"><meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="style.css?v=56">
+<link rel="stylesheet" href="style.css?v=62">
 </head>
 <body>
 <div id="game-wrap">
@@ -24,6 +24,7 @@
       <div class="stat"><span class="lbl">SCORE</span><span id="score" class="val">0</span></div>
       <div class="stat"><span class="lbl">WAVE</span><span id="wave" class="val">1</span></div>
       <div class="stat"><span class="lbl">BANDO</span><span id="hud-bando" class="val bando">—</span></div>
+      <div id="hud-mejoras" class="hud-mejoras"></div>
     </div>
     <div class="hud-center">
       <div id="combo" class="combo hidden">x1</div>
@@ -167,13 +168,14 @@
 
 <!-- Aviso de rotar en celular vertical -->
 <div id="rotar">
-  <div class="icono">📱</div>
-  <p><strong>GIRÁ EL CELULAR</strong><br>Se juega en horizontal</p>
+  <span class="icono">📱</span>
+  <span><strong>Mejor de lado</strong> · se juega más cómodo en horizontal</span>
+  <button id="rotar-cerrar" aria-label="Cerrar aviso" onclick="cerrarAvisoRotar()">✕</button>
 </div>
 
-<script src="pantallas.js?v=56" charset="utf-8"></script>
-<script src="ranking.js?v=56" charset="utf-8"></script>
-<script src="app.js?v=56" charset="utf-8"></script>
-<script src="red.js?v=56" charset="utf-8"></script>
+<script src="pantallas.js?v=62" charset="utf-8"></script>
+<script src="ranking.js?v=62" charset="utf-8"></script>
+<script src="app.js?v=62" charset="utf-8"></script>
+<script src="red.js?v=62" charset="utf-8"></script>
 </body>
 </html>
