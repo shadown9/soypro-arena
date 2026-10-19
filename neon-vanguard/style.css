@@ -291,6 +291,7 @@ button:active { transform:scale(.98); }
   kbd { font-size:9px; padding:2px 6px; letter-spacing:.5px; }
   .final-stats strong { font-size:26px; }
   /* HUD compacto para que no se pisen los números */
+  .stat-par { gap:10px; } .stat-bajas .val { font-size:15px !important; }
   #hud { padding:12px 14px; }
   .val { font-size:20px; }
   .lbl { font-size:8px; letter-spacing:2px; }
@@ -873,3 +874,7 @@ html.nv-intro #hud .hud-sonido { pointer-events:none; }
   color:#8fa3c8; background:rgba(0,240,255,.05); border:1px solid rgba(0,240,255,.25); transition:all .15s; }
 .pz-tabs button.activa { color:#05060d; background:#00f0ff; border-color:#00f0ff; box-shadow:0 0 12px rgba(0,240,255,.55); }
 @media (orientation: landscape) and (max-height: 500px) { .pz-tabs { margin-bottom:4px; } .pz-tabs button { padding:5px 12px; font-size:11px; } }
+
+/* marcador: OLEADA y BAJAS en la misma fila (las bajas más discretas) */
+.stat-par { display:flex; gap:16px; align-items:flex-start; }
+.stat-bajas .val { color:#ff6b8a; font-size:22px; text-shadow:0 0 8px rgba(255,77,109,.45); }

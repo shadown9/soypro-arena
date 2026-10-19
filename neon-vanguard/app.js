@@ -1681,6 +1681,7 @@ function drawEffects() {
 const el = {
   score: document.getElementById('score'),
   wave: document.getElementById('wave'),
+  kills: document.getElementById('hud-kills'),
   combo: document.getElementById('combo'),
   shieldFill: document.getElementById('shield-fill'),
   odFill: document.getElementById('od-fill'),
@@ -1700,6 +1701,7 @@ function updateHUD(dt) {
   hudAcc = 0;
   el.score.textContent = fmt(G.score);
   el.wave.textContent = G.wave;
+  if (el.kills) el.kills.textContent = fmt(G.kills);
   if (el.bando) {
     const id = (typeof bandoElegido !== 'undefined' && bandoElegido) ? bandoElegido : null;
     const b = id && typeof BANDOS !== 'undefined' ? BANDOS.find(x => x.id === id) : null;

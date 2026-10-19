@@ -11,7 +11,7 @@
 const I18N = {
   es: {
     // HUD
-    hud_score: 'PUNTAJE', hud_wave: 'OLEADA', hud_bando: 'BANDO', hud_shield: 'ESCUDO', hud_od: 'OVERDRIVE',
+    hud_score: 'PUNTAJE', hud_wave: 'OLEADA', hud_kills: 'BAJAS', hud_bando: 'BANDO', hud_shield: 'ESCUDO', hud_od: 'OVERDRIVE',
     aria_musica_off: 'Quitar música', aria_musica_on: 'Poner música', aria_efectos_off: 'Quitar efectos', aria_efectos_on: 'Poner efectos',
     idioma_btn: '🌐 EN', idioma_aria: 'Cambiar a inglés',
     // registro
@@ -112,7 +112,7 @@ const I18N = {
     ad_n_coraza: 'una CORAZA VIVA (rodéala)', ad_n_acechador: 'un ACECHADOR (no huyas)', ad_n_espino: 'un NÚCLEO ESPINADO (no te pegues)'
   },
   en: {
-    hud_score: 'SCORE', hud_wave: 'WAVE', hud_bando: 'FACTION', hud_shield: 'SHIELD', hud_od: 'OVERDRIVE',
+    hud_score: 'SCORE', hud_wave: 'WAVE', hud_kills: 'KILLS', hud_bando: 'FACTION', hud_shield: 'SHIELD', hud_od: 'OVERDRIVE',
     aria_musica_off: 'Mute music', aria_musica_on: 'Play music', aria_efectos_off: 'Mute sound effects', aria_efectos_on: 'Play sound effects',
     idioma_btn: '🌐 ES', idioma_aria: 'Switch to Spanish',
     reg_sub: 'Identify yourself, pilot.', reg_sub_nuevo: 'Create your pilot code.', reg_sub_codigo: 'Sign in with your name and code.', reg_nuevo_t: "I'M NEW", reg_nuevo_s: 'Get your pilot code',
