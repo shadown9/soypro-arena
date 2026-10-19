@@ -12,7 +12,12 @@
 <meta property="og:type" content="website"><meta property="og:url" content="https://soyproarena.com/neon-vanguard/">
 <meta property="og:title" content="Neon Vanguard · Shooter arcade gratis"><meta property="og:description" content="Elige tu planeta, sobrevive a las oleadas y sube en el ranking mundial. Gratis en el navegador.">
 <meta property="og:image" content="https://soyproarena.com/neon-vanguard/portada.jpg"><meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="style.css?v=70">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icono-192.png">
+<link rel="apple-touch-icon" href="icono-180.png">
+<meta name="apple-mobile-web-app-title" content="Neon Vanguard">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="style.css?v=71">
 </head>
 <body>
 <div id="game-wrap">
@@ -35,6 +40,10 @@
       </div>
       <div class="stat"><span class="lbl">OVERDRIVE</span>
         <div class="bar"><div id="od-fill" class="bar-fill od"></div></div>
+      </div>
+      <div class="hud-sonido">
+        <button id="btn-musica" class="btn-son" aria-label="Quitar música" onclick="Audio2.alternarMusica()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></button>
+        <button id="btn-efectos" class="btn-son" aria-label="Quitar efectos" onclick="Audio2.alternarEfectos()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></button>
       </div>
     </div>
   </div>
@@ -124,6 +133,7 @@
       <div class="fila-botones">
         <button class="btn-sec" onclick="abrirPizarra()">🏆 PIZARRA MUNDIAL</button>
         <button class="btn-sec" onclick="cambiarDeBando()">🔄 CAMBIAR DE BANDO</button>
+        <button class="btn-sec btn-instalar hidden" onclick="instalarApp()">📲 INSTALAR</button>
       </div>
     </div>
   </div>
@@ -164,11 +174,25 @@
       <div class="fila-botones">
         <button class="btn-sec" onclick="abrirPizarra()">🏆 PIZARRA MUNDIAL</button>
         <button class="btn-sec" onclick="cambiarDeBando()">🔄 CAMBIAR DE BANDO</button>
+        <button class="btn-sec btn-instalar hidden" onclick="instalarApp()">📲 INSTALAR</button>
       </div>
     </div>
   </div>
 
   <div id="fps" class="fps">60</div>
+</div>
+
+<!-- Cómo instalar en iPhone/iPad (Safari no tiene botón automático) -->
+<div id="instalar-ios" class="hidden" onclick="if(event.target===this)cerrarInstalarIOS()">
+  <div class="caja-ios">
+    <h3>INSTALAR NEON VANGUARD</h3>
+    <ol>
+      <li>Toca <b>Compartir</b> <span class="ico-ios">⬆︎</span> abajo en Safari.</li>
+      <li>Elige <b>«Añadir a pantalla de inicio»</b>.</li>
+      <li>Toca <b>Añadir</b>. Se abre a pantalla completa, como una app.</li>
+    </ol>
+    <button class="btn-sec" onclick="cerrarInstalarIOS()">ENTENDIDO</button>
+  </div>
 </div>
 
 <!-- Aviso de rotar en celular vertical -->
@@ -178,9 +202,11 @@
   <button id="rotar-cerrar" aria-label="Cerrar aviso" onclick="cerrarAvisoRotar()">✕</button>
 </div>
 
-<script src="pantallas.js?v=70" charset="utf-8"></script>
-<script src="ranking.js?v=70" charset="utf-8"></script>
-<script src="app.js?v=70" charset="utf-8"></script>
-<script src="red.js?v=70" charset="utf-8"></script>
+<script src="sonido.js?v=71" charset="utf-8"></script>
+<script src="instalar.js?v=71" charset="utf-8"></script>
+<script src="pantallas.js?v=71" charset="utf-8"></script>
+<script src="ranking.js?v=71" charset="utf-8"></script>
+<script src="app.js?v=71" charset="utf-8"></script>
+<script src="red.js?v=71" charset="utf-8"></script>
 </body>
 </html>

@@ -727,3 +727,25 @@ button:active { transform:scale(.98); }
   #overlay .fila-botones { grid-area:f; justify-content:center; margin-top:10px; }
   #gameover .panel { width:100% !important; max-width:none !important; padding:10px 4vw !important; }
 }
+
+/* --- Botones de música y efectos (en la partida, debajo de las barras) --- */
+.hud-sonido { display:flex; gap:8px; pointer-events:auto; margin-top:2px; }
+.btn-son { position:relative; width:38px; height:38px; border-radius:50%; border:1px solid rgba(0,240,255,.55);
+  background:rgba(0,240,255,.08); color:#00f0ff; cursor:pointer; padding:0;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 0 12px rgba(0,240,255,.25);
+  filter:drop-shadow(0 0 4px rgba(0,240,255,.6));
+  -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+.btn-son.apagado { color:#5f7f9f; filter:none; box-shadow:none; border-color:rgba(95,127,159,.4); }
+.btn-son.apagado::after { content:''; position:absolute; left:8px; right:8px; top:50%; height:2px;
+  background:#ff2bd6; transform:rotate(-45deg); box-shadow:0 0 6px #ff2bd6; }
+html.nv-demo .hud-sonido { display:none; }
+
+/* --- Instalar en iPhone: los pasos, sin recuadro pesado --- */
+#instalar-ios { position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
+  background:rgba(3,4,10,.86); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); padding:16px; }
+#instalar-ios.hidden { display:none !important; }
+.caja-ios { max-width:420px; width:100%; text-align:center; color:#cfe9ff; }
+.caja-ios h3 { margin:0 0 12px; font-size:15px; letter-spacing:3px; color:#00f0ff; text-shadow:0 0 14px rgba(0,240,255,.6); }
+.caja-ios ol { text-align:left; margin:0 auto 16px; padding-left:22px; line-height:1.7; font-size:14px; }
+.caja-ios b { color:#fff; }
+.ico-ios { display:inline-block; padding:0 6px; border:1px solid rgba(0,240,255,.4); border-radius:5px; color:#00f0ff; }

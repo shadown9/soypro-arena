@@ -35,52 +35,7 @@ const dist2 = (a, b) => { const dx = a.x - b.x, dy = a.y - b.y; return dx * dx +
 const lerp = (a, b, t) => a + (b - a) * t;
 const TAU = Math.PI * 2;
 
-/* ---------- audio sintetizado (WebAudio) ---------- */
-const Audio2 = {
-  ctx: null, master: null, enabled: true,
-  init() {
-    if (this.ctx) return;
-    try {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = 0.22;
-      this.master.connect(this.ctx.destination);
-    } catch (e) { this.enabled = false; }
-  },
-  tone(freq, dur, type = 'square', vol = 0.3, slideTo = null) {
-    if (!this.enabled || !this.ctx) return;
-    const t = this.ctx.currentTime;
-    const o = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t);
-    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), t + dur);
-    g.gain.setValueAtTime(vol, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(this.master);
-    o.start(t); o.stop(t + dur + 0.02);
-  },
-  noise(dur, vol = 0.2, filterFreq = 1200) {
-    if (!this.enabled || !this.ctx) return;
-    const t = this.ctx.currentTime;
-    const len = Math.floor(this.ctx.sampleRate * dur);
-    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
-    const src = this.ctx.createBufferSource(); src.buffer = buf;
-    const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = filterFreq;
-    const g = this.ctx.createGain(); g.gain.value = vol;
-    src.connect(f); f.connect(g); g.connect(this.master);
-    src.start(t);
-  },
-  shoot() { this.tone(rand(620, 720), 0.07, 'square', 0.10, 320); },
-  hit() { this.noise(0.06, 0.10, 2400); },
-  explode() { this.noise(0.35, 0.30, 900); this.tone(120, 0.3, 'sawtooth', 0.15, 40); },
-  powerup() { this.tone(520, 0.09, 'sine', 0.25, 880); setTimeout(() => this.tone(880, 0.12, 'sine', 0.2, 1320), 70); },
-  dash() { this.tone(300, 0.16, 'sawtooth', 0.12, 900); },
-  hurt() { this.tone(180, 0.22, 'sawtooth', 0.25, 60); this.noise(0.15, 0.15, 600); },
-  boss() { this.tone(70, 0.9, 'sawtooth', 0.3, 45); }
-};
+/* ---------- audio: vive en sonido.js (Audio2: efectos y música synthwave) ---------- */
 
 /* ---------- input ---------- */
 const keys = {};
@@ -721,7 +676,7 @@ function killEnemy(index, byPlayer = true) {
     color: e.color, speed: isBoss ? 520 : 300, life: isBoss ? 1.4 : 0.7, size: isBoss ? 7 : 4
   });
   spawnRing(e.x, e.y, e.color, isBoss ? 400 : 90, isBoss ? 900 : 500, isBoss ? 8 : 3);
-  Audio2.explode();
+  Audio2.explode(isBoss);
   shake(isBoss ? 30 : 6);
 
   if (byPlayer) {
@@ -1637,6 +1592,10 @@ function loop(now) {
 
   const dt = rawDt * G.slowmo;
   G.time += dt;
+  if (!NV_DEMO) { // la música sigue a la partida: combate, o jefe si hay uno vivo
+    Audio2.musica(enemies.some(e => e.type === 'boss') ? 2 : 1);
+    Audio2.ajustar(player.odActive > 0, player.hp / player.maxHp);
+  }
 
   // timers globales
   if (G.comboTimer > 0) { G.comboTimer -= dt; if (G.comboTimer <= 0) G.combo = 1; }
@@ -1672,9 +1631,9 @@ function loop(now) {
   drawOrbes();
   drawPlayer();
   drawEffects();
-  for (const e of enemies) if (e.type === 'boss') barraJefe(e); // la barra del jefe encima de todo
   ctx.restore();
   ctx.restore();
+  for (const e of enemies) if (e.type === 'boss') barraJefe(e); // la barra del jefe, arriba del todo
   drawFlechasEnemigos();
   if (typeof RED !== 'undefined') RED.dibujarPantalla();
 
@@ -1749,6 +1708,7 @@ function startGame() {
 function gameOver() {
   if (NV_DEMO) { startGame(); return; } // la demo nunca termina ni toca el ranking
   G.running = false; G.over = true;
+  Audio2.musica(0); Audio2.ajustar(false, 1); // vuelve la música tranquila del menú
   el.finalScore.textContent = G.score.toLocaleString('es');
   el.finalWave.textContent = G.wave;
   el.finalKills.textContent = G.kills;
@@ -2189,12 +2149,13 @@ function dibujarJefe(e, col, flash) {
 }
 
 function barraJefe(e) {
-  const bw = Math.min(360, W * 0.6), bh = 10, bx = vistaX0() + W / 2 - bw / 2, by = vistaY0() + 70;
-  ctx.save();
-  ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(bx, by, bw, bh);
-  ctx.fillStyle = e.color; ctx.shadowBlur = 16; ctx.shadowColor = e.color; ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), bh);
-  ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bw, bh);
-  ctx.font = '800 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = e.color; ctx.fillText('JEFE · ' + e.nombre, bx + bw / 2, by - 6);
+  // pegada al borde de arriba y finita: casi no tapa nada. En píxeles reales de pantalla (sin zoom ni temblor).
+  ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const sw = W * ZOOM, bw = Math.min(420, sw * 0.42), bh = 4, bx = (sw - bw) / 2, by = 3;
+  ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = e.color; ctx.shadowBlur = 8; ctx.shadowColor = e.color; ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), bh);
+  ctx.shadowBlur = 0; ctx.font = '800 9px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = e.color; ctx.fillText(e.nombre, bx - 8, by + bh / 2 + 0.5);
   ctx.restore();
 }
 
