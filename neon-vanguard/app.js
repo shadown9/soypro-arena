@@ -699,7 +699,8 @@ function damagePlayer(amount) {
   G.flash = 0.35; G.flashColor = '255,77,109';
   Audio2.hurt();
   spawnParticles(p.x, p.y, 18, { color: '#ff4d6d', speed: 260, life: 0.6, size: 4 });
-  if (p.hp <= 0) { p.hp = 0; p.alive = false; if (typeof RED !== 'undefined') RED.muerte(); gameOver(); }
+  if (p.hp <= 0) { p.hp = 0; p.alive = false; if (typeof RED !== 'undefined') RED.muerte();
+    if (G.privada && typeof caidoEnPrivada === 'function') caidoEnPrivada(); else gameOver(); }
 }
 
 // avisos para las misiones y logros (misiones.js)
@@ -860,6 +861,7 @@ function startWave(n) {
 }
 
 function updateWaves(dt) {
+  if (G.privada) { if (typeof tickPrivada === 'function') tickPrivada(dt); return; } // sala privada: sin oleadas, solo pilotos
   if (!G.waveActive) return;
   G.waveTimer += dt;
   // No avanzar si el jefe de esta oleada todavía no entró en escena
@@ -1755,6 +1757,7 @@ function resetGame() {
 
 function startGame() {
   Audio2.init();
+  if (G.privada && typeof salirPrivada === 'function') salirPrivada(true); // venía de una sala privada: vuelve al espacio público
   resetGame();
   CAM.x = player.x; CAM.y = player.y;
   despejarZona(player.x, player.y, 220);

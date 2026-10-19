@@ -11,6 +11,7 @@ const RED = (function () {
   const RADIO = { venus: 18, marte: 15, jupiter: 22, saturno: 17, neptuno: 17 };
   const DIBUJO = { venus: 'dibujarAvispa', marte: 'dibujarFilo', jupiter: 'dibujarColoso', saturno: 'dibujarAnillada', neptuno: 'dibujarEspectral' };
   let ws = null, conectado = false, miId = 0, envAcc = 0, cerrandoAdrede = false;
+  let sala = null, pedido = null, marc = null; // SALA PRIVADA: {codigo, modo, meta}; pedido = {crear} o {sala}
   const remotos = new Map();   // id → piloto
   let rBalas = [];             // balas de otros jugadores
   const feed = [];             // "X derribó a Y"
@@ -20,12 +21,18 @@ const RED = (function () {
   function conectar() {
     if (!activo || (ws && ws.readyState < 2)) return;
     const p = piloto(); if (!p || !p.codigo || !p.nombre) return;
-    try { ws = new WebSocket(URL_WS); } catch (e) { return; }
-    ws.onopen = () => enviar({ t: 'hola', nombre: p.nombre, codigo: p.codigo, bando: (typeof bandoElegido !== 'undefined' && bandoElegido) || p.bando });
-    ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
-    ws.onclose = () => { conectado = false; remotos.clear(); rBalas = []; if (!cerrandoAdrede) setTimeout(conectar, 4000); };
+    let este; try { este = ws = new WebSocket(URL_WS); } catch (e) { return; }
+    este.onopen = () => enviar(Object.assign({ t: 'hola', nombre: p.nombre, codigo: p.codigo, bando: miBando() }, pedido || {}));
+    este.onmessage = ev => { if (ws !== este) return; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
+    este.onclose = () => { if (ws !== este) return; conectado = false; remotos.clear(); rBalas = []; if (!cerrandoAdrede) setTimeout(conectar, 4000); };
     ws.onerror = () => {};
   }
+  function miBando() { const p = piloto() || {}; return (typeof bandoElegido !== 'undefined' && bandoElegido) || p.bando; }
+  // cambiar de sala: se cierra la conexión y se abre otra pidiendo la sala privada (o la pública)
+  function reconectar() { cerrandoAdrede = true; const viejo = ws; ws = null; conectado = false; remotos.clear(); rBalas = []; try { viejo && viejo.close(); } catch (e) {} cerrandoAdrede = false; conectar(); }
+  function privada(op) { pedido = op; sala = null; marc = null; reconectar(); }
+  function publica() { pedido = null; sala = null; marc = null; reconectar(); }
+  const aliado = id => { const r = remotos.get(id); return !!(sala && sala.modo === 'equipos' && r && r.bando === miBando()); };
   function enviar(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
   function nuevoRemoto(j) {
@@ -37,6 +44,8 @@ const RED = (function () {
     if (m.t === 'hola') {
       conectado = true; miId = m.id; remotos.clear();
       for (const j of m.j || []) remotos.set(j.id, nuevoRemoto(j));
+      sala = m.sala || null; pedido = null;
+      if (sala && typeof empezarPrivada === 'function') empezarPrivada(sala, m.x, m.y);
       if (G.running && player && (m.x || m.y)) { player.x = m.x; player.y = m.y; CAM.x = m.x; CAM.y = m.y; if (typeof despejarZona === 'function') despejarZona(m.x, m.y, 200); }
     } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); avisoFeed(m.nombre + ' entró al espacio', '#8fb4d0'); }
     else if (m.t === 'sale') { remotos.delete(m.id); }
@@ -53,6 +62,10 @@ const RED = (function () {
       const r = remotos.get(m.aId); if (r) spawnParticles(r.x, r.y, 30, { color: r.color, speed: 320, life: 0.8, size: 4 }); }
     else if (m.t === 'tuBaja') { G.score += m.pts; if (player) addFloater(player.x, player.y - 46, '+' + m.pts + ' ¡DERRIBASTE A ' + m.a + '!', '#00f0ff', 20); shake(8); }
     else if (m.t === 'corr') { if (player) { player.x = m.x; player.y = m.y; } }
+    else if (m.t === 'errSala') { pedido = null; if (typeof errorSala === 'function') errorSala(m.msg); const p = piloto() || {}; enviar({ t: 'hola', nombre: p.nombre, codigo: p.codigo, bando: miBando() }); }
+    else if (m.t === 'marcador') { marc = m; if (typeof privadaMarcador === 'function') privadaMarcador(m, miId); }
+    else if (m.t === 'fin') { if (typeof privadaFin === 'function') privadaFin(m, miId); }
+    else if (m.t === 'revancha') { if (typeof privadaRevancha === 'function') privadaRevancha(m); }
     else if (m.t === 'err') { cerrandoAdrede = true; try { ws.close(); } catch (e) {} } // nombre/código no coinciden: se juega sin conexión
   }
 
@@ -96,7 +109,7 @@ const RED = (function () {
       const b = rBalas[i]; b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
       if (b.life <= 0 || (p && Math.hypot(b.x - p.x, b.y - p.y) > 2600)) { rBalas.splice(i, 1); continue; } // pueden venir de fuera de la pantalla
       if (typeof chocaAsteroide === 'function' && chocaAsteroide(b.x, b.y, b.r)) { spawnParticles(b.x, b.y, 3, { color: '#9aa6b8', speed: 90, life: 0.25, size: 2 }); rBalas.splice(i, 1); continue; }
-      if (p && p.alive && p.invuln <= 0 && dist2(b, p) < (b.r + p.r) * (b.r + p.r)) {
+      if (p && p.alive && p.invuln <= 0 && !aliado(b.de) && dist2(b, p) < (b.r + p.r) * (b.r + p.r)) {
         enviar({ t: 'g', de: b.de, dmg: b.dmg });
         damagePlayer(b.dmg);
         spawnParticles(b.x, b.y, 8, { color: b.color, speed: 180, life: 0.4, size: 3 });
@@ -107,7 +120,7 @@ const RED = (function () {
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
       for (const r of remotos.values()) {
-        if (!r.v || !r.visto) continue;
+        if (!r.v || !r.visto || aliado(r.id)) continue;
         if (dist2(b, r) < (b.r + r.r) * (b.r + r.r)) { spawnParticles(b.x, b.y, 4, { color: b.color, speed: 150, life: 0.25, size: 2.5 }); bullets.splice(i, 1); break; }
       }
     }
@@ -125,7 +138,8 @@ const RED = (function () {
       ctx.restore();
       // nombre y vida (sin girar)
       ctx.save(); ctx.textAlign = 'center'; ctx.font = '700 11px system-ui, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.92)';
-      ctx.shadowBlur = 6; ctx.shadowColor = '#000'; ctx.fillText(r.nombre, r.x, r.y - r.r - 16);
+      if (aliado(r.id)) ctx.fillStyle = '#00ffa8';
+      ctx.shadowBlur = 6; ctx.shadowColor = '#000'; ctx.fillText((aliado(r.id) ? '▲ ' : '') + r.nombre, r.x, r.y - r.r - 16);
       const bw = 40; ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(r.x - bw / 2, r.y - r.r - 11, bw, 4);
       ctx.fillStyle = r.color; ctx.fillRect(r.x - bw / 2, r.y - r.r - 11, bw * Math.max(0, Math.min(1, r.hp / 100)), 4);
       ctx.restore();
@@ -146,15 +160,32 @@ const RED = (function () {
       }
       let vivos = 1; for (const r of remotos.values()) if (r.visto) vivos++;
       ctx.save(); ctx.font = '800 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(0,240,255,.85)';
-      ctx.fillText('● EN LÍNEA: ' + vivos, W / 2, 18); ctx.restore();
+      if (sala) ctx.fillText(textoMarcador(), W / 2, 18); else ctx.fillText('● EN LÍNEA: ' + vivos, W / 2, 18);
+      ctx.restore();
+      if (sala && !remotos.size) { // sola en la sala: esperando rival
+        ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.shadowBlur = 14; ctx.shadowColor = '#00f0ff';
+        ctx.font = '900 18px system-ui, sans-serif'; ctx.fillText(sala.modo === 'duelo' ? 'ESPERANDO RIVAL…' : 'ESPERANDO PILOTOS…', W / 2, H * 0.28);
+        ctx.font = '700 12px system-ui, sans-serif'; ctx.fillStyle = '#9fe8ff'; ctx.fillText('Pásale el código ' + sala.codigo + ' o toca INVITAR', W / 2, H * 0.28 + 20); ctx.restore();
+      }
     }
     feed.forEach((f, i) => { ctx.save(); ctx.globalAlpha = Math.min(1, f.vida); ctx.font = '800 12px system-ui, sans-serif'; ctx.textAlign = 'center';
       ctx.fillStyle = f.color; ctx.shadowBlur = 8; ctx.shadowColor = '#000'; ctx.fillText(f.txt, W / 2, 38 + i * 17); ctx.restore(); });
   }
 
+  function textoMarcador() {
+    if (!marc) return (sala.modo === 'duelo' ? 'DUELO ' : 'EQUIPOS ') + sala.codigo;
+    if (sala.modo === 'duelo') {
+      const yo = marc.j.find(j => j[0] === miId), otro = marc.j.find(j => j[0] !== miId);
+      return 'DUELO ' + sala.codigo + ' · TÚ ' + (yo ? yo[3] : 0) + ' – ' + (otro ? otro[3] : 0) + (otro ? ' ' + otro[1] : '') + ' · gana el primero a ' + marc.meta;
+    }
+    const eq = Object.entries(marc.e || {}).sort((a, z) => z[1] - a[1]).map(([b, n]) => b.toUpperCase() + ' ' + n).join(' · ');
+    return 'EQUIPOS ' + sala.codigo + ' · ' + (eq || 'sin bajas') + ' · gana el primero a ' + marc.meta;
+  }
+
   // al empezar partida: conectar (o reaparecer cerca de alguien si ya estamos dentro)
   function inicio() {
     if (!activo) return;
+    if (sala) return; // en una sala privada no se busca a nadie: ya estamos todos
     if (!conectado) { cerrandoAdrede = false; conectar(); return; }
     const vivos = [...remotos.values()].filter(r => r.v && r.visto);
     if (vivos.length && player) { const o = vivos[Math.floor(Math.random() * vivos.length)], a = Math.random() * TAU;
@@ -164,5 +195,7 @@ const RED = (function () {
   function muerte() { if (conectado) { enviar({ t: 'e', x: Math.round(player.x), y: Math.round(player.y), a: 0, hp: 0, od: 0, v: 0 }); enviar({ t: 'm' }); } }
 
   window.addEventListener('pagehide', () => { cerrandoAdrede = true; try { ws && ws.close(); } catch (e) {} });
-  return { tick, dibujar, dibujarPantalla, inicio, disparo, muerte, get conectado() { return conectado; }, get remotos() { return remotos; } };
+  function revancha() { enviar({ t: 'revancha' }); }
+  return { tick, dibujar, dibujarPantalla, inicio, disparo, muerte, privada, publica, revancha, get sala() { return sala; }, get miId() { return miId; },
+    get activo() { return activo; }, get conectado() { return conectado; }, get remotos() { return remotos; } };
 })();

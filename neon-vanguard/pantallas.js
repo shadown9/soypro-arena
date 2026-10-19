@@ -327,6 +327,8 @@ function irAControles() {
   document.getElementById('screen-bandos').classList.add('hidden');
   document.getElementById('overlay').classList.remove('hidden');
   mostrarControles();
+  // venía de un enlace de invitación (?sala=CÓDIGO) antes de tener piloto: ahora sí se abre la sala
+  try { const c = sessionStorage.getItem('nv_sala_pendiente'); if (c && typeof abrirAmigos === 'function') { sessionStorage.removeItem('nv_sala_pendiente'); setTimeout(() => abrirAmigos(c), 250); } } catch (e) {}
 }
 
 /* ---------- PANTALLA 3: CONTROLES ---------- */

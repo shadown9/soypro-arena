@@ -17,7 +17,7 @@
 <link rel="apple-touch-icon" href="icono-180.png">
 <meta name="apple-mobile-web-app-title" content="Neon Vanguard">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="style.css?v=82">
+<link rel="stylesheet" href="style.css?v=84">
 </head>
 <body>
 <div id="game-wrap">
@@ -132,6 +132,7 @@
       <p class="hint">Consejo: el dash te da invulnerabilidad por un instante.</p>
       <div id="guerra-mini" class="guerra-mini"></div>
       <div class="fila-botones">
+        <button class="btn-sec btn-amigos" onclick="abrirAmigos()">⚔ AMIGOS</button>
         <button class="btn-sec btn-misiones" onclick="abrirMisiones()">🎯 MISIONES</button>
         <button class="btn-sec" onclick="abrirPizarra()">🏆 PIZARRA MUNDIAL</button>
         <button class="btn-sec" onclick="cambiarDeBando()">🔄 CAMBIAR DE BANDO</button>
@@ -150,6 +151,34 @@
       <div id="pz-resultado" class="pz-resultado"></div>
       <div id="pizarra-lista" class="pizarra-lista"></div>
       <button class="btn-sec" onclick="cerrarPizarra()">← VOLVER</button>
+    </div>
+  </div>
+
+  <!-- JUGAR CON AMIGOS: salas privadas por código -->
+  <div id="screen-amigos" class="overlay hidden">
+    <div class="panel">
+      <h1 class="title">JUGAR CON<span>AMIGOS</span></h1>
+      <p class="subtitle">Crea una sala y pásales el código, o entra con el código que te dieron.</p>
+      <div class="am-crear">
+        <button class="btn-camino" onclick="crearSala('duelo')"><span class="camino-t">⚔ DUELO 1 VS 1</span><span class="camino-s">Gana el primero en derribar 5 veces al otro</span></button>
+        <button class="btn-camino" onclick="crearSala('equipos')"><span class="camino-t">🪐 GUERRA POR EQUIPOS</span><span class="camino-s">Planeta contra planeta, hasta 10 pilotos · primero a 15</span></button>
+      </div>
+      <div class="am-unir"><input id="am-codigo" type="text" maxlength="4" placeholder="CÓDIGO" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')unirseSala()"><button class="btn-sec" onclick="unirseSala()">ENTRAR A LA SALA</button></div>
+      <p id="am-msg" class="am-msg"></p>
+      <button class="btn-sec" onclick="cerrarAmigos()">← VOLVER</button>
+    </div>
+  </div>
+
+  <!-- RESULTADO DE LA SALA PRIVADA -->
+  <div id="screen-privada-fin" class="overlay hidden">
+    <div class="panel">
+      <h1 id="pf-titulo" class="title">¡VICTORIA!<span>GANASTE EL DUELO</span></h1>
+      <div id="pf-marcador" class="pf-marcador"></div>
+      <p id="pf-msg" class="am-msg"></p>
+      <div class="fila-botones">
+        <button id="pf-revancha" onclick="pedirRevancha()">🔁 REVANCHA</button>
+        <button class="btn-sec" onclick="salirPrivada()">✕ SALIR DE LA SALA</button>
+      </div>
     </div>
   </div>
 
@@ -194,6 +223,13 @@
   <div id="fps" class="fps">60</div>
 </div>
 
+<!-- Aviso de la sala privada (abajo, entre los dos joysticks) -->
+<div id="sala-banner" class="hidden">
+  <span class="sb-txt">SALA <b class="sb-cod">----</b> · <span class="sb-modo">DUELO</span></span>
+  <button class="sb-btn" onclick="invitarSala()">📤 INVITAR</button>
+  <button class="sb-btn sb-salir" onclick="salirPrivada()">✕ SALIR</button>
+</div>
+
 <!-- Cómo instalar en iPhone/iPad (Safari no tiene botón automático) -->
 <div id="instalar-ios" class="hidden" onclick="if(event.target===this)cerrarInstalarIOS()">
   <div class="caja-ios">
@@ -214,13 +250,14 @@
   <button id="rotar-cerrar" aria-label="Cerrar aviso" onclick="cerrarAvisoRotar()">✕</button>
 </div>
 
-<script src="sonido.js?v=80" charset="utf-8"></script>
-<script src="instalar.js?v=80" charset="utf-8"></script>
-<script src="pantallas.js?v=80" charset="utf-8"></script>
-<script src="ranking.js?v=80" charset="utf-8"></script>
-<script src="app.js?v=80" charset="utf-8"></script>
-<script src="intro.js?v=80" charset="utf-8"></script>
-<script src="misiones.js?v=80" charset="utf-8"></script>
-<script src="red.js?v=80" charset="utf-8"></script>
+<script src="sonido.js?v=84" charset="utf-8"></script>
+<script src="instalar.js?v=84" charset="utf-8"></script>
+<script src="pantallas.js?v=84" charset="utf-8"></script>
+<script src="ranking.js?v=84" charset="utf-8"></script>
+<script src="app.js?v=84" charset="utf-8"></script>
+<script src="intro.js?v=84" charset="utf-8"></script>
+<script src="misiones.js?v=84" charset="utf-8"></script>
+<script src="amigos.js?v=84" charset="utf-8"></script>
+<script src="red.js?v=84" charset="utf-8"></script>
 </body>
 </html>

@@ -809,3 +809,36 @@ html.nv-intro #hud .hud-sonido { pointer-events:none; }
   .guerra-mini { max-width:560px; }
 }
 #overlay.con-guerra .hint { display:none; } /* con la guerra cargada, su barra ocupa el lugar del consejo */
+
+/* ===== FASE 4: jugar con amigos ===== */
+.btn-amigos { border-color:rgba(255,43,214,.5); color:#ffb3ef; }
+.am-crear { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:6px 0 14px; }
+.am-crear .btn-camino { flex:1 1 220px; max-width:300px; margin:0; }
+.am-unir { display:flex; gap:8px; justify-content:center; align-items:center; margin-bottom:6px; }
+.am-unir input { width:150px; padding:10px 12px; border-radius:8px; border:1px solid rgba(0,240,255,.45); background:rgba(0,240,255,.06);
+  color:#fff; font:800 18px/1 system-ui, sans-serif; letter-spacing:6px; text-align:center; text-transform:uppercase; outline:none; }
+.am-unir input::placeholder { letter-spacing:2px; font-size:13px; color:#5f7f9f; }
+.am-unir input:focus { border-color:#00f0ff; box-shadow:0 0 14px rgba(0,240,255,.4); }
+.am-msg { min-height:16px; margin:6px 0 10px; font-size:12px; color:#ffd23f; }
+#sala-banner { position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 8px); transform:translateX(-50%); z-index:40;
+  display:flex; align-items:center; gap:8px; padding:5px 6px 5px 14px; border-radius:22px; background:rgba(5,6,13,.78);
+  border:1px solid rgba(0,240,255,.4); color:#9fe8ff; font:700 11px/1 system-ui, sans-serif; letter-spacing:1px; white-space:nowrap; }
+#sala-banner.hidden { display:none; }
+#sala-banner b { color:#fff; letter-spacing:3px; }
+.sb-btn { padding:6px 10px; border-radius:14px; border:1px solid rgba(0,240,255,.45); background:rgba(0,240,255,.1); color:#fff;
+  font:800 10px/1 system-ui, sans-serif; letter-spacing:1px; cursor:pointer; touch-action:manipulation; }
+.sb-salir { border-color:rgba(255,77,109,.5); background:rgba(255,77,109,.12); }
+.pf-marcador { display:flex; flex-direction:column; gap:6px; margin:10px auto 6px; max-width:320px; }
+.pf-fila { display:flex; justify-content:space-between; padding:6px 12px; border-radius:8px; background:rgba(255,255,255,.04); font-weight:800; letter-spacing:1px; }
+.pf-fila b { color:#fff; font-size:16px; }
+.pf-yo { border:1px solid rgba(0,240,255,.5); }
+.pf-eq { text-align:center; font-size:12px; font-weight:800; margin-top:4px; }
+#pf-revancha { padding:12px 22px; }
+@media (orientation: landscape) and (max-height: 500px) {
+  #screen-amigos .title, #screen-privada-fin .title { font-size:24px; }
+  #screen-amigos .title span, #screen-privada-fin .title span { display:inline; margin-left:8px; }
+  #screen-amigos .subtitle { margin:4px 0 8px; }
+  .am-crear { flex-wrap:nowrap; margin:4px 0 8px; }
+  .am-crear .btn-camino { padding:10px 12px; }
+  .am-msg { margin:2px 0 6px; }
+}
