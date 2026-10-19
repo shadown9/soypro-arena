@@ -714,3 +714,16 @@ button:active { transform:scale(.98); }
 .ver-clave:hover { background:rgba(255,43,214,.12); }
 .ver-clave #ojo-tachado { display:block; } .ver-clave.visible #ojo-tachado { display:none; }
 .ver-clave.visible { color:var(--magenta); }
+
+/* ===== SIN RECUADROS: las pantallas ocupan todo el ancho y el juego se ve detrás ===== */
+.overlay .panel { border:0 !important; background:transparent !important; box-shadow:none !important; backdrop-filter:none !important; }
+.overlay { background:linear-gradient(90deg, rgba(5,6,13,.78), rgba(5,6,13,.45) 50%, rgba(5,6,13,.78)) !important; backdrop-filter:blur(2px); }
+#overlay .panel { width:100% !important; max-width:none !important; }
+@media (orientation: landscape) {
+  #overlay .panel { display:grid; grid-template-columns:1fr 1fr; grid-template-areas:"t c" "s c" "b c" "h c" "f f"; column-gap:6vw; align-items:center; padding:12px 4vw !important; }
+  #overlay .title { grid-area:t; } #overlay .subtitle { grid-area:s; max-width:34ch; justify-self:center; }
+  #overlay .controls { grid-area:c; margin:0 !important; justify-self:center; }
+  #overlay #start-btn { grid-area:b; justify-self:center; } #overlay .hint { grid-area:h; justify-self:center; max-width:34ch; }
+  #overlay .fila-botones { grid-area:f; justify-content:center; margin-top:10px; }
+  #gameover .panel { width:100% !important; max-width:none !important; padding:10px 4vw !important; }
+}
