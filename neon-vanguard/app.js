@@ -428,6 +428,7 @@ function firePlayer() {
   });
   Audio2.shoot();
   shake(1.2);
+  if (typeof RED !== 'undefined') RED.disparo(p.weapon === 2 ? 2 : p.weapon === 3 ? 3 : od ? 4 : 1);
 }
 
 /* ---------- enemigos: NAVES DE CADA PLANETA ----------
@@ -664,7 +665,7 @@ function damagePlayer(amount) {
   G.flash = 0.35; G.flashColor = '255,77,109';
   Audio2.hurt();
   spawnParticles(p.x, p.y, 18, { color: '#ff4d6d', speed: 260, life: 0.6, size: 4 });
-  if (p.hp <= 0) { p.hp = 0; p.alive = false; gameOver(); }
+  if (p.hp <= 0) { p.hp = 0; p.alive = false; if (typeof RED !== 'undefined') RED.muerte(); gameOver(); }
 }
 
 function killEnemy(index, byPlayer = true) {
@@ -1535,6 +1536,7 @@ function loop(now) {
   updatePlayer(dt);
   updateEnemies(dt);
   updateBullets(dt);
+  if (typeof RED !== 'undefined') RED.tick(dt);
   updatePowerups(dt);
   updateEffects(dt);
   updateWaves(dt);
@@ -1549,11 +1551,13 @@ function loop(now) {
   drawPowerups();
   drawBullets();
   drawEnemies();
+  if (typeof RED !== 'undefined') RED.dibujar();
   drawPlayer();
   drawEffects();
   ctx.restore();
   ctx.restore();
   drawFlechasEnemigos();
+  if (typeof RED !== 'undefined') RED.dibujarPantalla();
 
   // flash de pantalla
   if (G.flash > 0) {
@@ -1614,6 +1618,7 @@ function startGame() {
   resetGame();
   CAM.x = player.x; CAM.y = player.y;
   G.running = true; G.over = false;
+  if (typeof RED !== 'undefined') RED.inicio();
   el.overlay.classList.add('hidden');
   el.gameover.classList.add('hidden');
   startWave(1);
