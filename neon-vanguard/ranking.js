@@ -30,10 +30,10 @@ const ARENA_LECTURA = (location.port === '7788') ? ARENA_API : 'https://juego.so
 const ARENA_URL_PUBLICA = (function () {
   try {
     if (location.protocol === 'http:' || location.protocol === 'https:') {
-      return location.origin + location.pathname;
+      return location.origin + location.pathname + '?v=2'; // ?v=2: WhatsApp y las redes piden la vista previa nueva (no la guardada)
     }
   } catch (e) {}
-  return 'https://soyproarena.com/neon-vanguard/';
+  return 'https://soyproarena.com/neon-vanguard/?v=2';
 })();
 
 const RANK_KEY = 'nv_record';
