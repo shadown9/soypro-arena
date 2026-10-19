@@ -237,7 +237,8 @@ function createPlayer() {
     dmgMult: b.dmg, odMult: b.od,
     dmgBase: b.dmg, fireRateBase: 0.115 * b.fire,
     mej: { venus: 0, marte: 0, jupiter: 0, saturno: 0, neptuno: 0 }, orbAng: 0, orbGolpe: 0,
-    trail: [], hitFlash: 0, alive: true
+    trail: [], hitFlash: 0, alive: true,
+    bando: (typeof leerPiloto === 'function' && (leerPiloto() || {}).bando) || '' // tu nave es la de tu planeta
   };
 }
 
@@ -1006,131 +1007,147 @@ function drawPlayer() {
   const accent = od ? '#ffb020' : '#4d7cff';
   const flash = p.hitFlash > 0;
 
+  // ---- TU NAVE ES LA DE TU PLANETA (diseño del Jefe), con aura propia para distinguirte siempre ----
+  const MIA = NAVE_IMG[p.bando];
+  if (MIA) {
+    ctx.save();
+    const aura = ctx.createRadialGradient(0, 0, 4, 0, 0, 30);
+    aura.addColorStop(0, od ? 'rgba(255,43,214,0.42)' : 'rgba(0,240,255,0.32)'); aura.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = aura; ctx.beginPath(); ctx.arc(0, 0, 30, 0, TAU); ctx.fill();
+    ctx.strokeStyle = od ? 'rgba(255,43,214,0.55)' : 'rgba(0,240,255,0.45)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(0, 0, 25, G.time * 2, G.time * 2 + 1.6); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, 25, G.time * 2 + Math.PI, G.time * 2 + Math.PI + 1.6); ctx.stroke();
+    const L = 15 * (NAVE_LARGO[p.bando] || 3), h = MIA.im.height * L / MIA.im.width * (NAVE_ANCHO[p.bando] || 1);
+    ctx.shadowBlur = 20; ctx.shadowColor = mainColor;
+    ctx.drawImage(flash ? MIA.blanco : MIA.im, -L * 0.6, -h / 2, L, h);
+    ctx.restore();
+  } else {
   // ---- ESTELAS DE MOTOR (doble, pulsantes) ----
-  const pulse = 0.75 + Math.sin(G.time * 30) * 0.25;
-  const flameLen = (od ? 30 : 20) * pulse;
-  for (const oy of [-5.5, 5.5]) {
-    const grad = ctx.createLinearGradient(-14, oy, -14 - flameLen, oy);
-    grad.addColorStop(0, od ? 'rgba(255,180,32,0.95)' : 'rgba(0,240,255,0.95)');
-    grad.addColorStop(0.45, od ? 'rgba(255,43,214,0.6)' : 'rgba(77,124,255,0.6)');
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grad;
+    const pulse = 0.75 + Math.sin(G.time * 30) * 0.25;
+    const flameLen = (od ? 30 : 20) * pulse;
+    for (const oy of [-5.5, 5.5]) {
+      const grad = ctx.createLinearGradient(-14, oy, -14 - flameLen, oy);
+      grad.addColorStop(0, od ? 'rgba(255,180,32,0.95)' : 'rgba(0,240,255,0.95)');
+      grad.addColorStop(0.45, od ? 'rgba(255,43,214,0.6)' : 'rgba(77,124,255,0.6)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(-13, oy - 3.2);
+      ctx.lineTo(-13 - flameLen, oy);
+      ctx.lineTo(-13, oy + 3.2);
+      ctx.closePath();
+      ctx.fill();
+      // núcleo blanco de la llama
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.55 * pulse) + ')';
+      ctx.beginPath();
+      ctx.moveTo(-13, oy - 1.4);
+      ctx.lineTo(-13 - flameLen * 0.45, oy);
+      ctx.lineTo(-13, oy + 1.4);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.shadowBlur = 24;
+    ctx.shadowColor = mainColor;
+
+    // ---- ALAS TRASERAS (degradado) ----
+    const wingGrad = ctx.createLinearGradient(-4, 0, -20, 0);
+    wingGrad.addColorStop(0, od ? '#ff2bd6' : '#00f0ff');
+    wingGrad.addColorStop(1, od ? '#7a1a6b' : '#1a3a8a');
+    ctx.fillStyle = flash ? '#ffffff' : wingGrad;
+    // ala superior
     ctx.beginPath();
-    ctx.moveTo(-13, oy - 3.2);
-    ctx.lineTo(-13 - flameLen, oy);
-    ctx.lineTo(-13, oy + 3.2);
+    ctx.moveTo(2, -6);
+    ctx.lineTo(-14, -19);
+    ctx.lineTo(-19, -17);
+    ctx.lineTo(-9, -5);
     ctx.closePath();
     ctx.fill();
-    // núcleo blanco de la llama
-    ctx.fillStyle = 'rgba(255,255,255,' + (0.55 * pulse) + ')';
+    // ala inferior
     ctx.beginPath();
-    ctx.moveTo(-13, oy - 1.4);
-    ctx.lineTo(-13 - flameLen * 0.45, oy);
-    ctx.lineTo(-13, oy + 1.4);
+    ctx.moveTo(2, 6);
+    ctx.lineTo(-14, 19);
+    ctx.lineTo(-19, 17);
+    ctx.lineTo(-9, 5);
     ctx.closePath();
     ctx.fill();
+
+    // ---- CAÑONES EN LAS PUNTAS DE LAS ALAS ----
+    ctx.fillStyle = flash ? '#ffffff' : accent;
+    ctx.shadowBlur = 12; ctx.shadowColor = accent;
+    for (const sy of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(-13, sy * 17.5);
+      ctx.lineTo(-19, sy * 18.5);
+      ctx.lineTo(-19, sy * 15.5);
+      ctx.lineTo(-13, sy * 15);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // ---- CASCO PRINCIPAL ----
+    ctx.shadowBlur = 22; ctx.shadowColor = mainColor;
+    const hullGrad = ctx.createLinearGradient(-14, 0, 22, 0);
+    hullGrad.addColorStop(0, od ? '#8a1a72' : '#0a4a6a');
+    hullGrad.addColorStop(0.55, od ? '#ff2bd6' : '#00f0ff');
+    hullGrad.addColorStop(1, '#ffffff');
+    ctx.fillStyle = flash ? '#ffffff' : hullGrad;
+    ctx.beginPath();
+    ctx.moveTo(22, 0);            // punta
+    ctx.quadraticCurveTo(14, -5, 4, -8);
+    ctx.lineTo(-10, -8.5);
+    ctx.lineTo(-13, -4);
+    ctx.lineTo(-13, 4);
+    ctx.lineTo(-10, 8.5);
+    ctx.lineTo(4, 8);
+    ctx.quadraticCurveTo(14, 5, 22, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    // ---- LÍNEAS DE PANEL ----
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1;
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.moveTo(16, 0); ctx.lineTo(-9, 0);
+    ctx.moveTo(6, -6.5); ctx.lineTo(2, -6.5);
+    ctx.moveTo(6, 6.5); ctx.lineTo(2, 6.5);
+    ctx.stroke();
+
+    // ---- CABINA (cockpit con reflejo) ----
+    const cockGrad = ctx.createLinearGradient(2, -4, 12, 4);
+    cockGrad.addColorStop(0, od ? '#ffd0f4' : '#d0fbff');
+    cockGrad.addColorStop(0.5, od ? '#ff2bd6' : '#00f0ff');
+    cockGrad.addColorStop(1, od ? '#5a0a4a' : '#0a3a5a');
+    ctx.fillStyle = flash ? '#ffffff' : cockGrad;
+    ctx.shadowBlur = 10; ctx.shadowColor = mainColor;
+    ctx.beginPath();
+    ctx.ellipse(7, 0, 6, 3.6, 0, 0, TAU);
+    ctx.fill();
+    // reflejo del vidrio
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.ellipse(8.5, -1.2, 2.2, 1.1, -0.3, 0, TAU);
+    ctx.fill();
+
+    // ---- NÚCLEO DE ENERGÍA ----
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowBlur = 16; ctx.shadowColor = mainColor;
+    ctx.beginPath();
+    ctx.arc(-4, 0, 2.6, 0, TAU);
+    ctx.fill();
+
+    // ---- LUCES DE NAVEGACIÓN (parpadeo alternado) ----
+    const blink = Math.floor(G.time * 6) % 2 === 0;
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = blink ? '#ff2bd6' : 'rgba(255,43,214,0.25)';
+    ctx.shadowColor = '#ff2bd6';
+    ctx.beginPath(); ctx.arc(-16, -17.5, 1.8, 0, TAU); ctx.fill();
+    ctx.fillStyle = blink ? 'rgba(0,255,140,0.25)' : '#00ff8c';
+    ctx.shadowColor = '#00ff8c';
+    ctx.beginPath(); ctx.arc(-16, 17.5, 1.8, 0, TAU); ctx.fill();
   }
-
-  ctx.shadowBlur = 24;
-  ctx.shadowColor = mainColor;
-
-  // ---- ALAS TRASERAS (degradado) ----
-  const wingGrad = ctx.createLinearGradient(-4, 0, -20, 0);
-  wingGrad.addColorStop(0, od ? '#ff2bd6' : '#00f0ff');
-  wingGrad.addColorStop(1, od ? '#7a1a6b' : '#1a3a8a');
-  ctx.fillStyle = flash ? '#ffffff' : wingGrad;
-  // ala superior
-  ctx.beginPath();
-  ctx.moveTo(2, -6);
-  ctx.lineTo(-14, -19);
-  ctx.lineTo(-19, -17);
-  ctx.lineTo(-9, -5);
-  ctx.closePath();
-  ctx.fill();
-  // ala inferior
-  ctx.beginPath();
-  ctx.moveTo(2, 6);
-  ctx.lineTo(-14, 19);
-  ctx.lineTo(-19, 17);
-  ctx.lineTo(-9, 5);
-  ctx.closePath();
-  ctx.fill();
-
-  // ---- CAÑONES EN LAS PUNTAS DE LAS ALAS ----
-  ctx.fillStyle = flash ? '#ffffff' : accent;
-  ctx.shadowBlur = 12; ctx.shadowColor = accent;
-  for (const sy of [-1, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(-13, sy * 17.5);
-    ctx.lineTo(-19, sy * 18.5);
-    ctx.lineTo(-19, sy * 15.5);
-    ctx.lineTo(-13, sy * 15);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  // ---- CASCO PRINCIPAL ----
-  ctx.shadowBlur = 22; ctx.shadowColor = mainColor;
-  const hullGrad = ctx.createLinearGradient(-14, 0, 22, 0);
-  hullGrad.addColorStop(0, od ? '#8a1a72' : '#0a4a6a');
-  hullGrad.addColorStop(0.55, od ? '#ff2bd6' : '#00f0ff');
-  hullGrad.addColorStop(1, '#ffffff');
-  ctx.fillStyle = flash ? '#ffffff' : hullGrad;
-  ctx.beginPath();
-  ctx.moveTo(22, 0);            // punta
-  ctx.quadraticCurveTo(14, -5, 4, -8);
-  ctx.lineTo(-10, -8.5);
-  ctx.lineTo(-13, -4);
-  ctx.lineTo(-13, 4);
-  ctx.lineTo(-10, 8.5);
-  ctx.lineTo(4, 8);
-  ctx.quadraticCurveTo(14, 5, 22, 0);
-  ctx.closePath();
-  ctx.fill();
-
-  // ---- LÍNEAS DE PANEL ----
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-  ctx.lineWidth = 1;
-  ctx.shadowBlur = 0;
-  ctx.beginPath();
-  ctx.moveTo(16, 0); ctx.lineTo(-9, 0);
-  ctx.moveTo(6, -6.5); ctx.lineTo(2, -6.5);
-  ctx.moveTo(6, 6.5); ctx.lineTo(2, 6.5);
-  ctx.stroke();
-
-  // ---- CABINA (cockpit con reflejo) ----
-  const cockGrad = ctx.createLinearGradient(2, -4, 12, 4);
-  cockGrad.addColorStop(0, od ? '#ffd0f4' : '#d0fbff');
-  cockGrad.addColorStop(0.5, od ? '#ff2bd6' : '#00f0ff');
-  cockGrad.addColorStop(1, od ? '#5a0a4a' : '#0a3a5a');
-  ctx.fillStyle = flash ? '#ffffff' : cockGrad;
-  ctx.shadowBlur = 10; ctx.shadowColor = mainColor;
-  ctx.beginPath();
-  ctx.ellipse(7, 0, 6, 3.6, 0, 0, TAU);
-  ctx.fill();
-  // reflejo del vidrio
-  ctx.fillStyle = 'rgba(255,255,255,0.75)';
-  ctx.shadowBlur = 0;
-  ctx.beginPath();
-  ctx.ellipse(8.5, -1.2, 2.2, 1.1, -0.3, 0, TAU);
-  ctx.fill();
-
-  // ---- NÚCLEO DE ENERGÍA ----
-  ctx.fillStyle = '#ffffff';
-  ctx.shadowBlur = 16; ctx.shadowColor = mainColor;
-  ctx.beginPath();
-  ctx.arc(-4, 0, 2.6, 0, TAU);
-  ctx.fill();
-
-  // ---- LUCES DE NAVEGACIÓN (parpadeo alternado) ----
-  const blink = Math.floor(G.time * 6) % 2 === 0;
-  ctx.shadowBlur = 10;
-  ctx.fillStyle = blink ? '#ff2bd6' : 'rgba(255,43,214,0.25)';
-  ctx.shadowColor = '#ff2bd6';
-  ctx.beginPath(); ctx.arc(-16, -17.5, 1.8, 0, TAU); ctx.fill();
-  ctx.fillStyle = blink ? 'rgba(0,255,140,0.25)' : '#00ff8c';
-  ctx.shadowColor = '#00ff8c';
-  ctx.beginPath(); ctx.arc(-16, 17.5, 1.8, 0, TAU); ctx.fill();
 
   dibujarModulos(p, 'delante');
   ctx.restore();
