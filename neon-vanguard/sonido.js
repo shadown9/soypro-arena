@@ -116,6 +116,53 @@ const Audio2 = {
     else g.connect(this.sfx);
     return g;
   },
+  // GRITO de criatura: cuerdas vocales (dientes de sierra distorsionados) → gruñido (temblor de volumen)
+  // → boca (filtros de formantes) + aliento rasposo; el tono sube o cae como un rugido o un chillido
+  distorsion() {
+    if (this._dist) return this._dist;
+    const n = 1024, cu = new Float32Array(n); for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; cu[i] = Math.tanh(x * 3.2); }
+    return (this._dist = cu);
+  },
+  grito(D, o) {
+    const c = this.ctx, t = c.currentTime + (o.dt || 0), dur = o.dur;
+    const env = c.createGain(); env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(o.vol, t + Math.min(0.08, dur * 0.25));
+    env.gain.setValueAtTime(o.vol, t + dur * 0.55); env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    env.connect(D);
+    const boca = c.createGain(); boca.gain.value = 1; boca.connect(env);
+    for (const [fr, q, v] of o.formantes) { const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = fr; bp.Q.value = q;
+      const g = c.createGain(); g.gain.value = v; bp.connect(g); g.connect(boca); o._f = (o._f || []).concat(bp); }
+    const sh = c.createWaveShaper(); sh.curve = this.distorsion();
+    const am = c.createGain(); am.gain.value = 1 - (o.gruñido || 0) / 2;
+    if (o.gruñido) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = o.gruñidoHz || 30; lg.gain.value = o.gruñido / 2; l.connect(lg); lg.connect(am.gain); l.start(t); l.stop(t + dur + 0.05); }
+    sh.connect(am); for (const bp of o._f) am.connect(bp);
+    const vib = c.createOscillator(), vg = c.createGain(); vib.frequency.value = o.vibHz || 6; vg.gain.value = o.vib || 0; vib.connect(vg);
+    for (const det of [0, 9, -7]) { const s = c.createOscillator(); s.type = 'sawtooth'; s.detune.value = det;
+      s.frequency.setValueAtTime(o.f[0], t);
+      if (o.f.length > 2) { s.frequency.linearRampToValueAtTime(o.f[1], t + dur * 0.3); s.frequency.exponentialRampToValueAtTime(o.f[2], t + dur); }
+      else s.frequency.exponentialRampToValueAtTime(o.f[1], t + dur);
+      vg.connect(s.frequency); const pre = c.createGain(); pre.gain.value = 0.9; s.connect(pre); pre.connect(sh); s.start(t); s.stop(t + dur + 0.05); }
+    vib.start(t); vib.stop(t + dur + 0.05);
+    if (o.aliento) { const n = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain(); n.buffer = this.ruido;
+      bp.type = 'bandpass'; bp.frequency.value = o.alientoHz || 1800; bp.Q.value = 0.8; g.gain.value = o.aliento;
+      n.connect(bp); bp.connect(g); g.connect(env); n.start(t, Math.random() * 0.4); n.stop(t + dur + 0.05); }
+  },
+  // voces de cada criatura (k < 1 = gigante: más grave y más largo)
+  VOCES: {
+    medusa:    { f: [520, 640, 340], dur: 0.9,  formantes: [[420, 6, 1.4], [850, 7, 0.8]], vib: 18, vibHz: 5, aliento: 0.05, alientoHz: 900, vol: 0.55 },
+    larva:     { f: [1700, 2600, 1500], dur: 0.28, formantes: [[2400, 5, 1.2], [3600, 6, 0.7]], gruñido: 0.9, gruñidoHz: 70, aliento: 0.06, alientoHz: 4000, vol: 0.5 },
+    serpiente: { f: [120, 135, 70], dur: 1.0,  formantes: [[520, 4, 1.3], [1150, 5, 0.8], [2600, 6, 0.3]], gruñido: 0.85, gruñidoHz: 28, vib: 4, aliento: 0.16, alientoHz: 2500, vol: 0.65 },
+    ojo:       { f: [78, 92, 52],  dur: 1.5,  formantes: [[300, 5, 1.5], [720, 6, 0.8]], gruñido: 0.5, gruñidoHz: 18, vib: 3, vibHz: 3, aliento: 0.08, alientoHz: 600, vol: 0.6 },
+    espino:    { f: [900, 1300, 420], dur: 0.5, formantes: [[2100, 8, 1.2], [3500, 9, 0.8]], gruñido: 0.6, gruñidoHz: 55, aliento: 0.08, alientoHz: 5000, vol: 0.6 },
+    coraza:    { f: [92, 100, 62],  dur: 1.1,  formantes: [[380, 4, 1.4], [900, 5, 0.9]], gruñido: 0.9, gruñidoHz: 22, aliento: 0.12, alientoHz: 1200, vol: 0.65 },
+    acechador: { f: [700, 1600, 520], dur: 0.55, formantes: [[1500, 5, 1.3], [2900, 6, 0.8]], gruñido: 0.7, gruñidoHz: 45, vib: 25, vibHz: 9, aliento: 0.12, alientoHz: 3200, vol: 0.55 }
+  },
+  gritar(tipo, D, k, muerte) {
+    const v = this.VOCES[tipo]; if (!v || !this.libre('grito', 420)) return; // nunca varios gritos encima: sería ruido
+    const f = muerte ? [v.f[0] * 1.15, v.f[0] * 1.3, v.f[v.f.length - 1] * 0.5] : v.f; // al morir: grito que se apaga hacia abajo
+    this.grito(D, Object.assign({}, v, { f: f.map(x => x * k), dur: v.dur * (k < 1 ? 1.6 : 1) * (muerte ? 1.15 : 1),
+      formantes: v.formantes.map(([a, q, g]) => [a * (k < 1 ? 0.75 : 1), q, g]), vol: v.vol * (k < 1 ? 1.25 : 1) }));
+  },
   // tipo: medusa · larva · serpiente · ojo · espino · coraza · acechador ; ev: aparece · ataque · carga · muere · bloqueo
   bestia(tipo, ev, x, y, gigante) {
     if (!this.listo() || !this.libre(tipo + ev, ev === 'muere' ? 70 : tipo === 'larva' ? 260 : 120)) return;
@@ -157,6 +204,8 @@ const Audio2 = {
         muere: () => { o('sawtooth', 2200, 300, 0.35, 0.1); r(0.2, 0.1, 'highpass', 3000, 1000); } }
     };
     const f = S[tipo] && S[tipo][ev]; if (f) f();
+    // gritos: al aparecer, al morir y al lanzarse los depredadores
+    if (ev === 'aparece' || ev === 'muere' || (ev === 'ataque' && (tipo === 'serpiente' || tipo === 'acechador' || gigante))) this.gritar(tipo, D, k, ev === 'muere');
   },
 
   latido() { // corazón con poca vida: dos golpes graves
