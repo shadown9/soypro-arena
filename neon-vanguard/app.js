@@ -629,7 +629,7 @@ function spawnBoss() {
   const jefe = elegirJefe(), J = JEFES[jefe];
   const hp = Math.round((900 + (G.wave - 1) * 420) * J.vida);
   const boss = {
-    type: 'boss', jefe, nombre: J.nombre, x: CAM.x, y: vistaY0() - 120, vx: 0, vy: 0, r: J.r,
+    type: 'boss', jefe, nombre: t('j_' + jefe), x: CAM.x, y: vistaY0() - 120, vx: 0, vy: 0, r: J.r,
     hp, maxHp: hp, speed: 70, color: J.color, score: 3000, dmg: 26, t: {},
     fireCd: 1.5, fireRate: 1.1, angle: 0, hitFlash: 0, phase: 0,
     spawnAnim: 1.2, entering: true, pattern: 0, patternTimer: 0, wobble: 0
@@ -639,7 +639,7 @@ function spawnBoss() {
   Audio2.boss();
   shake(20);
   G.flash = 0.5; G.flashColor = '255,43,214';
-  addFloater(CAM.x, CAM.y, 'JEFE', '#ff2bd6', 40);
+  addFloater(CAM.x, CAM.y, t('f_jefe'), '#ff2bd6', 40);
   return boss;
 }
 
@@ -798,8 +798,8 @@ function activarMutacion(p, planeta) {
   spawnRing(p.x, p.y, col, 260, 700, 7); spawnRing(p.x, p.y, '#ffffff', 160, 500, 3);
   spawnParticles(p.x, p.y, 60, { color: col, speed: 420, life: 1, size: 4 });
   G.flash = 0.6; G.flashColor = '255,255,255'; G.slowmo = 0.4; setTimeout(() => { G.slowmo = 1; }, 600); shake(16);
-  addFloater(p.x, p.y - 60, '★ ' + M.nombre, col, 28);
-  if (typeof Toast !== 'undefined') Toast.mostrar('★ SUPERMUTACIÓN · ' + M.nombre + ' — ' + M.desc, col);
+  addFloater(p.x, p.y - 60, '★ ' + t('mu_' + planeta), col, 28);
+  if (typeof Toast !== 'undefined') Toast.mostrar(t('supermutacion', { n: t('mu_' + planeta), d: t('mud_' + planeta) }), col);
   Audio2.powerup(); setTimeout(() => Audio2.powerup(), 160);
 }
 
@@ -818,10 +818,10 @@ function collectPowerup(pu) {
     const m = MEJORAS[pu.planeta];
     if (p.mej[pu.planeta] < MEJORA_MAX) {
       p.mej[pu.planeta]++; aplicarMejora(p, pu.planeta);
-      addFloater(p.x, p.y - 34, m.icono + ' ' + m.nombre + ' NV.' + p.mej[pu.planeta], m.color, 20);
+      addFloater(p.x, p.y - 34, m.icono + ' ' + t('m_' + pu.planeta) + ' ' + t('f_nv') + p.mej[pu.planeta], m.color, 20);
     } else { // ya al máximo: se convierte en vida y puntos
       p.hp = Math.min(p.maxHp, p.hp + 15); G.score += 150;
-      addFloater(p.x, p.y - 34, m.icono + ' MÁXIMO · +15 HP', m.color, 18);
+      addFloater(p.x, p.y - 34, m.icono + ' ' + t('f_maximo'), m.color, 18);
     }
     Audio2.powerup(); nvEvento('nucleo', p.mej);
     spawnRing(pu.x, pu.y, m.color, 80, 420, 3);
@@ -836,10 +836,10 @@ function collectPowerup(pu) {
     addFloater(p.x, p.y - 30, '+OVERDRIVE', '#ff2bd6', 18);
   } else if (/^weapon[2-6]$/.test(pu.type)) {
     const n = +pu.type.slice(6); p.weapon = n; p.weaponTimer = 16;
-    addFloater(p.x, p.y - 30, ARMAS[n][0], ARMAS[n][1], 20);
+    addFloater(p.x, p.y - 30, t('a_' + n), ARMAS[n][1], 20);
   } else if (pu.type === 'escudo') {
     p.invuln = Math.max(p.invuln, 6);
-    addFloater(p.x, p.y - 30, '◈ ESCUDO 6 s', '#00ffa8', 20);
+    addFloater(p.x, p.y - 30, t('f_escudo6'), '#00ffa8', 20);
   }
   Audio2.powerup();
   spawnRing(pu.x, pu.y, '#00ffa8', 70, 400, 3);
@@ -896,7 +896,7 @@ function startWave(n) {
     };
     spawnNext();
   }
-  addFloater(CAM.x, CAM.y - H * 0.15, 'OLEADA ' + n, '#00f0ff', 34);
+  addFloater(CAM.x, CAM.y - H * 0.15, t('f_oleada', { n }), '#00f0ff', 34);
   Audio2.tone(440, 0.15, 'sine', 0.2, 660);
 }
 
@@ -1656,17 +1656,17 @@ function updateHUD(dt) {
   hudAcc += dt;
   if (hudAcc < 0.08) return;
   hudAcc = 0;
-  el.score.textContent = G.score.toLocaleString('es');
+  el.score.textContent = fmt(G.score);
   el.wave.textContent = G.wave;
   if (el.bando) {
     const id = (typeof bandoElegido !== 'undefined' && bandoElegido) ? bandoElegido : null;
     const b = id && typeof BANDOS !== 'undefined' ? BANDOS.find(x => x.id === id) : null;
-    el.bando.textContent = b ? b.nombre : '—';
+    el.bando.textContent = b ? nombrePlaneta(b.id) : '—';
     el.bando.style.color = b ? b.glow.replace('rgba', 'rgb').replace(',.55)', ')') : '';
   }
   const hm = document.getElementById('hud-mejoras');
   if (hm && player.mej) {
-    const arma = player.weapon > 1 && ARMAS[player.weapon] ? '<span style="--c:' + ARMAS[player.weapon][1] + '">' + ARMAS[player.weapon][0] + '<b>' + Math.ceil(player.weaponTimer) + 's</b></span>' : '';
+    const arma = player.weapon > 1 && ARMAS[player.weapon] ? '<span style="--c:' + ARMAS[player.weapon][1] + '">' + t('a_' + player.weapon) + '<b>' + Math.ceil(player.weaponTimer) + 's</b></span>' : '';
     const html = arma + PLANETAS_MEJORA.filter(k => player.mej[k] > 0).map(k => '<span style="--c:' + MEJORAS[k].color + '"' + (player.mut && player.mut[k] ? ' class="mut"' : '') + '>' + MEJORAS[k].icono + '<b>' + (player.mut && player.mut[k] ? '★' : player.mej[k]) + '</b></span>').join('');
     if (hm.innerHTML !== html) hm.innerHTML = html;
   }
@@ -1823,7 +1823,7 @@ function gameOver() {
   if (NV_DEMO) { startGame(); return; } // la demo nunca termina ni toca el ranking
   G.running = false; G.over = true;
   Audio2.musica(0); Audio2.ajustar(false, 1); // vuelve la música tranquila del menú
-  el.finalScore.textContent = G.score.toLocaleString('es');
+  el.finalScore.textContent = fmt(G.score);
   el.finalWave.textContent = G.wave;
   el.finalKills.textContent = G.kills;
 
@@ -1845,13 +1845,13 @@ function gameOver() {
   if (typeof subirRecord === 'function') {
     subirRecord(scoreFinal, waveFinal, killsFinal, victoriasFinal).then(res => {
       if (res && res.puesto && puestoEl) {
-        puestoEl.textContent = 'PUESTO #' + res.puesto + (res.total ? ' DE ' + res.total : '') + ' EN EL MUNDO';
+        puestoEl.textContent = res.total ? t('go_puesto', { p: res.puesto, t: res.total }) : t('go_puesto_solo', { p: res.puesto });
         puestoEl.classList.remove('hidden');
       }
       const p = (typeof leerPiloto === 'function') ? leerPiloto() : {};
       if (typeof mostrarTarjeta === 'function') {
         mostrarTarjeta({
-          nombre: (p && p.nombre) || 'PILOTO',
+          nombre: (p && p.nombre) || t('piloto'),
           codigo: (p && p.codigo) || '',
           bando: (p && p.bando) || '',
           score: scoreFinal,

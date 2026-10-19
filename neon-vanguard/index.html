@@ -17,7 +17,7 @@
 <link rel="apple-touch-icon" href="icono-180.png">
 <meta name="apple-mobile-web-app-title" content="Neon Vanguard">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="style.css?v=86">
+<link rel="stylesheet" href="style.css?v=88">
 </head>
 <body>
 <div id="game-wrap">
@@ -26,19 +26,19 @@
   <!-- HUD -->
   <div id="hud">
     <div class="hud-left">
-      <div class="stat"><span class="lbl">SCORE</span><span id="score" class="val">0</span></div>
-      <div class="stat"><span class="lbl">WAVE</span><span id="wave" class="val">1</span></div>
-      <div class="stat"><span class="lbl">BANDO</span><span id="hud-bando" class="val bando">—</span></div>
+      <div class="stat"><span class="lbl" data-i18n="hud_score">PUNTAJE</span><span id="score" class="val">0</span></div>
+      <div class="stat"><span class="lbl" data-i18n="hud_wave">OLEADA</span><span id="wave" class="val">1</span></div>
+      <div class="stat"><span class="lbl" data-i18n="hud_bando">BANDO</span><span id="hud-bando" class="val bando">—</span></div>
       <div id="hud-mejoras" class="hud-mejoras"></div>
     </div>
     <div class="hud-center">
       <div id="combo" class="combo hidden">x1</div>
     </div>
     <div class="hud-right">
-      <div class="stat"><span class="lbl">SHIELD</span>
+      <div class="stat"><span class="lbl" data-i18n="hud_shield">ESCUDO</span>
         <div class="bar"><div id="shield-fill" class="bar-fill shield"></div></div>
       </div>
-      <div class="stat"><span class="lbl">OVERDRIVE</span>
+      <div class="stat"><span class="lbl" data-i18n="hud_od">OVERDRIVE</span>
         <div class="bar"><div id="od-fill" class="bar-fill od"></div></div>
       </div>
       <div class="hud-sonido">
@@ -50,93 +50,95 @@
 
   <!-- PANTALLA 1: REGISTRO -->
   <div id="screen-registro" class="overlay">
+    <button class="btn-idioma" onclick="alternarIdioma()">🌐 EN</button>
     <div class="panel">
       <h1 class="title">NEON<span>VANGUARD</span></h1>
-      <p class="subtitle" id="reg-sub">Identificate, piloto.</p>
+      <p class="subtitle" id="reg-sub" data-i18n="reg_sub">Identificate, piloto.</p>
 
       <!-- PASO 1: elegir camino -->
       <div id="reg-paso1" class="reg-paso">
         <button class="btn-camino" onclick="elegirCamino('nuevo')">
-          <span class="camino-t">SOY NUEVO</span>
-          <span class="camino-s">Generá tu código de piloto</span>
+          <span class="camino-t" data-i18n="reg_nuevo_t">SOY NUEVO</span>
+          <span class="camino-s" data-i18n="reg_nuevo_s">Generá tu código de piloto</span>
         </button>
         <button class="btn-camino" onclick="elegirCamino('codigo')">
-          <span class="camino-t">YA TENGO CÓDIGO</span>
-          <span class="camino-s">Entrá con tu nombre y código</span>
+          <span class="camino-t" data-i18n="reg_codigo_t">YA TENGO CÓDIGO</span>
+          <span class="camino-s" data-i18n="reg_codigo_s">Entrá con tu nombre y código</span>
         </button>
       </div>
 
       <!-- PASO 2A: nuevo piloto -->
       <div id="reg-paso-nuevo" class="reg-paso hidden">
         <div class="reg-form">
-          <input id="reg-nombre" type="text" maxlength="16" placeholder="TU NOMBRE" autocomplete="off" spellcheck="false">
-          <button id="reg-btn" onclick="registrarPiloto()">GENERAR CÓDIGO</button>
+          <input id="reg-nombre" type="text" maxlength="16" placeholder="TU NOMBRE" data-i18n-ph="reg_ph_nombre" autocomplete="off" spellcheck="false">
+          <button id="reg-btn" onclick="registrarPiloto()" data-i18n="reg_generar">GENERAR CÓDIGO</button>
         </div>
         <div id="reg-codigo-box" class="codigo-box hidden">
-          <span class="codigo-lbl">TU CÓDIGO DE PILOTO</span>
+          <span class="codigo-lbl" data-i18n="reg_tu_codigo">TU CÓDIGO DE PILOTO</span>
           <strong id="reg-codigo">—</strong>
-          <button id="reg-copiar" class="btn-copiar" onclick="copiarCodigo()">COPIAR</button>
-          <span class="codigo-hint">Guardalo. Lo vas a necesitar para volver.</span>
+          <button id="reg-copiar" class="btn-copiar" onclick="copiarCodigo()" data-i18n="copiar">COPIAR</button>
+          <span class="codigo-hint" data-i18n="reg_guardalo">Guardalo. Lo vas a necesitar para volver.</span>
         </div>
-        <button id="reg-continuar" class="hidden" onclick="irABandos()">CONTINUAR →</button>
+        <button id="reg-continuar" class="hidden" onclick="irABandos()" data-i18n="continuar">CONTINUAR →</button>
       </div>
 
       <!-- PASO 2B: ya tengo código -->
       <div id="reg-paso-codigo" class="reg-paso hidden">
         <div class="reg-form">
-          <input id="reg-nombre-entrar" type="text" name="username" maxlength="16" placeholder="TU NOMBRE DE PILOTO" autocomplete="username" autocapitalize="characters" spellcheck="false">
+          <input id="reg-nombre-entrar" type="text" name="username" maxlength="16" placeholder="TU NOMBRE DE PILOTO" data-i18n-ph="reg_ph_nombre_entrar" autocomplete="username" autocapitalize="characters" spellcheck="false">
           <div class="campo-clave">
-            <input id="reg-codigo-input" type="password" maxlength="8" placeholder="TU CÓDIGO (EJ: ABC-1234)" autocomplete="current-password" autocapitalize="characters" spellcheck="false">
-            <button type="button" id="ver-clave" class="ver-clave" aria-label="Mostrar código" onclick="verClave()">
+            <input id="reg-codigo-input" type="password" maxlength="8" placeholder="TU CÓDIGO (EJ: ABC-1234)" data-i18n-ph="reg_ph_codigo" autocomplete="current-password" autocapitalize="characters" spellcheck="false">
+            <button type="button" id="ver-clave" class="ver-clave" aria-label="Mostrar código" data-i18n-aria="aria_ver_codigo" onclick="verClave()">
               <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path id="ojo-abierto" d="M12 5C6.5 5 2.7 9.4 1.5 12c1.2 2.6 5 7 10.5 7s9.3-4.4 10.5-7C21.3 9.4 17.5 5 12 5zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7A2.5 2.5 0 1 0 12 14.5 2.5 2.5 0 0 0 12 9.5z" fill="currentColor"/><path id="ojo-tachado" d="M3 3l18 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
             </button>
           </div>
-          <button id="reg-entrar-btn" onclick="entrarConCodigo()">ENTRAR</button>
+          <button id="reg-entrar-btn" onclick="entrarConCodigo()" data-i18n="entrar">ENTRAR</button>
         </div>
       </div>
 
-      <button id="reg-volver" class="btn-volver hidden" onclick="volverPaso1()">← volver</button>
-      <p class="hint" id="reg-hint">Sin nombre no hay código. Sin código no hay misión.</p>
+      <button id="reg-volver" class="btn-volver hidden" onclick="volverPaso1()" data-i18n="volver_min">← volver</button>
+      <p class="hint" id="reg-hint" data-i18n="reg_hint">Sin nombre no hay código. Sin código no hay misión.</p>
     </div>
   </div>
 
   <!-- PANTALLA 2: ELEGIR BANDO -->
   <div id="screen-bandos" class="overlay hidden">
     <div class="panel panel-wide">
-      <h1 class="title">ELEGÍ TU<span>BANDO</span></h1>
-      <p class="subtitle">Cada planeta pelea distinto. Elegí bien.</p>
+      <h1 class="title"><b data-i18n="bandos_t1">ELEGÍ TU</b><span data-i18n="bandos_t2">BANDO</span></h1>
+      <p class="subtitle" data-i18n="bandos_sub">Cada planeta pelea distinto. Elegí bien.</p>
       <div id="planetas" class="planetas"></div>
-      <button id="bando-continuar" class="hidden" onclick="irAControles()">CONTINUAR →</button>
+      <button id="bando-continuar" class="hidden" onclick="irAControles()" data-i18n="continuar">CONTINUAR →</button>
     </div>
   </div>
 
   <!-- PANTALLA 3: CONTROLES (según dispositivo) -->
   <div id="overlay" class="overlay hidden">
+    <button class="btn-idioma" onclick="alternarIdioma()">🌐 EN</button>
     <div class="panel">
       <h1 class="title">NEON<span>VANGUARD</span></h1>
-      <p class="subtitle">Sobrevive a las oleadas. Encadená kills. Activá el OVERDRIVE.</p>
+      <p class="subtitle" data-i18n="inicio_sub">Sobrevive a las oleadas. Encadená kills. Activá el OVERDRIVE.</p>
       <div id="ctrl-desktop" class="controls hidden">
-        <div class="accion">mover</div><div class="lado"><kbd>W A S D</kbd><kbd>← ↑ ↓ →</kbd></div>
-        <div class="accion">apuntar</div><div class="lado"><kbd>MOUSE</kbd></div>
-        <div class="accion">disparar</div><div class="lado"><kbd>CLICK</kbd></div>
-        <div class="accion">dash</div><div class="lado"><kbd>SPACE</kbd></div>
-        <div class="accion">overdrive</div><div class="lado"><kbd>SHIFT</kbd></div>
+        <div class="accion" data-i18n="c_mover">mover</div><div class="lado"><kbd>W A S D</kbd><kbd>← ↑ ↓ →</kbd></div>
+        <div class="accion" data-i18n="c_apuntar">apuntar</div><div class="lado"><kbd>MOUSE</kbd></div>
+        <div class="accion" data-i18n="c_disparar">disparar</div><div class="lado"><kbd>CLICK</kbd></div>
+        <div class="accion" data-i18n="c_dash">dash</div><div class="lado"><kbd>SPACE</kbd></div>
+        <div class="accion" data-i18n="c_od">overdrive</div><div class="lado"><kbd>SHIFT</kbd></div>
       </div>
       <div id="ctrl-movil" class="controls hidden">
-        <div class="accion">mover</div><div class="lado"><kbd>DEDO IZQ.</kbd></div>
-        <div class="accion">apuntar y disparar</div><div class="lado"><kbd>DEDO DER.</kbd></div>
-        <div class="accion">dash</div><div class="lado"><kbd>2 TOQUES IZQ.</kbd></div>
-        <div class="accion">overdrive</div><div class="lado"><kbd>2 TOQUES DER.</kbd></div>
+        <div class="accion" data-i18n="c_mover">mover</div><div class="lado"><kbd data-i18n="k_dedo_izq">DEDO IZQ.</kbd></div>
+        <div class="accion" data-i18n="c_apuntar_disparar">apuntar y disparar</div><div class="lado"><kbd data-i18n="k_dedo_der">DEDO DER.</kbd></div>
+        <div class="accion" data-i18n="c_dash">dash</div><div class="lado"><kbd data-i18n="k_2izq">2 TOQUES IZQ.</kbd></div>
+        <div class="accion" data-i18n="c_od">overdrive</div><div class="lado"><kbd data-i18n="k_2der">2 TOQUES DER.</kbd></div>
       </div>
-      <button id="start-btn" onclick="startGame()">INICIAR MISIÓN</button>
-      <p class="hint">Consejo: el dash te da invulnerabilidad por un instante.</p>
+      <button id="start-btn" onclick="startGame()" data-i18n="start">INICIAR MISIÓN</button>
+      <p class="hint" data-i18n="hint_dash">Consejo: el dash te da invulnerabilidad por un instante.</p>
       <div id="guerra-mini" class="guerra-mini"></div>
       <div class="fila-botones">
-        <button class="btn-sec btn-amigos" onclick="abrirAmigos()">⚔ AMIGOS</button>
-        <button class="btn-sec btn-misiones" onclick="abrirMisiones()">🎯 MISIONES</button>
-        <button class="btn-sec" onclick="abrirPizarra()">🏆 PIZARRA MUNDIAL</button>
-        <button class="btn-sec" onclick="cambiarDeBando()">🔄 CAMBIAR DE BANDO</button>
-        <button class="btn-sec btn-instalar hidden" onclick="instalarApp()">📲 INSTALAR</button>
+        <button class="btn-sec btn-amigos" onclick="abrirAmigos()" data-i18n="b_amigos">⚔ AMIGOS</button>
+        <button class="btn-sec btn-misiones" onclick="abrirMisiones()" data-i18n="b_misiones">🎯 MISIONES</button>
+        <button class="btn-sec" onclick="abrirPizarra()" data-i18n="b_pizarra">🏆 PIZARRA MUNDIAL</button>
+        <button class="btn-sec" onclick="cambiarDeBando()" data-i18n="b_bando">🔄 CAMBIAR DE BANDO</button>
+        <button class="btn-sec btn-instalar hidden" onclick="instalarApp()" data-i18n="b_instalar">📲 INSTALAR</button>
       </div>
     </div>
   </div>
@@ -144,28 +146,28 @@
   <!-- PANTALLA: PIZARRA MUNDIAL -->
   <div id="screen-pizarra" class="overlay hidden">
     <div class="panel panel-wide">
-      <h1 class="title">PIZARRA<span>MUNDIAL</span></h1>
-      <p class="subtitle" id="pizarra-estado">Los mejores pilotos de la galaxia.</p>
+      <h1 class="title"><b data-i18n="pz_t1">PIZARRA</b><span data-i18n="pz_t2">MUNDIAL</span></h1>
+      <p class="subtitle" id="pizarra-estado" data-i18n="pz_sub">Los mejores pilotos de la galaxia.</p>
       <p class="pz-tu" id="pizarra-yo"></p>
-      <div class="pz-busca"><input id="pz-buscar" type="text" maxlength="8" placeholder="BUSCAR POR CÓDIGO" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')buscarEnPizarra()"><button class="btn-sec" onclick="buscarEnPizarra()">BUSCAR</button></div>
+      <div class="pz-busca"><input id="pz-buscar" type="text" maxlength="8" placeholder="BUSCAR POR CÓDIGO" data-i18n-ph="pz_ph" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')buscarEnPizarra()"><button class="btn-sec" onclick="buscarEnPizarra()" data-i18n="buscar">BUSCAR</button></div>
       <div id="pz-resultado" class="pz-resultado"></div>
       <div id="pizarra-lista" class="pizarra-lista"></div>
-      <button class="btn-sec" onclick="cerrarPizarra()">← VOLVER</button>
+      <button class="btn-sec" onclick="cerrarPizarra()" data-i18n="volver">← VOLVER</button>
     </div>
   </div>
 
   <!-- JUGAR CON AMIGOS: salas privadas por código -->
   <div id="screen-amigos" class="overlay hidden">
     <div class="panel">
-      <h1 class="title">JUGAR CON<span>AMIGOS</span></h1>
-      <p class="subtitle">Crea una sala y pásales el código, o entra con el código que te dieron.</p>
+      <h1 class="title"><b data-i18n="am_t1">JUGAR CON</b><span data-i18n="am_t2">AMIGOS</span></h1>
+      <p class="subtitle" data-i18n="am_sub">Crea una sala y pásales el código, o entra con el código que te dieron.</p>
       <div class="am-crear">
-        <button class="btn-camino" onclick="crearSala('duelo')"><span class="camino-t">⚔ DUELO 1 VS 1</span><span class="camino-s">Gana el primero en derribar 5 veces al otro</span></button>
-        <button class="btn-camino" onclick="crearSala('equipos')"><span class="camino-t">🪐 GUERRA POR EQUIPOS</span><span class="camino-s">Planeta contra planeta, hasta 10 pilotos · primero a 15</span></button>
+        <button class="btn-camino" onclick="crearSala('duelo')"><span class="camino-t" data-i18n="am_duelo_t">⚔ DUELO 1 VS 1</span><span class="camino-s" data-i18n="am_duelo_s">Gana el primero en derribar 5 veces al otro</span></button>
+        <button class="btn-camino" onclick="crearSala('equipos')"><span class="camino-t" data-i18n="am_eq_t">🪐 GUERRA POR EQUIPOS</span><span class="camino-s" data-i18n="am_eq_s">Planeta contra planeta, hasta 10 pilotos · primero a 15</span></button>
       </div>
-      <div class="am-unir"><input id="am-codigo" type="text" maxlength="4" placeholder="CÓDIGO" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')unirseSala()"><button class="btn-sec" onclick="unirseSala()">ENTRAR A LA SALA</button></div>
+      <div class="am-unir"><input id="am-codigo" type="text" maxlength="4" placeholder="CÓDIGO" data-i18n-ph="am_ph" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')unirseSala()"><button class="btn-sec" onclick="unirseSala()" data-i18n="am_entrar">ENTRAR A LA SALA</button></div>
       <p id="am-msg" class="am-msg"></p>
-      <button class="btn-sec" onclick="cerrarAmigos()">← VOLVER</button>
+      <button class="btn-sec" onclick="cerrarAmigos()" data-i18n="volver">← VOLVER</button>
     </div>
   </div>
 
@@ -176,8 +178,8 @@
       <div id="pf-marcador" class="pf-marcador"></div>
       <p id="pf-msg" class="am-msg"></p>
       <div class="fila-botones">
-        <button id="pf-revancha" onclick="pedirRevancha()">🔁 REVANCHA</button>
-        <button class="btn-sec" onclick="salirPrivada()">✕ SALIR DE LA SALA</button>
+        <button id="pf-revancha" onclick="pedirRevancha()" data-i18n="revancha">🔁 REVANCHA</button>
+        <button class="btn-sec" onclick="salirPrivada()" data-i18n="salir_sala">✕ SALIR DE LA SALA</button>
       </div>
     </div>
   </div>
@@ -185,37 +187,37 @@
   <!-- MISIONES DIARIAS · GUERRA DE PLANETAS · LOGROS -->
   <div id="screen-misiones" class="overlay hidden">
     <div class="panel panel-wide">
-      <h1 class="title">MISIONES<span>Y LOGROS</span></h1>
+      <h1 class="title"><b data-i18n="ms_t1">MISIONES</b><span data-i18n="ms_t2">Y LOGROS</span></h1>
       <div id="misiones-lista" class="pizarra-lista misiones-lista"></div>
-      <button class="btn-sec" onclick="cerrarMisiones()">← VOLVER</button>
+      <button class="btn-sec" onclick="cerrarMisiones()" data-i18n="volver">← VOLVER</button>
     </div>
   </div>
 
   <div id="gameover" class="overlay hidden">
     <div class="panel">
-      <h1 class="title dead">SISTEMA<span>CAÍDO</span></h1>
+      <h1 class="title dead"><b data-i18n="go_t1">SISTEMA</b><span data-i18n="go_t2">CAÍDO</span></h1>
       <div class="final-stats">
-        <div><span>PUNTAJE</span><strong id="final-score">0</strong></div>
-        <div><span>OLEADA</span><strong id="final-wave">1</strong></div>
-        <div><span>BAJAS</span><strong id="final-kills">0</strong></div>
+        <div><span data-i18n="go_puntaje">PUNTAJE</span><strong id="final-score">0</strong></div>
+        <div><span data-i18n="go_oleada">OLEADA</span><strong id="final-wave">1</strong></div>
+        <div><span data-i18n="go_bajas">BAJAS</span><strong id="final-kills">0</strong></div>
       </div>
-      <p id="record-nuevo" class="record-nuevo hidden">¡NUEVO RÉCORD PERSONAL!</p>
+      <p id="record-nuevo" class="record-nuevo hidden" data-i18n="go_record">¡NUEVO RÉCORD PERSONAL!</p>
       <p id="puesto-mundial" class="puesto-mundial hidden"></p>
 
       <div id="tarjeta-box" class="tarjeta-box hidden">
-        <img id="tarjeta-img" alt="Tarjeta de récord">
+        <img id="tarjeta-img" alt="Tarjeta de récord" data-i18n-alt="tj_alt">
         <div class="tarjeta-botones">
-          <button id="tarjeta-compartir" class="btn-sec" onclick="compartirTarjeta()">📤 COMPARTIR</button>
-          <button class="btn-sec" onclick="descargarTarjeta()">⬇ DESCARGAR</button>
+          <button id="tarjeta-compartir" class="btn-sec" onclick="compartirTarjeta()" data-i18n="compartir">📤 COMPARTIR</button>
+          <button class="btn-sec" onclick="descargarTarjeta()" data-i18n="descargar">⬇ DESCARGAR</button>
         </div>
       </div>
 
-      <button id="restart-btn" onclick="startGame()">REINTENTAR</button>
+      <button id="restart-btn" onclick="startGame()" data-i18n="reintentar">REINTENTAR</button>
       <div class="fila-botones">
-        <button class="btn-sec btn-misiones" onclick="abrirMisiones()">🎯 MISIONES</button>
-        <button class="btn-sec" onclick="abrirPizarra()">🏆 PIZARRA MUNDIAL</button>
-        <button class="btn-sec" onclick="cambiarDeBando()">🔄 CAMBIAR DE BANDO</button>
-        <button class="btn-sec btn-instalar hidden" onclick="instalarApp()">📲 INSTALAR</button>
+        <button class="btn-sec btn-misiones" onclick="abrirMisiones()" data-i18n="b_misiones">🎯 MISIONES</button>
+        <button class="btn-sec" onclick="abrirPizarra()" data-i18n="b_pizarra">🏆 PIZARRA MUNDIAL</button>
+        <button class="btn-sec" onclick="cambiarDeBando()" data-i18n="b_bando">🔄 CAMBIAR DE BANDO</button>
+        <button class="btn-sec btn-instalar hidden" onclick="instalarApp()" data-i18n="b_instalar">📲 INSTALAR</button>
       </div>
     </div>
   </div>
@@ -225,39 +227,40 @@
 
 <!-- Aviso de la sala privada (abajo, entre los dos joysticks) -->
 <div id="sala-banner" class="hidden">
-  <span class="sb-txt">SALA <b class="sb-cod">----</b> · <span class="sb-modo">DUELO</span></span>
-  <button class="sb-btn" onclick="invitarSala()">📤 INVITAR</button>
-  <button class="sb-btn sb-salir" onclick="salirPrivada()">✕ SALIR</button>
+  <span class="sb-txt"><span data-i18n="sala">SALA</span> <b class="sb-cod">----</b> · <span class="sb-modo">DUELO</span></span>
+  <button class="sb-btn" onclick="invitarSala()" data-i18n="invitar">📤 INVITAR</button>
+  <button class="sb-btn sb-salir" onclick="salirPrivada()" data-i18n="salir">✕ SALIR</button>
 </div>
 
 <!-- Cómo instalar en iPhone/iPad (Safari no tiene botón automático) -->
 <div id="instalar-ios" class="hidden" onclick="if(event.target===this)cerrarInstalarIOS()">
   <div class="caja-ios">
-    <h3>INSTALAR NEON VANGUARD</h3>
+    <h3 data-i18n="ios_t">INSTALAR NEON VANGUARD</h3>
     <ol>
-      <li>Toca <b>Compartir</b> <span class="ico-ios">⬆︎</span> abajo en Safari.</li>
-      <li>Elige <b>«Añadir a pantalla de inicio»</b>.</li>
-      <li>Toca <b>Añadir</b>. Se abre a pantalla completa, como una app.</li>
+      <li data-i18n-html="ios_1">Toca <b>Compartir</b> <span class="ico-ios">⬆︎</span> abajo en Safari.</li>
+      <li data-i18n-html="ios_2">Elige <b>«Añadir a pantalla de inicio»</b>.</li>
+      <li data-i18n-html="ios_3">Toca <b>Añadir</b>. Se abre a pantalla completa, como una app.</li>
     </ol>
-    <button class="btn-sec" onclick="cerrarInstalarIOS()">ENTENDIDO</button>
+    <button class="btn-sec" onclick="cerrarInstalarIOS()" data-i18n="entendido">ENTENDIDO</button>
   </div>
 </div>
 
 <!-- Aviso de rotar en celular vertical -->
 <div id="rotar">
   <span class="icono">📱</span>
-  <span><strong>Mejor de lado</strong> · se juega más cómodo en horizontal</span>
-  <button id="rotar-cerrar" aria-label="Cerrar aviso" onclick="cerrarAvisoRotar()">✕</button>
+  <span data-i18n-html="rotar"><strong>Mejor de lado</strong> · se juega más cómodo en horizontal</span>
+  <button id="rotar-cerrar" aria-label="Cerrar aviso" data-i18n-aria="aria_cerrar" onclick="cerrarAvisoRotar()">✕</button>
 </div>
 
-<script src="sonido.js?v=86" charset="utf-8"></script>
-<script src="instalar.js?v=86" charset="utf-8"></script>
-<script src="pantallas.js?v=86" charset="utf-8"></script>
-<script src="ranking.js?v=86" charset="utf-8"></script>
-<script src="app.js?v=86" charset="utf-8"></script>
-<script src="intro.js?v=86" charset="utf-8"></script>
-<script src="misiones.js?v=86" charset="utf-8"></script>
-<script src="amigos.js?v=86" charset="utf-8"></script>
-<script src="red.js?v=86" charset="utf-8"></script>
+<script src="i18n.js?v=88" charset="utf-8"></script>
+<script src="sonido.js?v=88" charset="utf-8"></script>
+<script src="instalar.js?v=88" charset="utf-8"></script>
+<script src="pantallas.js?v=88" charset="utf-8"></script>
+<script src="ranking.js?v=88" charset="utf-8"></script>
+<script src="app.js?v=88" charset="utf-8"></script>
+<script src="intro.js?v=88" charset="utf-8"></script>
+<script src="misiones.js?v=88" charset="utf-8"></script>
+<script src="amigos.js?v=88" charset="utf-8"></script>
+<script src="red.js?v=88" charset="utf-8"></script>
 </body>
 </html>

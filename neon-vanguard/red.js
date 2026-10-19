@@ -49,7 +49,7 @@ const RED = (function () {
       sala = m.sala || null; pedido = null; bestia = null;
       if (sala && typeof empezarPrivada === 'function') empezarPrivada(sala, m.x, m.y);
       if (G.running && player && (m.x || m.y)) { player.x = m.x; player.y = m.y; CAM.x = m.x; CAM.y = m.y; if (typeof despejarZona === 'function') despejarZona(m.x, m.y, 200); }
-    } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); avisoFeed(m.nombre + ' entró al espacio', '#8fb4d0'); }
+    } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); avisoFeed(t('rd_entro', { n: m.nombre }), '#8fb4d0'); }
     else if (m.t === 'sale') { remotos.delete(m.id); }
     else if (m.t === 's') {
       const ahora = performance.now();
@@ -61,27 +61,27 @@ const RED = (function () {
       }
     } else if (m.t === 'd') { balasDe(m); }
     else if (m.t === 'acierto') { const r = remotos.get(m.a); if (r) { r.hitFlash = 0.12; spawnParticles(r.x, r.y, 5, { color: '#ffffff', speed: 160, life: 0.25, size: 2.5 }); } }
-    else if (m.t === 'baja') { avisoFeed((m.de || 'El espacio') + ' derribó a ' + m.a, m.deId === miId ? '#00f0ff' : '#ff6e8a');
+    else if (m.t === 'baja') { avisoFeed(t('rd_derribo', { a: m.de || t('rd_espacio'), b: m.a }), m.deId === miId ? '#00f0ff' : '#ff6e8a');
       const r = remotos.get(m.aId); if (r) spawnParticles(r.x, r.y, 30, { color: r.color, speed: 320, life: 0.8, size: 4 }); }
-    else if (m.t === 'tuBaja') { G.score += m.pts; if (player) addFloater(player.x, player.y - 46, '+' + m.pts + ' ¡DERRIBASTE A ' + m.a + '!', '#00f0ff', 20); shake(8); }
+    else if (m.t === 'tuBaja') { G.score += m.pts; if (player) addFloater(player.x, player.y - 46, t('rd_derribaste', { p: m.pts, n: m.a }), '#00f0ff', 20); shake(8); }
     else if (m.t === 'corr') { if (player) { player.x = m.x; player.y = m.y; } }
     else if (m.t === 'bestia') { // aparece una bestia errante gigante: todos contra ella
-      bestia = { tipo: m.tipo, type: m.tipo, nombre: m.nombre, x: m.x, y: m.y, hp: m.hp, max: m.max, r: m.r, angle: 0, phase: 0, wobble: 0, vx: 0, vy: 0,
+      bestia = { tipo: m.tipo, type: m.tipo, nombre: nomBestia(m), x: m.x, y: m.y, hp: m.hp, max: m.max, r: m.r, angle: 0, phase: 0, wobble: 0, vx: 0, vy: 0,
         color: COLOR_BESTIA[m.tipo], buf: [{ t: performance.now(), x: m.x, y: m.y, hp: m.hp, a: 0 }], hitFlash: 0, laser: 0 };
-      if (typeof Toast !== 'undefined') Toast.mostrar('👾 ¡APARECIÓ ' + m.nombre + '! Todos los pilotos contra ella', bestia.color);
+      if (typeof Toast !== 'undefined') Toast.mostrar(t('rd_aparecio', { n: nomBestia(m) }), bestia.color);
       if (typeof Audio2 !== 'undefined') Audio2.boss();
     }
     else if (m.t === 'bf' && bestia) fuegoBestia(m);
     else if (m.t === 'bestiaMuere') {
       if (bestia) { spawnParticles(bestia.x, bestia.y, 120, { color: bestia.color, speed: 560, life: 1.5, size: 6 }); spawnRing(bestia.x, bestia.y, bestia.color, 500, 900, 8); shake(24); Audio2.explode(true); }
-      avisoFeed('👾 ' + m.de + ' derribó a ' + m.nombre, m.deId === miId ? '#00f0ff' : '#ffd23f'); bestia = null;
+      avisoFeed(t('rd_bestia_derribo', { a: m.de, b: nomBestia(m) }), m.deId === miId ? '#00f0ff' : '#ffd23f'); bestia = null;
     }
-    else if (m.t === 'bestiaSe') { bestia = null; avisoFeed('👾 ' + m.nombre + ' se perdió en el espacio', '#8fb4d0'); }
+    else if (m.t === 'bestiaSe') { bestia = null; avisoFeed(t('rd_bestia_se', { n: nomBestia(m) }), '#8fb4d0'); }
     else if (m.t === 'premioBestia') {
       G.score += m.pts;
-      if (player) addFloater(player.x, player.y - 56, '+' + m.pts + (m.remate ? ' ¡REMATASTE A ' + m.nombre + '!' : ' · AYUDASTE CONTRA ' + m.nombre), '#ffd23f', 20);
+      if (player) addFloater(player.x, player.y - 56, t(m.remate ? 'rd_remataste' : 'rd_ayudaste', { p: m.pts, n: nomBestia(m) }), '#ffd23f', 20);
       if (m.remate && typeof nvEvento === 'function') nvEvento('baja', { e: { type: 'medusa' } }); // cuenta como bestia cazada
-      if (typeof Toast !== 'undefined') Toast.mostrar(m.remate ? '👾 ¡REMATASTE A ' + m.nombre + '! +' + m.pts : '👾 +' + m.pts + ' por ayudar contra ' + m.nombre, '#ffd23f');
+      if (typeof Toast !== 'undefined') Toast.mostrar(t(m.remate ? 't_remataste' : 't_ayudaste', { n: nomBestia(m), p: m.pts }), '#ffd23f');
     }
     else if (m.t === 'errSala') { pedido = null; if (typeof errorSala === 'function') errorSala(m.msg); const p = piloto() || {}; enviar({ t: 'hola', nombre: p.nombre, codigo: p.codigo, bando: miBando() }); }
     else if (m.t === 'marcador') { marc = m; if (typeof privadaMarcador === 'function') privadaMarcador(m, miId); }
@@ -111,6 +111,9 @@ const RED = (function () {
     else if (m.tipo === 'ojo') for (let k = -3; k <= 3; k++) b(m.a + k * 0.13, 330, 6, 12, '#ff6a85');
     else for (let k = 0; k < 6; k++) setTimeout(() => { if (bestia) b(m.a + (Math.random() - 0.5) * 0.3, 380, 5, 9, '#ff9be8'); }, k * 90);
   }
+
+  const BESTIA_POR_NOMBRE = { 'MEDUSA REINA': 'medusa', 'OJO DEL VACÍO': 'ojo', 'LEVIATÁN': 'serpiente' };
+  const nomBestia = m => { const tp = m.tipo || BESTIA_POR_NOMBRE[m.nombre] || (bestia && bestia.tipo); return tp ? t('be_' + tp) : m.nombre; };
 
   function avisoFeed(txt, color) { feed.push({ txt, color, vida: 4.5 }); if (feed.length > 4) feed.shift(); }
 
@@ -223,12 +226,12 @@ const RED = (function () {
       }
       let vivos = 1; for (const r of remotos.values()) if (r.visto) vivos++;
       ctx.save(); ctx.font = '800 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(0,240,255,.85)';
-      if (sala) ctx.fillText(textoMarcador(), W / 2, 18); else ctx.fillText('● EN LÍNEA: ' + vivos, W / 2, 18);
+      if (sala) ctx.fillText(textoMarcador(), W / 2, 18); else ctx.fillText(t('rd_linea', { n: vivos }), W / 2, 18);
       ctx.restore();
       if (sala && !remotos.size) { // sola en la sala: esperando rival
         ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.shadowBlur = 14; ctx.shadowColor = '#00f0ff';
-        ctx.font = '900 18px system-ui, sans-serif'; ctx.fillText(sala.modo === 'duelo' ? 'ESPERANDO RIVAL…' : 'ESPERANDO PILOTOS…', W / 2, H * 0.28);
-        ctx.font = '700 12px system-ui, sans-serif'; ctx.fillStyle = '#9fe8ff'; ctx.fillText('Pásale el código ' + sala.codigo + ' o toca INVITAR', W / 2, H * 0.28 + 20); ctx.restore();
+        ctx.font = '900 18px system-ui, sans-serif'; ctx.fillText(t(sala.modo === 'duelo' ? 'rd_esperando_rival' : 'rd_esperando_pilotos'), W / 2, H * 0.28);
+        ctx.font = '700 12px system-ui, sans-serif'; ctx.fillStyle = '#9fe8ff'; ctx.fillText(t('rd_pasale', { c: sala.codigo }), W / 2, H * 0.28 + 20); ctx.restore();
       }
     }
     feed.forEach((f, i) => { ctx.save(); ctx.globalAlpha = Math.min(1, f.vida); ctx.font = '800 12px system-ui, sans-serif'; ctx.textAlign = 'center';
@@ -236,14 +239,16 @@ const RED = (function () {
   }
 
   function textoMarcador() {
-    if (!marc) return (sala.modo === 'duelo' ? 'DUELO ' : 'EQUIPOS ') + sala.codigo;
+    const cab = t(sala.modo === 'duelo' ? 'rd_duelo' : 'rd_equipos') + ' ' + sala.codigo;
+    if (!marc) return cab;
     if (sala.modo === 'duelo') {
       const yo = marc.j.find(j => j[0] === miId), otro = marc.j.find(j => j[0] !== miId);
-      return 'DUELO ' + sala.codigo + ' · TÚ ' + (yo ? yo[3] : 0) + ' – ' + (otro ? otro[3] : 0) + (otro ? ' ' + otro[1] : '') + ' · gana el primero a ' + marc.meta;
+      return cab + ' · ' + t('rd_tu') + ' ' + (yo ? yo[3] : 0) + ' – ' + (otro ? otro[3] : 0) + (otro ? ' ' + otro[1] : '') + ' · ' + t('rd_gana', { n: marc.meta });
     }
-    const eq = Object.entries(marc.e || {}).sort((a, z) => z[1] - a[1]).map(([b, n]) => b.toUpperCase() + ' ' + n).join(' · ');
-    return 'EQUIPOS ' + sala.codigo + ' · ' + (eq || 'sin bajas') + ' · gana el primero a ' + marc.meta;
+    const eq = Object.entries(marc.e || {}).sort((a, z) => z[1] - a[1]).map(([b, n]) => nombrePlaneta(b) + ' ' + n).join(' · ');
+    return cab + ' · ' + (eq || t('rd_sin_bajas')) + ' · ' + t('rd_gana', { n: marc.meta });
   }
+
 
   // al empezar partida: conectar (o reaparecer cerca de alguien si ya estamos dentro)
   function inicio() {

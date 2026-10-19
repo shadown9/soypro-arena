@@ -7,17 +7,17 @@
      y sus pilotos llevan la insignia dorada 🏆 toda la semana. El jefe que más sale es el del planeta que va ganando.
    ============================================================ */
 const Misiones = (() => {
-  const NOMBRE = { venus: 'VENUS', marte: 'MARTE', jupiter: 'JÚPITER', saturno: 'SATURNO', neptuno: 'NEPTUNO' };
+  const NOMBRE = new Proxy({}, { get: (o, id) => nombrePlaneta(id) }); // nombre del planeta en el idioma del jugador
   const PLANETAS = ['venus', 'marte', 'jupiter', 'saturno', 'neptuno'];
   const TIPOS = {
-    bajas:   { txt: n => 'Derriba ' + n + ' naves', niveles: [40, 60, 90] },
-    planeta: { txt: (n, x) => 'Derriba ' + n + ' naves de ' + NOMBRE[x], niveles: [12, 20] },
-    jefes:   { txt: n => n === 1 ? 'Derrota a 1 jefe' : 'Derrota a ' + n + ' jefes', niveles: [1, 2] },
-    oleada:  { txt: n => 'Llega a la oleada ' + n + ' en una partida', niveles: [6, 8, 11], partida: true },
-    puntos:  { txt: n => 'Haz ' + n.toLocaleString('es') + ' puntos en una partida', niveles: [15000, 30000, 50000], partida: true },
-    nucleos: { txt: n => 'Recoge ' + n + ' núcleos de planeta', niveles: [4, 7] },
-    bestias: { txt: n => 'Caza ' + n + ' bestias del espacio', niveles: [3, 5] },
-    combo:   { txt: n => 'Llega a un combo x' + n, niveles: [8, 12], partida: true }
+    bajas:   { txt: n => t('mi_bajas', { n }), niveles: [40, 60, 90] },
+    planeta: { txt: (n, x) => t('mi_planeta', { n, p: NOMBRE[x] }), niveles: [12, 20] },
+    jefes:   { txt: n => n === 1 ? t('mi_jefe1') : t('mi_jefes', { n }), niveles: [1, 2] },
+    oleada:  { txt: n => t('mi_oleada', { n }), niveles: [6, 8, 11], partida: true },
+    puntos:  { txt: n => t('mi_puntos', { n: fmt(n) }), niveles: [15000, 30000, 50000], partida: true },
+    nucleos: { txt: n => t('mi_nucleos', { n }), niveles: [4, 7] },
+    bestias: { txt: n => t('mi_bestias', { n }), niveles: [3, 5] },
+    combo:   { txt: n => t('mi_combo', { n }), niveles: [8, 12], partida: true }
   };
   const LOGROS = [
     { id: 'bautismo',      ico: '🚀', nom: 'Bautismo de fuego', desc: 'Juega tu primera partida' },
@@ -78,7 +78,7 @@ const Misiones = (() => {
       cienmil: s.mejorPuntos >= 100000, campeon: !!guerraCache && !!guerraCache.campeon && guerraCache.campeon === miBando()
     };
     for (const L of LOGROS) if (cumple[L.id] && !ya.includes(L.id)) { ya.push(L.id); nuevos.push(L); }
-    if (nuevos.length) { guardar('nv_logros', ya); for (const L of nuevos) { avisar(L.ico + ' LOGRO · ' + L.nom.toUpperCase(), '#ffd23f'); Audio2.powerup(); } }
+    if (nuevos.length) { guardar('nv_logros', ya); for (const L of nuevos) { avisar(t('t_logro', { i: L.ico, n: t('lg_' + L.id).toUpperCase() }), '#ffd23f'); Audio2.powerup(); } }
   }
 
   function avanzar(tipo, valor, planeta, esPartida) {
@@ -92,9 +92,9 @@ const Misiones = (() => {
       if (e.prog[i] >= m.meta) {
         e.hechas[i] = true;
         guardar('nv_premios', Math.min(3, leer('nv_premios', 0) + 1));
-        avisar('🎯 MISIÓN CUMPLIDA · ' + textoDe(m).toUpperCase(), '#00ffa8'); Audio2.powerup();
+        avisar(t('t_mision', { n: textoDe(m).toUpperCase() }), '#00ffa8'); Audio2.powerup();
         const s = stats(); if (!s.dias.includes(e.dia)) { s.dias.push(e.dia); s.dias = s.dias.slice(-30); }
-        if (e.hechas.every(Boolean)) { s.diasCompletos = (s.diasCompletos || 0) + 1; avisar('🎁 ¡LAS 3 MISIONES DE HOY!', '#ffd23f'); }
+        if (e.hechas.every(Boolean)) { s.diasCompletos = (s.diasCompletos || 0) + 1; avisar(t('t_tres'), '#ffd23f'); }
         guardar('nv_stats', s);
       }
     });
@@ -132,7 +132,7 @@ const Misiones = (() => {
       const op = PLANETAS.filter(x => player.mej[x] < MEJORA_MAX); if (!op.length) break;
       const x = op[Math.floor(Math.random() * op.length)]; player.mej[x]++; aplicarMejora(player, x);
     }
-    avisar('🎁 PREMIO DE MISIONES · +' + n + (n === 1 ? ' MEJORA' : ' MEJORAS'), '#00ffa8');
+    avisar(n === 1 ? t('t_premio1') : t('t_premios', { n }), '#00ffa8');
   }
 
   return { evento, aplicarPremios, estado, textoDe, LOGROS, logros, stats, revisarLogros, NOMBRE, PLANETAS, premios: () => leer('nv_premios', 0) };
@@ -175,8 +175,8 @@ function pintarGuerraMini() {
   const g = guerraCache, ov = document.getElementById('overlay');
   if (!g || !g.orden) { el.innerHTML = ''; if (ov) ov.classList.remove('con-guerra'); return; }
   if (ov) ov.classList.add('con-guerra');
-  const lider = g.lider ? '<b style="color:' + COLOR_PLANETA[g.lider] + '">' + Misiones.NOMBRE[g.lider] + '</b> va ganando' : 'Nadie ha sumado puntos todavía';
-  el.innerHTML = '<div class="gm-txt">⚔ GUERRA DE PLANETAS<br>' + lider + ' · cierra en ' + tiempoRestante(g.cierra_en) +
+  const lider = g.lider ? t('gm_va_ganando', { p: '<b style="color:' + COLOR_PLANETA[g.lider] + '">' + Misiones.NOMBRE[g.lider] + '</b>' }) : t('nadie_suma');
+  el.innerHTML = '<div class="gm-txt">' + t('gm_titulo') + '<br>' + lider + ' · ' + t('cierra_en', { t: tiempoRestante(g.cierra_en) }) +
     (g.campeon ? ' · 🏆 ' + Misiones.NOMBRE[g.campeon] : '') + '</div>' + (g.lider ? barraGuerraHtml(g, false) : '');
 }
 function pintarHudCampeon() {
@@ -186,35 +186,34 @@ function pintarHudCampeon() {
 function pintarBotonMisiones() {
   const b = document.querySelectorAll('.btn-misiones'); if (!b.length) return;
   const e = Misiones.estado(), n = e.hechas.filter(Boolean).length;
-  b.forEach(x => { x.innerHTML = '🎯 MISIONES <span class="bm-n">' + n + '/3</span>'; });
+  b.forEach(x => { x.innerHTML = t('b_mis_n', { n }); });
 }
 
 /* ---------- pantalla MISIONES · GUERRA · LOGROS ---------- */
 function abrirMisiones() {
   const e = Misiones.estado(), lg = Misiones.logros(), prem = Misiones.premios();
   const fin = new Date(); fin.setHours(24, 0, 0, 0);
-  let h = '<div class="mi-sec">MISIONES DE HOY <span class="mi-nota">nuevas en ' + tiempoRestante((fin - Date.now()) / 1000) + '</span></div>';
+  let h = '<div class="mi-sec">' + t('ms_hoy') + ' <span class="mi-nota">' + t('ms_nuevas', { t: tiempoRestante((fin - Date.now()) / 1000) }) + '</span></div>';
   e.lista.forEach((m, i) => {
     const pct = Math.min(100, e.prog[i] / m.meta * 100), ok = e.hechas[i];
     h += '<div class="mi-fila' + (ok ? ' mi-ok' : '') + '"><span class="mi-check">' + (ok ? '✓' : '') + '</span>' +
       '<span class="mi-txt">' + Misiones.textoDe(m) + '</span>' +
-      '<span class="mi-prog"><span class="mi-bar"><i style="width:' + pct + '%"></i></span>' + Number(e.prog[i]).toLocaleString('es') + ' / ' + m.meta.toLocaleString('es') + '</span></div>';
+      '<span class="mi-prog"><span class="mi-bar"><i style="width:' + pct + '%"></i></span>' + fmt(e.prog[i]) + ' / ' + fmt(m.meta) + '</span></div>';
   });
-  h += '<div class="mi-premio">' + (prem ? '🎁 Tienes <b>' + prem + '</b> ' + (prem === 1 ? 'mejora guardada' : 'mejoras guardadas') + ': se aplican al empezar tu próxima misión.' : 'Cada misión cumplida te da una mejora de planeta para tu próxima partida.') + '</div>';
+  h += '<div class="mi-premio">' + (prem ? (prem === 1 ? t('ms_premio_n1') : t('ms_premio_n', { n: prem })) : t('ms_premio_0')) + '</div>';
   const g = guerraCache;
-  h += '<div class="mi-sec">GUERRA DE PLANETAS · ESTA SEMANA' + (g ? ' <span class="mi-nota">cierra en ' + tiempoRestante(g.cierra_en) + '</span>' : '') + '</div>';
+  h += '<div class="mi-sec">' + t('ms_guerra') + (g ? ' <span class="mi-nota">' + t('cierra_en', { t: tiempoRestante(g.cierra_en) }) + '</span>' : '') + '</div>';
   if (g && g.orden) {
     const yo = (leerPiloto() || {}).bando, max = Math.max(1, ...Misiones.PLANETAS.map(p => g.puntos[p] || 0));
     g.orden.forEach((p, i) => {
       h += '<div class="gw-fila' + (p === yo ? ' gw-yo' : '') + '"><span class="gw-pos">' + (i + 1) + '</span><span class="gw-nom" style="color:' + COLOR_PLANETA[p] + '">' + Misiones.NOMBRE[p] + (p === g.campeon ? ' 🏆' : '') + '</span>' +
-        '<span class="gw-bar"><i style="width:' + ((g.puntos[p] || 0) / max * 100) + '%;background:' + COLOR_PLANETA[p] + '"></i></span><span class="gw-pts">' + Number(g.puntos[p] || 0).toLocaleString('es') + '</span></div>';
+        '<span class="gw-bar"><i style="width:' + ((g.puntos[p] || 0) / max * 100) + '%;background:' + COLOR_PLANETA[p] + '"></i></span><span class="gw-pts">' + fmt(g.puntos[p]) + '</span></div>';
     });
-    h += '<div class="mi-premio">Tus puntos de cada partida suman a tu planeta. El lunes gana el que más sumó y sus pilotos llevan la insignia 🏆 toda la semana.' +
-      (g.campeon ? ' Campeón de la semana pasada: <b style="color:' + COLOR_PLANETA[g.campeon] + '">' + Misiones.NOMBRE[g.campeon] + '</b>.' : '') + '</div>';
-  } else h += '<div class="mi-premio">Sin conexión con la guerra. Prueba de nuevo en un momento.</div>';
-  h += '<div class="mi-sec">LOGROS <span class="mi-nota">' + lg.length + ' / ' + Misiones.LOGROS.length + '</span></div><div class="lg-rejilla">';
+    h += '<div class="mi-premio">' + t('ms_guerra_txt') + (g.campeon ? t('ms_campeon_ant', { c: COLOR_PLANETA[g.campeon], p: Misiones.NOMBRE[g.campeon] }) : '') + '</div>';
+  } else h += '<div class="mi-premio">' + t('ms_sin_guerra') + '</div>';
+  h += '<div class="mi-sec">' + t('ms_logros') + ' <span class="mi-nota">' + lg.length + ' / ' + Misiones.LOGROS.length + '</span></div><div class="lg-rejilla">';
   for (const L of Misiones.LOGROS) { const ok = lg.includes(L.id);
-    h += '<div class="lg' + (ok ? ' lg-ok' : '') + '"><span class="lg-ico">' + L.ico + '</span><span class="lg-nom">' + L.nom + '</span><span class="lg-desc">' + L.desc + '</span></div>'; }
+    h += '<div class="lg' + (ok ? ' lg-ok' : '') + '"><span class="lg-ico">' + L.ico + '</span><span class="lg-nom">' + t('lg_' + L.id) + '</span><span class="lg-desc">' + t('lgd_' + L.id) + '</span></div>'; }
   h += '</div>';
   document.getElementById('misiones-lista').innerHTML = h;
   document.getElementById('screen-misiones').classList.remove('hidden');
@@ -226,3 +225,8 @@ if (typeof NV_DEMO === 'undefined' || !NV_DEMO) {
   window.addEventListener('load', () => { pintarBotonMisiones(); cargarGuerra(); });
   setInterval(() => { if (!G.running) cargarGuerra(); }, 120000);
 }
+
+window.addEventListener('nv-idioma', () => {
+  pintarBotonMisiones(); pintarGuerraMini();
+  if (!document.getElementById('screen-misiones').classList.contains('hidden')) abrirMisiones();
+});

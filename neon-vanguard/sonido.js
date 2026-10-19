@@ -222,8 +222,8 @@ Audio2.cargarPrefs();
 
 function pintarBotonesSonido() {
   const m = document.getElementById('btn-musica'), e = document.getElementById('btn-efectos');
-  if (m) { m.classList.toggle('apagado', !Audio2.musicaOn); m.setAttribute('aria-label', Audio2.musicaOn ? 'Quitar música' : 'Poner música'); }
-  if (e) { e.classList.toggle('apagado', !Audio2.efectosOn); e.setAttribute('aria-label', Audio2.efectosOn ? 'Quitar efectos' : 'Poner efectos'); }
+  if (m) { m.classList.toggle('apagado', !Audio2.musicaOn); m.setAttribute('aria-label', t(Audio2.musicaOn ? 'aria_musica_off' : 'aria_musica_on')); }
+  if (e) { e.classList.toggle('apagado', !Audio2.efectosOn); e.setAttribute('aria-label', t(Audio2.efectosOn ? 'aria_efectos_off' : 'aria_efectos_on')); }
 }
 
 // el navegador solo deja sonar después de un toque: al primero arranca la música del menú
@@ -241,4 +241,5 @@ function pintarBotonesSonido() {
     if (document.hidden) Audio2.ctx.suspend().catch(() => {}); else Audio2.ctx.resume().catch(() => {});
   });
   document.addEventListener('DOMContentLoaded', pintarBotonesSonido);
+  window.addEventListener('nv-idioma', pintarBotonesSonido);
 })();

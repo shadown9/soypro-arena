@@ -113,7 +113,7 @@ async function abrirPizarra() {
   const cont = document.getElementById('pizarra-lista');
   const estado = document.getElementById('pizarra-estado');
   document.getElementById('screen-pizarra').classList.remove('hidden');
-  cont.innerHTML = '<div class="pz-cargando">Consultando el ranking mundial…</div>';
+  cont.innerHTML = '<div class="pz-cargando">' + t('pz_cargando') + '</div>';
   document.getElementById('pz-resultado').innerHTML = ''; document.getElementById('pizarra-yo').textContent = '';
   estado.textContent = '';
 
@@ -124,19 +124,19 @@ async function abrirPizarra() {
   if (data && data.ok && data.top && !data.top.length) {
     cont.innerHTML =
       '<div class="pz-vacio">' +
-        '<strong>Todavía no hay récords</strong>' +
-        '<span>¡Jugá una partida y sé el primer piloto de la pizarra mundial!</span>' +
+        '<strong>' + t('pz_vacio_t') + '</strong>' +
+        '<span>' + t('pz_vacio_s') + '</span>' +
       '</div>';
-    estado.textContent = '0 pilotos en la arena';
+    estado.textContent = t('pz_pilotos_arena', { n: 0 });
     return;
   }
   if (!data || !data.top || !data.top.length) {
     cont.innerHTML =
       '<div class="pz-vacio">' +
-        '<strong>Sin conexión al ranking</strong>' +
-        '<span>El servidor no responde. Tus récords se guardan igual en este dispositivo.</span>' +
+        '<strong>' + t('pz_sin_t') + '</strong>' +
+        '<span>' + t('pz_sin_s') + '</span>' +
       '</div>';
-    estado.textContent = 'Modo local';
+    estado.textContent = t('pz_local');
     return;
   }
 
@@ -146,10 +146,10 @@ async function abrirPizarra() {
   let html = '<div class="pz-tabla">';
   html += '<div class="pz-fila pz-head">' +
             '<span class="pz-pos">#</span>' +
-            '<span class="pz-nom">PILOTO</span>' +
-            '<span class="pz-ban">PLANETA</span>' +
-            '<span class="pz-vic">VICT.</span>' +
-            '<span class="pz-pts">PUNTOS</span>' +
+            '<span class="pz-nom">' + t('pz_h_piloto') + '</span>' +
+            '<span class="pz-ban">' + t('pz_h_planeta') + '</span>' +
+            '<span class="pz-vic">' + t('pz_h_vict') + '</span>' +
+            '<span class="pz-pts">' + t('pz_h_puntos') + '</span>' +
           '</div>';
 
   data.top.forEach(p => {
@@ -157,10 +157,10 @@ async function abrirPizarra() {
     const medalla = p.puesto === 1 ? '🥇' : p.puesto === 2 ? '🥈' : p.puesto === 3 ? '🥉' : p.puesto;
     html += '<div class="pz-fila' + yo + '">' +
               '<span class="pz-pos">' + medalla + '</span>' +
-              '<span class="pz-nom">' + (p.oro ? '<span class="pz-oro" title="Su planeta ganó la guerra">🏆</span>' : '') + escaparHtml(p.nombre) + '</span>' +
-              '<span class="pz-ban ban-' + (p.bando || 'x') + '">' + (p.bando || '—').toUpperCase() + '</span>' +
+              '<span class="pz-nom">' + (p.oro ? '<span class="pz-oro" title="' + t('pz_oro_title') + '">🏆</span>' : '') + escaparHtml(p.nombre) + '</span>' +
+              '<span class="pz-ban ban-' + (p.bando || 'x') + '">' + nombrePlaneta(p.bando) + '</span>' +
               '<span class="pz-vic">' + Number(p.victorias || 0) + '</span>' +
-              '<span class="pz-pts">' + Number(p.score).toLocaleString('es') + '</span>' +
+              '<span class="pz-pts">' + fmt(p.score) + '</span>' +
             '</div>';
   });
   html += '</div>';
@@ -171,24 +171,24 @@ async function abrirPizarra() {
   // GUERRA DE PLANETAS DE ESTA SEMANA (se reinicia cada lunes; el ganador lleva la insignia 🏆)
   if (data.guerra && data.guerra.orden) {
     const g = data.guerra; if (typeof guerraCache !== 'undefined') guerraCache = g;
-    html += '<div class="pz-bandos-tit">GUERRA DE PLANETAS · ESTA SEMANA</div>';
-    html += '<div class="pz-lider">' + (g.lider ? '👑 VA GANANDO: <strong class="ban-' + g.lider + '">' + g.lider.toUpperCase() + '</strong>' : 'Nadie ha sumado puntos todavía') +
-      ' · cierra en ' + (typeof tiempoRestante === 'function' ? tiempoRestante(g.cierra_en) : '') + (g.campeon ? ' · 🏆 campeón: <strong class="ban-' + g.campeon + '">' + g.campeon.toUpperCase() + '</strong>' : '') + '</div>';
+    html += '<div class="pz-bandos-tit">' + t('pz_guerra_tit') + '</div>';
+    html += '<div class="pz-lider">' + (g.lider ? t('pz_va_ganando') + ' <strong class="ban-' + g.lider + '">' + nombrePlaneta(g.lider) + '</strong>' : t('nadie_suma')) +
+      ' · ' + t('cierra_en', { t: typeof tiempoRestante === 'function' ? tiempoRestante(g.cierra_en) : '' }) + (g.campeon ? ' · ' + t('pz_campeon') + ' <strong class="ban-' + g.campeon + '">' + nombrePlaneta(g.campeon) + '</strong>' : '') + '</div>';
     html += '<div class="pz-bandos">';
     g.orden.forEach((b, i) => {
       html += '<div class="pz-bando ban-' + b + (i === 0 && g.lider ? ' pz-bando-lider' : '') + '">' +
                 '<span class="pb-pos">' + (i + 1) + '</span>' +
-                '<span class="pb-nom">' + b.toUpperCase() + (b === g.campeon ? ' 🏆' : '') + '</span>' +
-                '<span class="pb-vic">' + Number((g.partidas || {})[b] || 0) + ' partidas</span>' +
-                '<span class="pb-pts">' + Number(g.puntos[b] || 0).toLocaleString('es') + '</span>' +
+                '<span class="pb-nom">' + nombrePlaneta(b) + (b === g.campeon ? ' 🏆' : '') + '</span>' +
+                '<span class="pb-vic">' + t('pz_partidas', { n: Number((g.partidas || {})[b] || 0) }) + '</span>' +
+                '<span class="pb-pts">' + fmt(g.puntos[b]) + '</span>' +
               '</div>';
     });
     html += '</div>';
   }
 
   cont.innerHTML = html;
-  estado.textContent = data.total_pilotos + (data.total_pilotos === 1 ? ' piloto' : ' pilotos') + ' en la arena';
-  document.getElementById('pizarra-yo').innerHTML = data.mi ? 'TU PUESTO: <strong>#' + data.mi.puesto + '</strong> de ' + data.total_pilotos + ' · ' + Number(data.mi.score).toLocaleString('es') + ' pts' : (miP && miP.codigo ? 'Jugá una partida para entrar en el ranking' : '');
+  estado.textContent = data.total_pilotos === 1 ? t('pz_piloto_arena') : t('pz_pilotos_arena', { n: data.total_pilotos });
+  document.getElementById('pizarra-yo').innerHTML = data.mi ? t('pz_tu_puesto', { p: data.mi.puesto, t: data.total_pilotos, s: fmt(data.mi.score) }) : (miP && miP.codigo ? t('pz_juga') : '');
 }
 
 function cerrarPizarra() {
@@ -318,12 +318,12 @@ function generarTarjeta(datos) {
 
   ctx.fillStyle = 'rgba(255,255,255,0.45)';
   ctx.font = '22px Arial, sans-serif';
-  ctx.fillText('RÉCORD DE PILOTO', W / 2, 195);
+  ctx.fillText(t('tj_record'), W / 2, 195);
 
   // Nombre
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 72px "Arial Black", Arial, sans-serif';
-  ctx.fillText(String(datos.nombre || 'PILOTO').toUpperCase(), W / 2, 300);
+  ctx.fillText(String(datos.nombre || t('piloto')).toUpperCase(), W / 2, 300);
 
   // Bando
   const colores = {
@@ -335,7 +335,7 @@ function generarTarjeta(datos) {
   ctx.font = 'bold 34px Arial, sans-serif';
   ctx.shadowColor = col;
   ctx.shadowBlur = 20;
-  ctx.fillText('BANDO ' + String(datos.bando || '—').toUpperCase(), W / 2, 360);
+  ctx.fillText(t('tj_bando', { b: nombrePlaneta(datos.bando) }), W / 2, 360);
   ctx.shadowBlur = 0;
 
   // Puntaje grande
@@ -343,18 +343,18 @@ function generarTarjeta(datos) {
   ctx.font = 'bold 150px "Arial Black", Arial, sans-serif';
   ctx.shadowColor = '#00ffc8';
   ctx.shadowBlur = 40;
-  ctx.fillText(Number(datos.score || 0).toLocaleString('es'), W / 2, 540);
+  ctx.fillText(fmt(datos.score), W / 2, 540);
   ctx.shadowBlur = 0;
 
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
   ctx.font = '26px Arial, sans-serif';
-  ctx.fillText('PUNTOS', W / 2, 585);
+  ctx.fillText(t('tj_puntos'), W / 2, 585);
 
   // Stats
   ctx.fillStyle = '#00ffc8';
   ctx.font = 'bold 40px Arial, sans-serif';
-  ctx.fillText('OLEADA ' + (datos.wave || 1), W / 2 - 160, 680);
-  ctx.fillText((datos.kills || 0) + ' BAJAS', W / 2 + 160, 680);
+  ctx.fillText(t('tj_oleada', { n: datos.wave || 1 }), W / 2 - 160, 680);
+  ctx.fillText(t('tj_bajas', { n: datos.kills || 0 }), W / 2 + 160, 680);
 
   // QR
   const qrTam = 200;
@@ -370,7 +370,7 @@ function generarTarjeta(datos) {
   // Llamado a la acción
   ctx.fillStyle = 'rgba(0,255,200,0.85)';
   ctx.font = 'bold 24px Arial, sans-serif';
-  ctx.fillText('¿ME SUPERÁS? ESCANEÁ Y JUGÁ', W / 2, 1030);
+  ctx.fillText(t('tj_reto'), W / 2, 1030);
 
   return cv.toDataURL('image/png');
 }
@@ -399,10 +399,10 @@ async function compartirTarjeta() {
   const rec = leerRecordLocal() || {};
   const texto =
     '🎮 NEON VANGUARD\n' +
-    'Piloto: ' + ((p && p.nombre) || '?') + '\n' +
-    'Bando: ' + String((p && p.bando) || '—').toUpperCase() + '\n' +
-    'Récord: ' + Number(rec.score || 0).toLocaleString('es') + ' pts\n' +
-    '¿Me superás? ' + ARENA_URL_PUBLICA;
+    t('sh_piloto') + ': ' + ((p && p.nombre) || '?') + '\n' +
+    t('sh_bando') + ': ' + nombrePlaneta(p && p.bando) + '\n' +
+    t('sh_record') + ': ' + fmt(rec.score) + ' pts\n' +
+    t('sh_reto') + ' ' + ARENA_URL_PUBLICA;
 
   // 0) Dentro de la app de ProArena el navegador interno no sabe compartir:
   //    se lo pedimos a la app, que abre el menú nativo del teléfono con la imagen y el texto.
@@ -434,7 +434,7 @@ async function compartirTarjeta() {
     const btn = document.getElementById('tarjeta-compartir');
     if (btn) {
       const orig = btn.textContent;
-      btn.textContent = '¡COPIADO!';
+      btn.textContent = t('copiado');
       setTimeout(() => { btn.textContent = orig; }, 1800);
     }
     return;
@@ -449,10 +449,10 @@ function filaPizarra(p, yo) {
   const medalla = p.puesto === 1 ? '🥇' : p.puesto === 2 ? '🥈' : p.puesto === 3 ? '🥉' : p.puesto;
   return '<div class="pz-fila' + (yo ? ' pz-yo' : '') + '">' +
     '<span class="pz-pos">' + medalla + '</span>' +
-    '<span class="pz-nom">' + (p.oro ? '<span class="pz-oro" title="Su planeta ganó la guerra">🏆</span>' : '') + escaparHtml(p.nombre) + '</span>' +
-    '<span class="pz-ban ban-' + (p.bando || 'x') + '">' + (p.bando || '—').toUpperCase() + '</span>' +
+    '<span class="pz-nom">' + (p.oro ? '<span class="pz-oro" title="' + t('pz_oro_title') + '">🏆</span>' : '') + escaparHtml(p.nombre) + '</span>' +
+    '<span class="pz-ban ban-' + (p.bando || 'x') + '">' + nombrePlaneta(p.bando) + '</span>' +
     '<span class="pz-vic">' + Number(p.victorias || 0) + '</span>' +
-    '<span class="pz-pts">' + Number(p.score).toLocaleString('es') + '</span>' +
+    '<span class="pz-pts">' + fmt(p.score) + '</span>' +
   '</div>';
 }
 
@@ -460,14 +460,14 @@ function filaPizarra(p, yo) {
 async function buscarEnPizarra() {
   const inp = document.getElementById('pz-buscar'), out = document.getElementById('pz-resultado');
   const codigo = (inp.value || '').trim().toUpperCase();
-  if (codigo.length < 6) { out.innerHTML = '<span class="pz-msg">El código tiene el formato ABC-1234.</span>'; return; }
-  out.innerHTML = '<span class="pz-msg">Buscando…</span>';
+  if (codigo.length < 6) { out.innerHTML = '<span class="pz-msg">' + t('msg_formato_codigo') + '</span>'; return; }
+  out.innerHTML = '<span class="pz-msg">' + t('pz_buscando') + '</span>';
   try {
     const r = await fetch(ARENA_LECTURA + '/piloto/' + encodeURIComponent(codigo));
     const d = r.ok ? await r.json() : null;
-    if (!d || !d.existe) { out.innerHTML = '<span class="pz-msg">No hay ningún piloto con ese código.</span>'; return; }
-    if (!d.puesto) { out.innerHTML = '<span class="pz-msg">' + escaparHtml(d.piloto.nombre) + ' todavía no tiene puntaje: le falta jugar.</span>'; return; }
-    out.innerHTML = '<span class="pz-msg"><strong>' + escaparHtml(d.piloto.nombre) + '</strong> está en el puesto <strong>#' + d.puesto + '</strong> de ' + d.total + '</span>' +
+    if (!d || !d.existe) { out.innerHTML = '<span class="pz-msg">' + t('pz_no_hay') + '</span>'; return; }
+    if (!d.puesto) { out.innerHTML = '<span class="pz-msg">' + t('pz_sin_puntaje', { n: escaparHtml(d.piloto.nombre) }) + '</span>'; return; }
+    out.innerHTML = '<span class="pz-msg">' + t('pz_esta', { n: escaparHtml(d.piloto.nombre), p: d.puesto, t: d.total }) + '</span>' +
       '<div class="pz-tabla">' + filaPizarra(Object.assign({ puesto: d.puesto }, d.piloto), false) + '</div>';
-  } catch (e) { out.innerHTML = '<span class="pz-msg">Sin conexión. Probá de nuevo.</span>'; }
+  } catch (e) { out.innerHTML = '<span class="pz-msg">' + t('msg_sin_conexion') + '</span>'; }
 }

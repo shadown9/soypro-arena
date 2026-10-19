@@ -158,7 +158,7 @@ function empezarIntro() {
   introTextura(bando); introGalaxia();
   INTRO.estelas = [];
   for (let i = 0; i < 160; i++) INTRO.estelas.push({ a: Math.random() * Math.PI * 2, d: 20 + Math.random() * 900, z: 0.4 + Math.random() * 0.8 });
-  G.intro = { t: 0, bando, nombre: String(p.nombre || 'PILOTO').toUpperCase(), sonoDespegue: false, sonoSalto: false };
+  G.intro = { t: 0, bando, nombre: String(p.nombre || traducir('piloto')).toUpperCase(), sonoDespegue: false, sonoSalto: false };
   document.documentElement.classList.add('nv-intro');
   Audio2.musica(0);
 }
@@ -168,7 +168,7 @@ function terminarIntro() {
   document.documentElement.classList.remove('nv-intro');
   G.flash = 0.9; G.flashColor = '200,250,255';
   if (typeof RED !== 'undefined') RED.inicio();
-  addFloater(CAM.x, CAM.y - H * 0.29, '¡A LA BATALLA!', '#ff2bd6', 26);
+  addFloater(CAM.x, CAM.y - H * 0.29, traducir('in_batalla'), '#ff2bd6', 26);
   startWave(1);
   if (typeof Misiones !== 'undefined') Misiones.aplicarPremios();
 }
@@ -251,22 +251,22 @@ function dibujarIntro(dt) {
     ctx.save(); ctx.globalAlpha = txt; ctx.textAlign = 'center';
     const tam = Math.min(W * 0.075, 46);
     ctx.font = '600 ' + Math.round(tam * 0.3) + 'px system-ui, sans-serif'; ctx.fillStyle = '#7fa6c4';
-    ctx.fillText('P I L O T O', W / 2, H * 0.17);
+    ctx.fillText(traducir('in_piloto'), W / 2, H * 0.17);
     ctx.font = '900 ' + Math.round(tam) + 'px system-ui, sans-serif'; ctx.fillStyle = '#fff';
     ctx.shadowBlur = 24; ctx.shadowColor = '#00f0ff'; ctx.fillText(I.nombre, W / 2, H * 0.17 + tam * 1.05);
     ctx.font = '800 ' + Math.round(tam * 0.34) + 'px system-ui, sans-serif'; ctx.fillStyle = B.color; ctx.shadowColor = B.color; ctx.shadowBlur = 12;
-    ctx.fillText('TU PLANETA · ' + B.nombre, W / 2, H * 0.17 + tam * 1.62);
+    ctx.fillText(traducir('in_tu_planeta', { p: nombrePlaneta(I.bando) }), W / 2, H * 0.17 + tam * 1.62);
     ctx.restore();
   }
   const txt2 = introTramo(t, 3.3, 3.6) * (1 - introTramo(t, 4.2, 4.4));
   if (txt2 > 0) {
     ctx.save(); ctx.globalAlpha = txt2; ctx.textAlign = 'center'; ctx.font = '800 ' + Math.round(Math.min(W * 0.03, 16)) + 'px system-ui, sans-serif';
     ctx.fillStyle = '#ff9ff0'; ctx.shadowBlur = 14; ctx.shadowColor = '#ff2bd6';
-    ctx.fillText('RUMBO AL CENTRO DE LA GALAXIA', W / 2, H * 0.9); ctx.restore();
+    ctx.fillText(traducir('in_rumbo'), W / 2, H * 0.9); ctx.restore();
   }
   if (t < 3) { // aviso para saltar
     ctx.save(); ctx.globalAlpha = 0.45 * introTramo(t, 0.8, 1.2); ctx.textAlign = 'right'; ctx.font = '600 10px system-ui, sans-serif'; ctx.fillStyle = '#9fb8cc';
-    ctx.fillText('TOCA PARA SALTAR ›', W - 14, H - 12); ctx.restore();
+    ctx.fillText(traducir('in_saltar'), W - 14, H - 12); ctx.restore();
   }
 
   // destello final

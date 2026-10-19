@@ -82,11 +82,11 @@ function elegirCamino(cual) {
   document.getElementById('reg-volver').classList.remove('hidden');
   if (cual === 'nuevo') {
     document.getElementById('reg-paso-nuevo').classList.remove('hidden');
-    document.getElementById('reg-sub').textContent = 'Creá tu código de piloto.';
+    document.getElementById('reg-sub').textContent = t('reg_sub_nuevo');
     setTimeout(() => document.getElementById('reg-nombre').focus(), 80);
   } else {
     document.getElementById('reg-paso-codigo').classList.remove('hidden');
-    document.getElementById('reg-sub').textContent = 'Entrá con tu nombre y código.';
+    document.getElementById('reg-sub').textContent = t('reg_sub_codigo');
     // el último nombre y código usados en este teléfono aparecen ya escritos
     const rec = leerRecordado();
     if (rec) { document.getElementById('reg-nombre-entrar').value = rec.nombre || ''; document.getElementById('reg-codigo-input').value = rec.codigo || ''; }
@@ -99,9 +99,9 @@ function volverPaso1() {
   document.getElementById('reg-paso-codigo').classList.add('hidden');
   document.getElementById('reg-paso1').classList.remove('hidden');
   document.getElementById('reg-volver').classList.add('hidden');
-  document.getElementById('reg-sub').textContent = 'Identificate, piloto.';
+  document.getElementById('reg-sub').textContent = t('reg_sub');
   const hint = document.getElementById('reg-hint');
-  hint.textContent = 'Sin nombre no hay código. Sin código no hay misión.';
+  hint.textContent = t('reg_hint');
   hint.style.color = '';
 }
 
@@ -121,7 +121,7 @@ function registrarPiloto() {
   if (nombre.length < 2) {
     input.style.borderColor = '#ff4d6d';
     input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
-    avisar('Necesitás al menos 2 letras, piloto.', false);
+    avisar(t('msg_min_letras'), false);
     setTimeout(() => {
       input.style.borderColor = '';
       input.style.boxShadow = '';
@@ -135,7 +135,7 @@ function registrarPiloto() {
   if (db[nombre]) {
     input.style.borderColor = '#ff4d6d';
     input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
-    avisar('Ese nombre ya está registrado. Entrá con tu nombre y código.', false);
+    avisar(t('msg_nombre_registrado'), false);
     setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 1600);
     return;
   }
@@ -149,12 +149,12 @@ function registrarPiloto() {
   }
 
   input.disabled = true;
-  avisar('Reservando tu nombre…', true);
+  avisar(t('msg_reservando'), true);
   reservarNombre(codigo, nombre).then(r => {
     if (r && r.error) {
       input.disabled = false;
       input.style.borderColor = '#ff4d6d'; input.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
-      avisar(r.error, false);
+      avisar(tServidor(r.error), false);
       setTimeout(() => { input.style.borderColor = ''; input.style.boxShadow = ''; }, 1600);
       return;
     }
@@ -163,7 +163,7 @@ function registrarPiloto() {
     guardarUsuarios(db);
     try { localStorage.setItem('nv_piloto', JSON.stringify({ nombre: final, codigo, fecha: Date.now() })); } catch (e) {}
     mostrarCodigo(codigo, final);
-    avisar('Código generado. Guardalo bien.', true);
+    avisar(t('msg_codigo_generado'), true);
   });
 }
 
@@ -174,7 +174,7 @@ async function reservarNombre(codigo, nombre) {
   try {
     const r = await fetch(ARENA_API + '/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codigo, nombre }) });
     const d = await r.json().catch(() => ({}));
-    if (r.status === 409 || r.status === 403) return { error: d.error || 'Ese nombre ya lo usa otro piloto.' };
+    if (r.status === 409 || r.status === 403) return { error: d.error || t('msg_nombre_usado') };
     return r.ok ? d : {};
   } catch (e) { return {}; }
 }
@@ -193,9 +193,9 @@ function copiarCodigo() {
   const codigo = document.getElementById('reg-codigo').textContent;
   const btn = document.getElementById('reg-copiar');
   const listo = () => {
-    btn.textContent = '¡COPIADO!';
+    btn.textContent = t('copiado');
     btn.classList.add('ok');
-    setTimeout(() => { btn.textContent = 'COPIAR'; btn.classList.remove('ok'); }, 1800);
+    setTimeout(() => { btn.textContent = t('copiar'); btn.classList.remove('ok'); }, 1800);
   };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(codigo).then(listo).catch(() => {
@@ -203,14 +203,14 @@ function copiarCodigo() {
       r.selectNodeContents(document.getElementById('reg-codigo'));
       const s = window.getSelection();
       s.removeAllRanges(); s.addRange(r);
-      avisar('Seleccionado. Copiá con Ctrl+C.', true);
+      avisar(t('msg_seleccionado'), true);
     });
   } else {
     const r = document.createRange();
     r.selectNodeContents(document.getElementById('reg-codigo'));
     const s = window.getSelection();
     s.removeAllRanges(); s.addRange(r);
-    avisar('Seleccionado. Copiá con Ctrl+C.', true);
+    avisar(t('msg_seleccionado'), true);
   }
 }
 
@@ -221,8 +221,8 @@ function entrarConCodigo() {
   const nombre = (inNom.value || '').trim().toUpperCase();
   const marcar = (el) => { el.style.borderColor = '#ff4d6d'; el.style.boxShadow = '0 0 24px rgba(255,77,109,.5)';
     setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1400); };
-  if (nombre.length < 2) { marcar(inNom); avisar('Escribí tu nombre de piloto.', false); return; }
-  if (codigo.length < 6) { marcar(input); avisar('El código tiene el formato ABC-1234.', false); return; }
+  if (nombre.length < 2) { marcar(inNom); avisar(t('msg_escribi_nombre'), false); return; }
+  if (codigo.length < 6) { marcar(input); avisar(t('msg_formato_codigo'), false); return; }
   const fallo = (msg) => { marcar(inNom); marcar(input); avisar(msg, false); };
   const entrar = (piloto) => {
     try {
@@ -230,7 +230,7 @@ function entrarConCodigo() {
         nombre: piloto.nombre, codigo: piloto.codigo, bando: piloto.bando || undefined, fecha: piloto.fecha || Date.now()
       }));
     } catch (e) {}
-    avisar('Bienvenido de vuelta, ' + piloto.nombre + '.', true);
+    avisar(t('msg_bienvenido', { n: piloto.nombre }), true);
     setTimeout(() => irABandos(), 700);
   };
 
@@ -238,13 +238,13 @@ function entrarConCodigo() {
   if (typeof ARENA_LECTURA === 'undefined' || ARENA_LECTURA.endsWith('/api/arena')) {
     const local = buscarPorCodigo(codigo); // hub de Shadow: solo en este dispositivo
     if (local && String(local.nombre).toUpperCase() === nombre) return entrar(local);
-    return fallo('Nombre o código incorrectos.');
+    return fallo(t('msg_incorrectos'));
   }
-  avisar('Comprobando…', true);
+  avisar(t('msg_comprobando'), true);
   fetch(ARENA_LECTURA + '/entrar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, codigo }) })
     .then(r => r.json().then(d => ({ ok: r.ok, d })).catch(() => ({ ok: false, d: {} })))
-    .then(({ ok, d }) => { if (ok && d.piloto) entrar(d.piloto); else fallo((d && d.error) || 'Nombre o código incorrectos.'); })
-    .catch(() => fallo('Sin conexión. Probá de nuevo.'));
+    .then(({ ok, d }) => { if (ok && d.piloto) entrar(d.piloto); else fallo(tServidor(d && d.error) || t('msg_incorrectos')); })
+    .catch(() => fallo(t('msg_sin_conexion')));
 }
 
 function irABandos() {
@@ -304,8 +304,8 @@ function dibujarPlanetas() {
         '<div class="detalle"></div>' +
         (b.id === 'saturno' ? '<div class="anillo"></div>' : '') +
       '</div>' +
-      '<div class="p-nombre">' + b.nombre + '</div>' +
-      '<div class="p-bonus">' + b.bonus + '</div>';
+      '<div class="p-nombre">' + nombrePlaneta(b.id) + '</div>' +
+      '<div class="p-bonus">' + t('bonus_' + b.id) + '</div>';
     el.onclick = () => elegirBando(b.id, el);
     cont.appendChild(el);
   });
@@ -391,7 +391,7 @@ function guardarRecordado(nombre, codigo) { try { if (nombre && codigo) localSto
 function verClave() {
   const inp = document.getElementById('reg-codigo-input'), btn = document.getElementById('ver-clave');
   const ver = inp.type === 'password'; inp.type = ver ? 'text' : 'password';
-  btn.classList.toggle('visible', ver); btn.setAttribute('aria-label', ver ? 'Ocultar código' : 'Mostrar código');
+  btn.classList.toggle('visible', ver); btn.setAttribute('aria-label', t(ver ? 'aria_ocultar_codigo' : 'aria_ver_codigo'));
 }
 // cada vez que se guarda el piloto activo, también queda recordado
 (function () {
@@ -402,3 +402,9 @@ function verClave() {
   };
   const p = (typeof leerPiloto === 'function') ? leerPiloto() : null; if (p && p.nombre && p.codigo && !leerRecordado()) guardarRecordado(p.nombre, p.codigo);
 })();
+
+// al cambiar de idioma, los planetas se vuelven a escribir
+window.addEventListener('nv-idioma', () => {
+  const c = document.getElementById('planetas');
+  if (c && c.dataset.listo) { const sel = bandoElegido; c.dataset.listo = ''; c.innerHTML = ''; dibujarPlanetas(); if (sel) document.querySelectorAll('.planeta').forEach(el => { if (el.dataset.id === sel) el.classList.add('sel'); }); }
+});
