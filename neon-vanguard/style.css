@@ -878,3 +878,11 @@ html.nv-intro #hud .hud-sonido { pointer-events:none; }
 /* marcador: OLEADA y BAJAS en la misma fila (las bajas más discretas) */
 .stat-par { display:flex; gap:16px; align-items:flex-start; }
 .stat-bajas .val { color:#ff6b8a; font-size:22px; text-shadow:0 0 8px rgba(255,77,109,.45); }
+
+/* fin de partida: elegir qué tarjeta compartir (solo si la partida quedó por debajo del récord) */
+.tarjeta-modo { display:flex; gap:6px; justify-content:center; margin:0 0 6px; }
+.tarjeta-modo button { font:inherit; font-size:11px; font-weight:800; letter-spacing:1.5px; padding:5px 12px; border-radius:999px; cursor:pointer;
+  color:#8fa3c8; background:rgba(0,240,255,.05); border:1px solid rgba(0,240,255,.25); }
+.tarjeta-modo button.activa { color:#05060d; background:#00f0ff; border-color:#00f0ff; box-shadow:0 0 10px rgba(0,240,255,.5); }
+@media (orientation: landscape) and (max-height: 500px) { .tarjeta-modo button { padding:4px 10px; font-size:10px; } }
+#gameover .tarjeta-modo button { width:auto; flex:0 0 auto; white-space:nowrap; margin:0; min-height:0; padding:6px 14px; font-size:11px; letter-spacing:1.5px; }

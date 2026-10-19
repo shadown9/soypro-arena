@@ -59,6 +59,7 @@ async function subirRecord(score, wave, kills, victorias) {
     score: mejorLocal,
     wave: Math.max(previo.wave || 0, wave),
     kills: Math.max(previo.kills || 0, kills),
+    rk: score > (previo.score || 0) ? kills : previo.rk, // bajas de la partida del récord
     victorias: (previo.victorias || 0) + (victorias || 0),
     bando: p.bando || previo.bando || '',
     fecha: Date.now()
@@ -323,7 +324,7 @@ function generarTarjeta(datos) {
 
   ctx.fillStyle = 'rgba(255,255,255,0.45)';
   ctx.font = '22px Arial, sans-serif';
-  ctx.fillText(t('tj_record') + (datos.puesto && datos.puesto <= 100 ? '  ·  ' + t('tj_puesto', { p: datos.puesto }) : ''), W / 2, 195);
+  ctx.fillText(t(datos.modo === 'partida' ? 'tj_de_partida' : 'tj_record') + (datos.puesto && datos.puesto <= 100 ? '  ·  ' + t('tj_puesto', { p: datos.puesto }) : ''), W / 2, 195);
 
   // Nombre
   ctx.fillStyle = '#ffffff';
@@ -358,8 +359,8 @@ function generarTarjeta(datos) {
   // Stats
   ctx.fillStyle = '#00ffc8';
   ctx.font = 'bold 40px Arial, sans-serif';
-  ctx.fillText(t('tj_oleada', { n: datos.wave || 1 }), W / 2 - 160, 680);
-  ctx.fillText(t('tj_bajas', { n: datos.kills || 0 }), W / 2 + 160, 680);
+  if (datos.kills == null) ctx.fillText(t('tj_oleada', { n: datos.wave || 1 }), W / 2, 680);
+  else { ctx.fillText(t('tj_oleada', { n: datos.wave || 1 }), W / 2 - 160, 680); ctx.fillText(t('tj_bajas', { n: datos.kills }), W / 2 + 160, 680); }
 
   // QR
   const qrTam = 200;
@@ -381,13 +382,21 @@ function generarTarjeta(datos) {
 }
 
 /* Muestra la tarjeta en el overlay de fin de partida */
-let datosTarjeta = null; // lo que muestra la tarjeta: el texto para compartir dice lo mismo
+let datosTarjeta = null, datosRecord = null; // lo que muestra la tarjeta: el texto para compartir dice lo mismo
 function mostrarTarjeta(datos) {
   const img = document.getElementById('tarjeta-img');
   if (!img) return;
-  datosTarjeta = datos;
-  img.src = generarTarjeta(datos);
+  datosRecord = datos;
+  // si la partida quedó por debajo del récord, se puede elegir cuál compartir (sale primero el récord)
+  const modo = document.getElementById('tarjeta-modo'); if (modo) modo.classList.toggle('hidden', !datos.partida);
+  elegirTarjeta('record');
   document.getElementById('tarjeta-box').classList.remove('hidden');
+}
+function elegirTarjeta(modo) {
+  const d = datosRecord; if (!d) return;
+  datosTarjeta = modo === 'partida' && d.partida ? Object.assign({}, d, d.partida, { puesto: 0, modo: 'partida', partida: null }) : d;
+  document.getElementById('tarjeta-img').src = generarTarjeta(datosTarjeta);
+  document.querySelectorAll('#tarjeta-modo button').forEach(b => b.classList.toggle('activa', b.dataset.m === (datosTarjeta.modo || 'record')));
 }
 
 function descargarTarjeta() {
@@ -408,7 +417,7 @@ async function compartirTarjeta() {
     '🎮 NEON VANGUARD\n' +
     t('sh_piloto') + ': ' + ((p && p.nombre) || '?') + '\n' +
     t('sh_bando') + ': ' + nombrePlaneta(p && p.bando) + '\n' +
-    t('sh_record') + ': ' + fmt(rec.score) + ' pts' + (rec.wave ? ' · ' + t('sh_oleada', { n: rec.wave }) : '') + '\n' +
+    t(rec.modo === 'partida' ? 'sh_partida' : 'sh_record') + ': ' + fmt(rec.score) + ' pts' + (rec.wave ? ' · ' + t('sh_oleada', { n: rec.wave }) : '') + '\n' +
     (rec.puesto && rec.puesto <= 100 ? t('sh_puesto', { p: rec.puesto }) + '\n' : '') +
     t('sh_reto') + ' ' + ARENA_URL_PUBLICA;
 

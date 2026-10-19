@@ -1908,8 +1908,10 @@ function gameOver() {
           bando: (p && p.bando) || '',
           score: record,
           wave: esta ? (rec.wave || waveFinal) : Math.max(waveFinal, rec.wave || 0),
-          kills: esta ? (rec.kills || killsFinal) : Math.max(killsFinal, rec.kills || 0),
-          puesto: res && res.puesto, total: res && res.total
+          // bajas de la partida del récord (rk); si no se saben (récords viejos), la tarjeta no las muestra
+          kills: esta ? (rec.rk != null ? rec.rk : null) : killsFinal,
+          puesto: res && res.puesto, total: res && res.total,
+          partida: esta ? { score: scoreFinal, wave: waveFinal, kills: killsFinal } : null // para elegir «ESTA PARTIDA»
         });
       }
     });
