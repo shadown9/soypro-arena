@@ -467,7 +467,8 @@ const BANDOS_ENEMIGOS = ['venus', 'marte', 'jupiter', 'saturno', 'neptuno'];
 
 function spawnEnemy(type, x, y) {
   const t = ENEMY_TYPES[type];
-  const scale = 1 + (G.wave - 1) * 0.08;
+  // vida: +8 % por oleada y, desde la 15, +6 % más; las bestias aguantan un 20 % extra
+  const scale = (1 + (G.wave - 1) * 0.08 + Math.max(0, G.wave - 15) * 0.06) * (t.bando === 'bestia' ? 1.2 : 1);
   const e = {
     type, bando: t.bando || type, x, y, vx: 0, vy: 0, r: t.r,
     hp: t.hp * scale, maxHp: t.hp * scale,
@@ -633,7 +634,7 @@ function enemyShoot(e, count, T) {
 /* ---------- jefe ---------- */
 function spawnBoss() {
   const jefe = elegirJefe(), J = JEFES[jefe];
-  const hp = Math.round((900 + (G.wave - 1) * 420) * J.vida);
+  const hp = Math.round((900 + (G.wave - 1) * 420 + Math.max(0, G.wave - 15) * 300) * J.vida);
   const boss = {
     type: 'boss', jefe, nombre: t('j_' + jefe), x: CAM.x, y: vistaY0() - 120, vx: 0, vy: 0, r: J.r,
     hp, maxHp: hp, speed: 70, color: J.color, score: 3000, dmg: 26, t: {},
@@ -708,9 +709,13 @@ function updateBoss(e, dt) {
 }
 
 /* ---------- daño y muerte ---------- */
+// DUREZA: los enemigos pegan más fuerte en cada oleada (+5 % por oleada; en salas privadas no hay oleadas)
+// sin esto, una nave al máximo se volvía invencible en las oleadas altas
+const durezaOleada = () => G.privada ? 1 : 1 + (Math.max(1, G.wave) - 1) * 0.05;
 function damagePlayer(amount) {
   const p = player;
   if (!p.alive || p.invuln > 0) return;
+  amount *= durezaOleada();
   if (p.mut && p.mut.jupiter) amount *= 0.65; // CORAZA COLOSAL
   p.desdeGolpe = 0;
   p.hp -= amount;
