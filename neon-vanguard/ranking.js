@@ -99,9 +99,9 @@ async function subirRecord(score, wave, kills, victorias) {
 }
 
 /* ---------- Leer pizarra mundial ---------- */
-async function leerPizarra(limite, yo) {
+async function leerPizarra(limite, yo, periodo) {
   try {
-    const r = await fetch(ARENA_LECTURA + '/leaderboard?limite=' + (limite || 100) + (yo ? '&yo=' + encodeURIComponent(yo) : ''));
+    const r = await fetch(ARENA_LECTURA + '/leaderboard?limite=' + (limite || 100) + (yo ? '&yo=' + encodeURIComponent(yo) : '') + (periodo ? '&periodo=' + periodo : ''));
     if (!r.ok) return null;
     return await r.json();
   } catch (e) {
@@ -112,7 +112,15 @@ async function leerPizarra(limite, yo) {
 /* ============================================================
    PIZARRA MUNDIAL (pantalla)
    ============================================================ */
+/* pestañas HOY · SEMANA · SIEMPRE (se recuerda la última elegida) */
+let pzPeriodo = (() => { try { return localStorage.getItem('nv_pz_periodo') || 'hoy'; } catch (e) { return 'hoy'; } })();
+function pzMarcarTab() { document.querySelectorAll('.pz-tabs button').forEach(b => b.classList.toggle('activa', b.dataset.p === pzPeriodo)); }
+function cambiarPeriodo(p) { pzPeriodo = p; try { localStorage.setItem('nv_pz_periodo', p); } catch (e) {} abrirPizarra(); }
+// "hace 3 min": cuándo fue la última partida de la lista
+function haceCuanto(seg) { seg = Math.max(0, seg | 0); return seg < 60 ? t('ahora_mismo') : seg < 3600 ? t('hace_min', { n: Math.floor(seg / 60) }) : t('hace_h', { n: Math.floor(seg / 3600) }); }
+
 async function abrirPizarra() {
+  pzMarcarTab();
   const cont = document.getElementById('pizarra-lista');
   const estado = document.getElementById('pizarra-estado');
   document.getElementById('screen-pizarra').classList.remove('hidden');
@@ -121,14 +129,15 @@ async function abrirPizarra() {
   estado.textContent = '';
 
   const miP = (typeof leerPiloto === 'function') ? leerPiloto() : null;
-  const data = await leerPizarra(100, miP && miP.codigo);
+  const periodo = pzPeriodo, data = await leerPizarra(100, miP && miP.codigo, periodo);
+  if (periodo !== pzPeriodo) return; // cambió de pestaña mientras cargaba
 
   // ranking conectado pero todavía vacío: invitar a ser el primero
   if (data && data.ok && data.top && !data.top.length) {
     cont.innerHTML =
       '<div class="pz-vacio">' +
-        '<strong>' + t('pz_vacio_t') + '</strong>' +
-        '<span>' + t('pz_vacio_s') + '</span>' +
+        '<strong>' + t(periodo === 'siempre' ? 'pz_vacio_t' : 'pz_vacio_hoy_t') + '</strong>' +
+        '<span>' + t(periodo === 'siempre' ? 'pz_vacio_s' : 'pz_vacio_hoy_s') + '</span>' +
       '</div>';
     estado.textContent = t('pz_pilotos_arena', { n: 0 });
     return;
@@ -152,20 +161,11 @@ async function abrirPizarra() {
             '<span class="pz-nom">' + t('pz_h_piloto') + '</span>' +
             '<span class="pz-ban">' + t('pz_h_planeta') + '</span>' +
             '<span class="pz-vic">' + t('pz_h_vict') + '</span>' +
+            '<span class="pz-ola">' + t('pz_h_ola') + '</span>' +
             '<span class="pz-pts">' + t('pz_h_puntos') + '</span>' +
           '</div>';
 
-  data.top.forEach(p => {
-    const yo = p.yo ? ' pz-yo' : '';
-    const medalla = p.puesto === 1 ? '🥇' : p.puesto === 2 ? '🥈' : p.puesto === 3 ? '🥉' : p.puesto;
-    html += '<div class="pz-fila' + yo + '">' +
-              '<span class="pz-pos">' + medalla + '</span>' +
-              '<span class="pz-nom">' + (p.oro ? '<span class="pz-oro" title="' + t('pz_oro_title') + '">🏆</span>' : '') + escaparHtml(p.nombre) + '</span>' +
-              '<span class="pz-ban ban-' + (p.bando || 'x') + '">' + nombrePlaneta(p.bando) + '</span>' +
-              '<span class="pz-vic">' + Number(p.victorias || 0) + '</span>' +
-              '<span class="pz-pts">' + fmt(p.score) + '</span>' +
-            '</div>';
-  });
+  data.top.forEach(p => { html += filaPizarra(p, p.yo); });
   html += '</div>';
 
   // si no estoy en la lista, mi fila va al final con mi puesto
@@ -190,8 +190,10 @@ async function abrirPizarra() {
   }
 
   cont.innerHTML = html;
-  estado.textContent = data.total_pilotos === 1 ? t('pz_piloto_arena') : t('pz_pilotos_arena', { n: data.total_pilotos });
-  document.getElementById('pizarra-yo').innerHTML = data.mi ? t('pz_tu_puesto', { p: data.mi.puesto, t: data.total_pilotos, s: fmt(data.mi.score) }) : (miP && miP.codigo ? t('pz_juga') : '');
+  estado.textContent = (periodo === 'hoy' ? t('pz_jugaron_hoy', { n: data.total_pilotos }) : periodo === 'semana' ? t('pz_jugaron_sem', { n: data.total_pilotos })
+    : data.total_pilotos === 1 ? t('pz_piloto_arena') : t('pz_pilotos_arena', { n: data.total_pilotos }))
+    + (data.ultima_partida && data.ahora ? ' · ' + t('pz_ultima', { t: haceCuanto(data.ahora - data.ultima_partida) }) : '');
+  document.getElementById('pizarra-yo').innerHTML = data.mi ? t('pz_tu_puesto', { p: data.mi.puesto, t: data.total_pilotos, s: fmt(data.mi.score) }) : (miP && miP.codigo ? t(periodo === 'siempre' ? 'pz_juga' : periodo === 'hoy' ? 'pz_juga_hoy' : 'pz_juga_sem') : '');
 }
 
 function cerrarPizarra() {
@@ -455,6 +457,7 @@ function filaPizarra(p, yo) {
     '<span class="pz-nom">' + (p.oro ? '<span class="pz-oro" title="' + t('pz_oro_title') + '">🏆</span>' : '') + escaparHtml(p.nombre) + '</span>' +
     '<span class="pz-ban ban-' + (p.bando || 'x') + '">' + nombrePlaneta(p.bando) + '</span>' +
     '<span class="pz-vic">' + Number(p.victorias || 0) + '</span>' +
+    '<span class="pz-ola">' + Number(p.wave || 0) + '</span>' +
     '<span class="pz-pts">' + fmt(p.score) + '</span>' +
   '</div>';
 }

@@ -447,7 +447,7 @@ button:active { transform:scale(.98); }
 
 .pz-fila {
   display: grid;
-  grid-template-columns: 40px 1fr 78px 52px 84px;
+  grid-template-columns: 40px 1fr 78px 48px 58px 92px;
   align-items: center;
   gap: 8px;
   padding: 9px 12px;
@@ -480,6 +480,7 @@ button:active { transform:scale(.98); }
 .pz-nom { font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pz-ban { font-size: 10px; font-weight: 800; letter-spacing: .5px; text-align: center; }
 .pz-vic { text-align: center; font-weight: 900; color: #ffd166; font-variant-numeric: tabular-nums; }
+.pz-ola { text-align: center; font-weight: 800; color: #b48cff; font-variant-numeric: tabular-nums; }
 .pz-pts { text-align: right; font-weight: 900; color: #00f0ff; font-variant-numeric: tabular-nums; }
 
 /* Colores por bando */
@@ -546,11 +547,11 @@ button:active { transform:scale(.98); }
 
 /* --- Móvil --- */
 @media (max-width: 520px) {
-  .pz-fila { grid-template-columns: 28px 1fr 58px 34px 64px; font-size: 11px; padding: 8px 6px; gap: 4px; }
+  .pz-fila { grid-template-columns: 24px 1fr 52px 28px 40px 70px; font-size: 11px; padding: 8px 6px; gap: 4px; }
   .pz-pos { font-size: 12px; }
   .pz-ban { font-size: 9px; }
   .pz-pts { font-size: 11px; }
-  .pz-vic { font-size: 11px; }
+  .pz-vic, .pz-ola { font-size: 11px; }
   .pizarra-lista { max-height: 46vh; }
   #tarjeta-img { max-width: 200px; }
   .fila-botones { gap: 8px; }
@@ -865,3 +866,10 @@ html.nv-intro #hud .hud-sonido { pointer-events:none; }
 .cb-botones button { padding:9px 14px; border-radius:10px; font:800 11px/1 system-ui, sans-serif; letter-spacing:1px; cursor:pointer; touch-action:manipulation; }
 .cb-si { background:linear-gradient(90deg,#00f0ff,#4d7cff); border:0; color:#05060d; }
 .cb-no { background:rgba(255,43,214,.12); border:1px solid rgba(255,43,214,.5); color:#ffb3ef; }
+
+/* pizarra: pestañas HOY · SEMANA · SIEMPRE */
+.pz-tabs { display:flex; gap:6px; justify-content:center; margin:2px auto 8px; }
+.pz-tabs button { font:inherit; font-size:12px; font-weight:800; letter-spacing:2px; padding:7px 14px; border-radius:999px; cursor:pointer;
+  color:#8fa3c8; background:rgba(0,240,255,.05); border:1px solid rgba(0,240,255,.25); transition:all .15s; }
+.pz-tabs button.activa { color:#05060d; background:#00f0ff; border-color:#00f0ff; box-shadow:0 0 12px rgba(0,240,255,.55); }
+@media (orientation: landscape) and (max-height: 500px) { .pz-tabs { margin-bottom:4px; } .pz-tabs button { padding:5px 12px; font-size:11px; } }

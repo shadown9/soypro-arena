@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" href="icono-180.png">
 <meta name="apple-mobile-web-app-title" content="Neon Vanguard">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="style.css?v=93">
+<link rel="stylesheet" href="style.css?v=99">
 </head>
 <body>
 <div id="game-wrap">
@@ -153,6 +153,7 @@
       <p class="pz-tu" id="pizarra-yo"></p>
       <div class="pz-busca"><input id="pz-buscar" type="text" maxlength="8" placeholder="BUSCAR POR CÓDIGO" data-i18n-ph="pz_ph" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')buscarEnPizarra()"><button class="btn-sec" onclick="buscarEnPizarra()" data-i18n="buscar">BUSCAR</button></div>
       <div id="pz-resultado" class="pz-resultado"></div>
+      <div class="pz-tabs" role="tablist"><button data-p="hoy" onclick="cambiarPeriodo('hoy')" data-i18n="pz_hoy">HOY</button><button data-p="semana" onclick="cambiarPeriodo('semana')" data-i18n="pz_semana">SEMANA</button><button data-p="siempre" onclick="cambiarPeriodo('siempre')" data-i18n="pz_siempre">SIEMPRE</button></div>
       <div id="pizarra-lista" class="pizarra-lista"></div>
       <button class="btn-sec" onclick="cerrarPizarra()" data-i18n="volver">← VOLVER</button>
     </div>
@@ -264,11 +265,11 @@
   <button id="rotar-cerrar" aria-label="Cerrar aviso" data-i18n-aria="aria_cerrar" onclick="cerrarAvisoRotar()">✕</button>
 </div>
 
-<script src="i18n.js?v=96" charset="utf-8"></script>
+<script src="i18n.js?v=99" charset="utf-8"></script>
 <script src="sonido.js?v=89" charset="utf-8"></script>
 <script src="instalar.js?v=89" charset="utf-8"></script>
 <script src="pantallas.js?v=96" charset="utf-8"></script>
-<script src="ranking.js?v=96" charset="utf-8"></script>
+<script src="ranking.js?v=98" charset="utf-8"></script>
 <script src="app.js?v=96" charset="utf-8"></script>
 <script src="intro.js?v=89" charset="utf-8"></script>
 <script src="misiones.js?v=89" charset="utf-8"></script>
