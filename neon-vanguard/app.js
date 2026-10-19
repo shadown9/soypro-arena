@@ -320,9 +320,10 @@ function updatePlayer(dt) {
   if (nOrb > 0) {
     p.orbAng += dt * 3.2; p.orbGolpe -= dt;
     for (let k = 0; k < nOrb; k++) {
-      const oa = p.orbAng + k * TAU / nOrb, ox = p.x + Math.cos(oa) * 46, oy = p.y + Math.sin(oa) * 46;
-      for (let i = eBullets.length - 1; i >= 0; i--) { const b = eBullets[i]; if ((b.x - ox) ** 2 + (b.y - oy) ** 2 < (b.r + 9) ** 2) { spawnParticles(b.x, b.y, 5, { color: '#b98cff', speed: 140, life: 0.25, size: 2.5 }); eBullets.splice(i, 1); } }
-      for (let j = enemies.length - 1; j >= 0; j--) { const e = enemies[j]; if ((e.x - ox) ** 2 + (e.y - oy) ** 2 < (e.r + 9) ** 2) { e.hp -= 70 * dt; e.hitFlash = 0.06; if (e.hp <= 0) killEnemy(j, true); } }
+      const RO = p.mut && p.mut.saturno ? 66 : 46, oa = p.orbAng + k * TAU / nOrb, ox = p.x + Math.cos(oa) * RO, oy = p.y + Math.sin(oa) * RO;
+      const RB = p.mut && p.mut.saturno ? 14 : 9;
+      for (let i = eBullets.length - 1; i >= 0; i--) { const b = eBullets[i]; if ((b.x - ox) ** 2 + (b.y - oy) ** 2 < (b.r + RB) ** 2) { spawnParticles(b.x, b.y, 5, { color: '#b98cff', speed: 140, life: 0.25, size: 2.5 }); eBullets.splice(i, 1); } }
+      for (let j = enemies.length - 1; j >= 0; j--) { const e = enemies[j]; if ((e.x - ox) ** 2 + (e.y - oy) ** 2 < (e.r + 9) ** 2) { e.hp -= (p.mut && p.mut.saturno ? 150 : 70) * dt; e.hitFlash = 0.06; if (e.hp <= 0) killEnemy(j, true); } }
     }
   }
 
@@ -334,6 +335,20 @@ function updatePlayer(dt) {
 
   // timers
   p.fireCd -= dt; p.dashCd -= dt; p.invuln -= dt; p.hitFlash -= dt;
+  if (p.mut) {
+    const T = p.mutT; p.desdeGolpe = (p.desdeGolpe || 0) + dt;
+    if (p.mut.venus && (T.venus = (T.venus || 5) - dt) <= 0) { // LANZA SOLAR
+      T.venus = 5; const [x, y] = puntoNave(p, 30, 0);
+      const b = balaDesde(x, y, p.angle, 140, 1500, 10, '#fff3a0'); b.pierce = 99; b.lanza = true; b.life = 1.8;
+      spawnRing(x, y, '#ffd23f', 70, 400, 3); Audio2.dash();
+    }
+    if (p.mut.neptuno && (T.neptuno = (T.neptuno || 3) - dt) <= 0) { // TORMENTA ABISAL
+      T.neptuno = 3;
+      for (let k = 0; k < 6; k++) { const b = balaDesde(p.x, p.y, p.angle + k * TAU / 6, 22, 620, 4, '#9cc1ff'); b.guiado = true; b.life = 2.4; }
+      spawnRing(p.x, p.y, '#9cc1ff', 80, 420, 2);
+    }
+    if (p.mut.jupiter && p.desdeGolpe > 2 && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + 4 * dt); // CORAZA COLOSAL
+  }
   if (p.weaponTimer > 0) { p.weaponTimer -= dt; if (p.weaponTimer <= 0) p.weapon = 1; }
   if (p.odActive > 0) {
     p.odActive -= dt;
@@ -690,6 +705,8 @@ function updateBoss(e, dt) {
 function damagePlayer(amount) {
   const p = player;
   if (!p.alive || p.invuln > 0) return;
+  if (p.mut && p.mut.jupiter) amount *= 0.65; // CORAZA COLOSAL
+  p.desdeGolpe = 0;
   p.hp -= amount;
   p.invuln = 0.9;
   if (p.mej && p.mej.jupiter >= 3) ondaMetralla(p);
@@ -764,8 +781,31 @@ const MEJORA_MAX = 5;
 function dropNucleo(x, y, planeta) {
   powerups.push({ x, y, r: 14, type: 'nucleo', planeta, life: 20, phase: rand(0, TAU), vy: -40 });
 }
+/* SUPERMUTACIONES (Fase 5): al llevar una mejora a nivel 5, la nave se transforma y gana un poder propio */
+const MUTACIONES = {
+  venus:   { nombre: 'LANZA SOLAR',       desc: 'una lanza gigante que lo atraviesa todo cada 5 s' },
+  marte:   { nombre: 'FURIA ROJA',        desc: 'el cañón principal dispara triple' },
+  jupiter: { nombre: 'CORAZA COLOSAL',    desc: '−35 % de daño y regeneración' },
+  saturno: { nombre: 'ANILLO PLANETARIO', desc: 'anillo más grande y el doble de fuerte' },
+  neptuno: { nombre: 'TORMENTA ABISAL',   desc: '6 esquirlas de hielo que persiguen cada 3 s' }
+};
+function activarMutacion(p, planeta) {
+  if (!p.mut) p.mut = {};
+  if (p.mut[planeta]) return;
+  p.mut[planeta] = true; p.mutT = p.mutT || {};
+  const M = MUTACIONES[planeta], col = MEJORAS[planeta].color;
+  if (NV_DEMO) return;
+  spawnRing(p.x, p.y, col, 260, 700, 7); spawnRing(p.x, p.y, '#ffffff', 160, 500, 3);
+  spawnParticles(p.x, p.y, 60, { color: col, speed: 420, life: 1, size: 4 });
+  G.flash = 0.6; G.flashColor = '255,255,255'; G.slowmo = 0.4; setTimeout(() => { G.slowmo = 1; }, 600); shake(16);
+  addFloater(p.x, p.y - 60, '★ ' + M.nombre, col, 28);
+  if (typeof Toast !== 'undefined') Toast.mostrar('★ SUPERMUTACIÓN · ' + M.nombre + ' — ' + M.desc, col);
+  Audio2.powerup(); setTimeout(() => Audio2.powerup(), 160);
+}
+
 function aplicarMejora(p, planeta) {
   const lv = p.mej[planeta];
+  if (lv >= MEJORA_MAX) activarMutacion(p, planeta);
   if (planeta === 'venus') p.dmgMult = p.dmgBase * (1 + 0.12 * lv);
   else if (planeta === 'marte') p.fireRate = p.fireRateBase * Math.pow(0.9, lv);
   else if (planeta === 'jupiter') { p.maxHp += 15; p.hp = Math.min(p.maxHp, p.hp + 30); }
@@ -1052,6 +1092,13 @@ function drawPlayer() {
   const mainColor = od ? '#ff2bd6' : '#00f0ff';
   const accent = od ? '#ffb020' : '#4d7cff';
   const flash = p.hitFlash > 0;
+
+  // ---- SUPERMUTACIONES: un anillo de energía del color de cada planeta girando alrededor ----
+  if (p.mut) { let k = 0;
+    for (const pl of PLANETAS_MEJORA) { if (!p.mut[pl]) continue; const R = 34 + k * 5, c = MEJORAS[pl].color, g = G.time * (k % 2 ? -1.6 : 2.2);
+      ctx.save(); ctx.strokeStyle = c; ctx.shadowBlur = 14; ctx.shadowColor = c; ctx.lineWidth = 2; ctx.globalAlpha *= 0.85;
+      for (let q = 0; q < 3; q++) { ctx.beginPath(); ctx.arc(0, 0, R, g + q * TAU / 3, g + q * TAU / 3 + 1.1); ctx.stroke(); }
+      ctx.restore(); k++; } }
 
   // ---- TU NAVE ES LA DE TU PLANETA (diseño del Jefe), con aura propia para distinguirte siempre ----
   const MIA = NAVE_IMG[p.bando];
@@ -1505,11 +1552,11 @@ function drawBullets() {
 
 function drawOrbes() {
   const p = player; if (!p || !p.alive || !p.mej || !p.mej.saturno) return;
-  const n = p.mej.saturno;
-  ctx.save(); ctx.strokeStyle = 'rgba(185,140,255,.2)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(p.x, p.y, 46, 0, TAU); ctx.stroke();
+  const n = p.mej.saturno, sup = p.mut && p.mut.saturno, RO = sup ? 66 : 46;
+  ctx.save(); ctx.strokeStyle = sup ? 'rgba(185,140,255,.45)' : 'rgba(185,140,255,.2)'; ctx.lineWidth = sup ? 2 : 1; ctx.beginPath(); ctx.arc(p.x, p.y, RO, 0, TAU); ctx.stroke();
   for (let k = 0; k < n; k++) { const oa = p.orbAng + k * TAU / n;
-    ctx.shadowBlur = 16; ctx.shadowColor = '#b98cff'; ctx.fillStyle = '#fff3cf';
-    ctx.beginPath(); ctx.arc(p.x + Math.cos(oa) * 46, p.y + Math.sin(oa) * 46, 6.5, 0, TAU); ctx.fill(); }
+    ctx.shadowBlur = sup ? 24 : 16; ctx.shadowColor = '#b98cff'; ctx.fillStyle = sup ? '#e6d6ff' : '#fff3cf';
+    ctx.beginPath(); ctx.arc(p.x + Math.cos(oa) * RO, p.y + Math.sin(oa) * RO, sup ? 9 : 6.5, 0, TAU); ctx.fill(); }
   ctx.restore();
 }
 
@@ -1620,7 +1667,7 @@ function updateHUD(dt) {
   const hm = document.getElementById('hud-mejoras');
   if (hm && player.mej) {
     const arma = player.weapon > 1 && ARMAS[player.weapon] ? '<span style="--c:' + ARMAS[player.weapon][1] + '">' + ARMAS[player.weapon][0] + '<b>' + Math.ceil(player.weaponTimer) + 's</b></span>' : '';
-    const html = arma + PLANETAS_MEJORA.filter(k => player.mej[k] > 0).map(k => '<span style="--c:' + MEJORAS[k].color + '">' + MEJORAS[k].icono + '<b>' + player.mej[k] + '</b></span>').join('');
+    const html = arma + PLANETAS_MEJORA.filter(k => player.mej[k] > 0).map(k => '<span style="--c:' + MEJORAS[k].color + '"' + (player.mut && player.mut[k] ? ' class="mut"' : '') + '>' + MEJORAS[k].icono + '<b>' + (player.mut && player.mut[k] ? '★' : player.mej[k]) + '</b></span>').join('');
     if (hm.innerHTML !== html) hm.innerHTML = html;
   }
   el.shieldFill.style.width = (player.hp / player.maxHp * 100) + '%';
@@ -1914,6 +1961,8 @@ function puntoNave(p, lx, ly) { const e = escalaNave(p), c = Math.cos(p.angle), 
 function disparoModulos(p, a, od) {
   const m = p.mej; if (!m) return;
   p.cuentaDisp = (p.cuentaDisp || 0) + 1;
+  // FURIA ROJA (Marte nivel 5): el cañón principal dispara triple
+  if (p.mut && p.mut.marte) { const [x, y] = puntoNave(p, 20, 0); for (const s of [-1, 1]) balaDesde(x, y, a + s * 0.09, 9, 1150, 3, '#ff6a7f'); }
   // MARTE: ametralladoras laterales (una por nivel, alternando lados)
   for (let i = 0; i < m.marte; i++) {
     const lado = i % 2 ? 1 : -1, fila = Math.floor(i / 2);

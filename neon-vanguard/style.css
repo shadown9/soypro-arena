@@ -842,3 +842,7 @@ html.nv-intro #hud .hud-sonido { pointer-events:none; }
   .am-crear .btn-camino { padding:10px 12px; }
   .am-msg { margin:2px 0 6px; }
 }
+
+/* supermutación en el HUD */
+.hud-mejoras span.mut { box-shadow:0 0 10px var(--c); border-color:var(--c) !important; }
+.hud-mejoras span.mut b { color:#fff; }

@@ -11,6 +11,8 @@ const RED = (function () {
   const RADIO = { venus: 18, marte: 15, jupiter: 22, saturno: 17, neptuno: 17 };
   const DIBUJO = { venus: 'dibujarAvispa', marte: 'dibujarFilo', jupiter: 'dibujarColoso', saturno: 'dibujarAnillada', neptuno: 'dibujarEspectral' };
   let ws = null, conectado = false, miId = 0, envAcc = 0, cerrandoAdrede = false;
+  let bestia = null, golpeAcum = 0, golpeT = 0; // BESTIA ERRANTE compartida (la mueve el servidor)
+  const COLOR_BESTIA = { medusa: '#7affd6', ojo: '#ff3355', serpiente: '#ff4fd8' };
   let sala = null, pedido = null, marc = null; // SALA PRIVADA: {codigo, modo, meta}; pedido = {crear} o {sala}
   const remotos = new Map();   // id → piloto
   let rBalas = [];             // balas de otros jugadores
@@ -44,13 +46,14 @@ const RED = (function () {
     if (m.t === 'hola') {
       conectado = true; miId = m.id; remotos.clear();
       for (const j of m.j || []) remotos.set(j.id, nuevoRemoto(j));
-      sala = m.sala || null; pedido = null;
+      sala = m.sala || null; pedido = null; bestia = null;
       if (sala && typeof empezarPrivada === 'function') empezarPrivada(sala, m.x, m.y);
       if (G.running && player && (m.x || m.y)) { player.x = m.x; player.y = m.y; CAM.x = m.x; CAM.y = m.y; if (typeof despejarZona === 'function') despejarZona(m.x, m.y, 200); }
     } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); avisoFeed(m.nombre + ' entró al espacio', '#8fb4d0'); }
     else if (m.t === 'sale') { remotos.delete(m.id); }
     else if (m.t === 's') {
       const ahora = performance.now();
+      if (m.b && bestia) { bestia.buf.push({ t: ahora, x: m.b[0], y: m.b[1], hp: m.b[2], a: m.b[3] }); if (bestia.buf.length > 12) bestia.buf.shift(); }
       for (const [id, x, y, a, hp, od, v] of m.j) {
         if (id === miId) continue;
         const r = remotos.get(id); if (!r) continue;
@@ -62,6 +65,24 @@ const RED = (function () {
       const r = remotos.get(m.aId); if (r) spawnParticles(r.x, r.y, 30, { color: r.color, speed: 320, life: 0.8, size: 4 }); }
     else if (m.t === 'tuBaja') { G.score += m.pts; if (player) addFloater(player.x, player.y - 46, '+' + m.pts + ' ¡DERRIBASTE A ' + m.a + '!', '#00f0ff', 20); shake(8); }
     else if (m.t === 'corr') { if (player) { player.x = m.x; player.y = m.y; } }
+    else if (m.t === 'bestia') { // aparece una bestia errante gigante: todos contra ella
+      bestia = { tipo: m.tipo, type: m.tipo, nombre: m.nombre, x: m.x, y: m.y, hp: m.hp, max: m.max, r: m.r, angle: 0, phase: 0, wobble: 0, vx: 0, vy: 0,
+        color: COLOR_BESTIA[m.tipo], buf: [{ t: performance.now(), x: m.x, y: m.y, hp: m.hp, a: 0 }], hitFlash: 0, laser: 0 };
+      if (typeof Toast !== 'undefined') Toast.mostrar('👾 ¡APARECIÓ ' + m.nombre + '! Todos los pilotos contra ella', bestia.color);
+      if (typeof Audio2 !== 'undefined') Audio2.boss();
+    }
+    else if (m.t === 'bf' && bestia) fuegoBestia(m);
+    else if (m.t === 'bestiaMuere') {
+      if (bestia) { spawnParticles(bestia.x, bestia.y, 120, { color: bestia.color, speed: 560, life: 1.5, size: 6 }); spawnRing(bestia.x, bestia.y, bestia.color, 500, 900, 8); shake(24); Audio2.explode(true); }
+      avisoFeed('👾 ' + m.de + ' derribó a ' + m.nombre, m.deId === miId ? '#00f0ff' : '#ffd23f'); bestia = null;
+    }
+    else if (m.t === 'bestiaSe') { bestia = null; avisoFeed('👾 ' + m.nombre + ' se perdió en el espacio', '#8fb4d0'); }
+    else if (m.t === 'premioBestia') {
+      G.score += m.pts;
+      if (player) addFloater(player.x, player.y - 56, '+' + m.pts + (m.remate ? ' ¡REMATASTE A ' + m.nombre + '!' : ' · AYUDASTE CONTRA ' + m.nombre), '#ffd23f', 20);
+      if (m.remate && typeof nvEvento === 'function') nvEvento('baja', { e: { type: 'medusa' } }); // cuenta como bestia cazada
+      if (typeof Toast !== 'undefined') Toast.mostrar(m.remate ? '👾 ¡REMATASTE A ' + m.nombre + '! +' + m.pts : '👾 +' + m.pts + ' por ayudar contra ' + m.nombre, '#ffd23f');
+    }
     else if (m.t === 'errSala') { pedido = null; if (typeof errorSala === 'function') errorSala(m.msg); const p = piloto() || {}; enviar({ t: 'hola', nombre: p.nombre, codigo: p.codigo, bando: miBando() }); }
     else if (m.t === 'marcador') { marc = m; if (typeof privadaMarcador === 'function') privadaMarcador(m, miId); }
     else if (m.t === 'fin') { if (typeof privadaFin === 'function') privadaFin(m, miId); }
@@ -81,6 +102,14 @@ const RED = (function () {
     else if (m.k === 6) { bala(a - 0.35, 10, 700, 4); bala(a + 0.35, 10, 700, 4); } // misiles
     else if (m.k === 7) bala(a, 18, 560, 8);                          // plasma
     else bala(a, 9, 1000, 4);
+  }
+
+  // la bestia dispara (lo decide el servidor; cada teléfono pone las balas, que solo dañan a su piloto)
+  function fuegoBestia(m) {
+    const b = (ang, v, r, dmg, col) => eBullets.push({ x: m.x + Math.cos(ang) * 50, y: m.y + Math.sin(ang) * 50, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, r, dmg, life: 3, color: col });
+    if (m.tipo === 'medusa') for (let k = 0; k < 16; k++) b(k / 16 * TAU + m.a, 230, 6, 10, '#bfffea');
+    else if (m.tipo === 'ojo') for (let k = -3; k <= 3; k++) b(m.a + k * 0.13, 330, 6, 12, '#ff6a85');
+    else for (let k = 0; k < 6; k++) setTimeout(() => { if (bestia) b(m.a + (Math.random() - 0.5) * 0.3, 380, 5, 9, '#ff9be8'); }, k * 90);
   }
 
   function avisoFeed(txt, color) { feed.push({ txt, color, vida: 4.5 }); if (feed.length > 4) feed.shift(); }
@@ -103,6 +132,25 @@ const RED = (function () {
       r.x = s0.x + (s1.x - s0.x) * k; r.y = s0.y + (s1.y - s0.y) * k;
       r.a = s0.a + Math.atan2(Math.sin(s1.a - s0.a), Math.cos(s1.a - s0.a)) * k;
       r.hp = s1.hp; r.v = !!s1.v; r.od = !!s1.od; r.visto = true;
+    }
+    // BESTIA ERRANTE: posición suavizada, mis golpes (sumados y enviados 8 veces por segundo) y su choque conmigo
+    if (bestia) {
+      const B = bestia, tb = performance.now() - 110, bb = B.buf;
+      let i = bb.length - 1; while (i > 0 && bb[i - 1].t > tb) i--;
+      const s1 = bb[i], s0 = bb[Math.max(0, i - 1)], k = s1 === s0 ? 1 : Math.max(0, Math.min(1, (tb - s0.t) / (s1.t - s0.t || 1)));
+      const nx = s0.x + (s1.x - s0.x) * k, ny = s0.y + (s1.y - s0.y) * k;
+      B.vx = (nx - B.x) / Math.max(dt, 0.001); B.vy = (ny - B.y) / Math.max(dt, 0.001); B.x = nx; B.y = ny; B.hp = s1.hp; B.angle = s1.a;
+      B.phase += dt; B.wobble += dt * 3; B.hitFlash -= dt;
+      if (B.tipo === 'serpiente') { // el cuerpo sigue a la cabeza
+        if (!B.cuerpo) { B.cuerpo = []; for (let q = 0; q < 22; q++) B.cuerpo.push({ x: B.x, y: B.y, r: Math.max(12, 30 - q * 0.9) }); }
+        let prev = B; for (const c of B.cuerpo) { const dx = c.x - prev.x, dy = c.y - prev.y, dd = Math.hypot(dx, dy) || 1, sep = (prev.r || B.r) * 0.9; if (dd > sep) { c.x = prev.x + dx / dd * sep; c.y = prev.y + dy / dd * sep; } prev = c; }
+      }
+      for (let i2 = bullets.length - 1; i2 >= 0; i2--) { const b = bullets[i2];
+        if (dist2(b, B) < (b.r + B.r) * (b.r + B.r)) { golpeAcum += b.dmg; B.hitFlash = 0.08; spawnParticles(b.x, b.y, 4, { color: B.color, speed: 160, life: 0.3, size: 2.5 });
+          if (b.pierce > 0 && !b.hitBestia) { b.hitBestia = true; b.pierce--; } else bullets.splice(i2, 1); } }
+      golpeT += dt;
+      if (golpeT >= 0.125 && golpeAcum > 0) { golpeT = 0; let d = golpeAcum; golpeAcum = 0; while (d > 0) { enviar({ t: 'gb', dmg: Math.min(40, d) }); d -= 40; } }
+      if (p && p.alive && p.invuln <= 0 && dist2(p, B) < (p.r + B.r * 0.85) ** 2) damagePlayer(22);
     }
     // balas de otros: si me dan, lo digo yo (el servidor comprueba que es posible)
     for (let i = rBalas.length - 1; i >= 0; i--) {
@@ -129,6 +177,14 @@ const RED = (function () {
   // ---------- dibujo (en el mundo) ----------
   function dibujar() {
     if (!conectado) return;
+    if (bestia && typeof dibujarBestia === 'function') {
+      const B = bestia, flash = B.hitFlash > 0;
+      try { dibujarBestia(B, flash ? '#fff' : B.color, flash); } catch (e) {}
+      ctx.save(); ctx.textAlign = 'center'; ctx.font = '900 13px system-ui, sans-serif'; ctx.fillStyle = B.color; ctx.shadowBlur = 10; ctx.shadowColor = '#000';
+      ctx.fillText('👾 ' + B.nombre, B.x, B.y - B.r - 30);
+      const bw = 140; ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(B.x - bw / 2, B.y - B.r - 22, bw, 6);
+      ctx.fillStyle = B.color; ctx.fillRect(B.x - bw / 2, B.y - B.r - 22, bw * Math.max(0, B.hp / B.max), 6); ctx.restore();
+    }
     for (const b of rBalas) { ctx.save(); ctx.shadowBlur = 12; ctx.shadowColor = b.color; ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill(); ctx.restore(); }
     for (const r of remotos.values()) {
       if (!r.v || !r.visto) continue;
@@ -157,6 +213,13 @@ const RED = (function () {
         ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(dy, dx)); ctx.fillStyle = r.color; ctx.shadowBlur = 12; ctx.shadowColor = r.color;
         ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-7, -9); ctx.lineTo(-3, 0); ctx.lineTo(-7, 9); ctx.closePath(); ctx.fill(); ctx.restore();
         ctx.save(); ctx.font = '700 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = r.color; ctx.fillText(r.nombre, x - Math.cos(Math.atan2(dy, dx)) * 26, y - Math.sin(Math.atan2(dy, dx)) * 26 + 3); ctx.restore();
+      }
+      if (bestia && fueraDeVista(bestia.x, bestia.y, 0)) {
+        const dx = bestia.x - CAM.x, dy = bestia.y - CAM.y, m = 40, k = Math.min((W / 2 - m) / Math.abs(dx || 1e-6), (H / 2 - m) / Math.abs(dy || 1e-6));
+        const x = W / 2 + dx * k, y = H / 2 + dy * k, an = Math.atan2(dy, dx);
+        ctx.save(); ctx.translate(x, y); ctx.rotate(an); ctx.fillStyle = bestia.color; ctx.shadowBlur = 16; ctx.shadowColor = bestia.color;
+        ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(-9, -12); ctx.lineTo(-4, 0); ctx.lineTo(-9, 12); ctx.closePath(); ctx.fill(); ctx.restore();
+        ctx.save(); ctx.font = '900 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = bestia.color; ctx.fillText('👾 ' + Math.round(Math.hypot(dx, dy) / 10) + ' m', x - Math.cos(an) * 30, y - Math.sin(an) * 30 + 4); ctx.restore();
       }
       let vivos = 1; for (const r of remotos.values()) if (r.visto) vivos++;
       ctx.save(); ctx.font = '800 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(0,240,255,.85)';
@@ -197,5 +260,5 @@ const RED = (function () {
   window.addEventListener('pagehide', () => { cerrandoAdrede = true; try { ws && ws.close(); } catch (e) {} });
   function revancha() { enviar({ t: 'revancha' }); }
   return { tick, dibujar, dibujarPantalla, inicio, disparo, muerte, privada, publica, revancha, get sala() { return sala; }, get miId() { return miId; },
-    get activo() { return activo; }, get conectado() { return conectado; }, get remotos() { return remotos; } };
+    get activo() { return activo; }, get bestia() { return bestia; }, get conectado() { return conectado; }, get remotos() { return remotos; } };
 })();
