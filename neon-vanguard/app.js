@@ -6,7 +6,7 @@
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-let W = 0, H = 0, DPR = 1;
+let W = 0, H = 0, DPR = 1, ZOOM = 1;
 /* MODO DEMOSTRACIÓN (?demo): la portada del juego. Se juega solo con las naves reales de cada planeta,
    sin menús, sin sonido, sin morir y sin enviar nada al ranking. */
 const NV_DEMO = new URLSearchParams(location.search).has('demo');
@@ -18,9 +18,12 @@ function fueraDeVista(x, y, m) { return x < CAM.x - W / 2 - m || x > CAM.x + W /
 
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
-  W = canvas.clientWidth; H = canvas.clientHeight;
-  canvas.width = W * DPR; canvas.height = H * DPR;
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const cw = canvas.clientWidth, ch = canvas.clientHeight, menor = Math.min(cw, ch);
+  // ZOOM de cámara: en el teléfono las naves se ven más grandes (W y H son el trozo de mundo visible)
+  ZOOM = menor < 500 ? 1.45 : menor < 820 ? 1.25 : 1.1;
+  W = cw / ZOOM; H = ch / ZOOM;
+  canvas.width = cw * DPR; canvas.height = ch * DPR;
+  ctx.setTransform(DPR * ZOOM, 0, 0, DPR * ZOOM, 0, 0);
 }
 window.addEventListener('resize', resize);
 
@@ -89,7 +92,7 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 canvas.addEventListener('mousemove', e => {
   const r = canvas.getBoundingClientRect();
-  mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
+  mouse.x = (e.clientX - r.left) / ZOOM; mouse.y = (e.clientY - r.top) / ZOOM;
 });
 canvas.addEventListener('mousedown', () => { mouse.down = true; });
 window.addEventListener('mouseup', () => { mouse.down = false; });
@@ -111,7 +114,7 @@ function touchStart(e) {
   const r = canvas.getBoundingClientRect();
   for (const t of e.changedTouches) {
     const x = t.clientX - r.left, y = t.clientY - r.top;
-    if (x < W * 0.5 && touch.moveId === null) {
+    if (x < W * ZOOM * 0.5 && touch.moveId === null) {
       const ahora = performance.now();
       if (touch.ultimoToque && ahora - touch.ultimoToque < 280) {
         touch.dashPedido = true; touch.ultimoToque = 0;
@@ -119,7 +122,7 @@ function touchStart(e) {
       touch.moveId = t.identifier;
       touch.moveOx = x; touch.moveOy = y;
       touch.moveX = x; touch.moveY = y;
-    } else if (x >= W * 0.5 && touch.aimId === null) {
+    } else if (x >= W * ZOOM * 0.5 && touch.aimId === null) {
       // doble toque en la mitad derecha = overdrive (en el celular no hay tecla Shift)
       const ahoraD = performance.now();
       if (touch.ultimoToqueDer && ahoraD - touch.ultimoToqueDer < 280) {
@@ -333,6 +336,7 @@ function updatePlayer(dt) {
   }
 
   p.x += p.vx * dt; p.y += p.vy * dt;
+  empujarFuera(p);
   // sin paredes: el espacio es abierto; la cámara sigue a la nave, adelantada hacia donde apunta
   const adel = Math.min(W, H) * 0.12;
   const cx = p.x + Math.cos(p.angle) * adel, cy = p.y + Math.sin(p.angle) * adel;
@@ -588,6 +592,7 @@ function updateEnemies(dt) {
 
     e.fireCd -= dt;
     e.x += e.vx * dt; e.y += e.vy * dt;
+    empujarFuera(e);
 
     // colisión con jugador
     if (p.alive && p.invuln <= 0 && dist2(e, p) < (e.r + p.r) * (e.r + p.r)) {
@@ -616,10 +621,11 @@ function enemyShoot(e, count) {
 
 /* ---------- jefe ---------- */
 function spawnBoss() {
-  const hp = 900 + (G.wave - 1) * 420;
+  const jefe = elegirJefe(), J = JEFES[jefe];
+  const hp = Math.round((900 + (G.wave - 1) * 420) * J.vida);
   const boss = {
-    type: 'boss', x: CAM.x, y: vistaY0() - 120, vx: 0, vy: 0, r: 52,
-    hp, maxHp: hp, speed: 70, color: '#ff2bd6', score: 3000, dmg: 26,
+    type: 'boss', jefe, nombre: J.nombre, x: CAM.x, y: vistaY0() - 120, vx: 0, vy: 0, r: J.r,
+    hp, maxHp: hp, speed: 70, color: J.color, score: 3000, dmg: 26, t: {},
     fireCd: 1.5, fireRate: 1.1, angle: 0, hitFlash: 0, phase: 0,
     spawnAnim: 1.2, entering: true, pattern: 0, patternTimer: 0, wobble: 0
   };
@@ -646,6 +652,7 @@ function updateBoss(e, dt) {
     if (e.y >= meta) { e.y = meta; e.entering = false; }
     return;
   }
+  if (e.jefe) { iaJefe(e, dt); return; }
 
   const targetX = p.x + Math.sin(e.phase * 0.6) * (W * 0.28);
   const targetY = p.y - H / 2 + 140 + Math.sin(e.phase * 0.9) * 40;
@@ -888,6 +895,13 @@ function updateBullets(dt) {
       if (b.explota && b.life <= 0) explotarPlasma(b);
       bullets.splice(i, 1); continue;
     }
+    // asteroides: paran las balas; los pequeños se rompen
+    const ast = chocaAsteroide(b.x, b.y, b.r);
+    if (ast) { golpearAsteroide(ast, b.dmg, b.x, b.y); if (b.explota) explotarPlasma(b); bullets.splice(i, 1); continue; }
+    // escudo de orbes del jefe de Saturno
+    let paradaOrbe = false;
+    for (const e of enemies) if (e.jefe === 'saturno' && e.orbes) for (const o of e.orbes) if ((b.x - o.x) ** 2 + (b.y - o.y) ** 2 < (b.r + 11) ** 2) { paradaOrbe = true; spawnParticles(b.x, b.y, 3, { color: '#f0dca0', speed: 120, life: 0.2, size: 2 }); break; }
+    if (paradaOrbe) { bullets.splice(i, 1); continue; }
     // el cuerpo de la serpiente cósmica bloquea las balas (hay que darle en la cabeza)
     let bloqueada = false;
     for (const e of enemies) if (e.cuerpo) for (let k = 2; k < e.cuerpo.length; k++) { const c = e.cuerpo[k];
@@ -916,8 +930,14 @@ function updateBullets(dt) {
   const p = player;
   for (let i = eBullets.length - 1; i >= 0; i--) {
     const b = eBullets[i];
+    if (b.guiaJ && p.alive) { const va = Math.atan2(b.vy, b.vx), obj = Math.atan2(p.y - b.y, p.x - b.x), v = Math.hypot(b.vx, b.vy);
+      const na = va + Math.max(-b.guiaJ * dt, Math.min(b.guiaJ * dt, Math.atan2(Math.sin(obj - va), Math.cos(obj - va)))); b.vx = Math.cos(na) * v; b.vy = Math.sin(na) * v; }
+    if (b.mina !== undefined) { b.mina -= dt; if (b.mina <= 0) { // la mina explota en 8 balas
+      for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; eBullets.push({ x: b.x, y: b.y, vx: Math.cos(a) * 230, vy: Math.sin(a) * 230, r: 5, dmg: 9, life: 1.6, color: '#ffd27a' }); }
+      spawnRing(b.x, b.y, '#ffc46e', 60, 400, 3); eBullets.splice(i, 1); continue; } }
     b.x += b.vx * dt; b.y += b.vy * dt;
     b.life -= dt;
+    if (chocaAsteroide(b.x, b.y, b.r)) { spawnParticles(b.x, b.y, 3, { color: '#9aa6b8', speed: 90, life: 0.25, size: 2 }); eBullets.splice(i, 1); continue; }
     if (b.life <= 0 || fueraDeVista(b.x, b.y, 220)) {
       eBullets.splice(i, 1); continue;
     }
@@ -1422,45 +1442,7 @@ function drawEnemies() {
     const flash = e.hitFlash > 0;
     const col = flash ? '#ffffff' : e.color;
 
-    if (e.type === 'boss') {
-      ctx.save();
-      ctx.translate(e.x, e.y);
-      ctx.rotate(e.phase * 0.4);
-      ctx.shadowBlur = 40; ctx.shadowColor = col;
-      ctx.fillStyle = col;
-      ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const a = i * TAU / 6;
-        const rr = e.r * (1 + Math.sin(e.phase * 2 + i) * 0.06);
-        if (i === 0) ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
-        else ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
-      }
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(0, 0, e.r * 0.55, 0, TAU);
-      ctx.stroke();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(0, 0, e.r * 0.22 + Math.sin(e.phase * 6) * 3, 0, TAU);
-      ctx.fill();
-      ctx.restore();
-
-      const bw = 300, bh = 10;
-      const bx = vistaX0() + W / 2 - bw / 2, by = vistaY0() + 70; // fija en pantalla
-      ctx.fillStyle = 'rgba(255,255,255,0.1)';
-      ctx.fillRect(bx, by, bw, bh);
-      ctx.fillStyle = '#ff2bd6';
-      ctx.shadowBlur = 16; ctx.shadowColor = '#ff2bd6';
-      ctx.fillRect(bx, by, bw * (e.hp / e.maxHp), bh);
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = 'rgba(255,43,214,0.6)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(bx, by, bw, bh);
-      continue;
-    }
+    if (e.type === 'boss') { dibujarJefe(e, col, flash); continue; }
 
     if (ENEMY_TYPES[e.type] && ENEMY_TYPES[e.type].bando === 'bestia') { dibujarBestia(e, col, flash); continue; }
 
@@ -1682,6 +1664,7 @@ function loop(now) {
   drawBackground(dt);
   ctx.save();
   ctx.translate(Math.round(W / 2 - CAM.x), Math.round(H / 2 - CAM.y));
+  drawAsteroides();
   drawPowerups();
   drawBullets();
   drawEnemies();
@@ -1689,6 +1672,7 @@ function loop(now) {
   drawOrbes();
   drawPlayer();
   drawEffects();
+  for (const e of enemies) if (e.type === 'boss') barraJefe(e); // la barra del jefe encima de todo
   ctx.restore();
   ctx.restore();
   drawFlechasEnemigos();
@@ -1713,6 +1697,7 @@ function loop(now) {
 
 /* ---------- dibujo de los joysticks táctiles ---------- */
 function drawJoysticks() {
+  ctx.save(); ctx.scale(1 / ZOOM, 1 / ZOOM); // los joysticks van en píxeles de pantalla, sin zoom
   const dibujar = (ox, oy, x, y, color, activo) => {
     if (!activo) return;
     ctx.save();
@@ -1735,6 +1720,7 @@ function drawJoysticks() {
   };
   dibujar(touch.moveOx, touch.moveOy, touch.moveX, touch.moveY, '#00f0ff', touch.moveId !== null);
   dibujar(touch.aimOx, touch.aimOy, touch.aimX, touch.aimY, '#ff2bd6', touch.aimId !== null);
+  ctx.restore();
 }
 
 /* ---------- flujo de juego ---------- */
@@ -1752,6 +1738,7 @@ function startGame() {
   Audio2.init();
   resetGame();
   CAM.x = player.x; CAM.y = player.y;
+  despejarZona(player.x, player.y, 220);
   G.running = true; G.over = false;
   if (typeof RED !== 'undefined') RED.inicio();
   el.overlay.classList.add('hidden');
@@ -2017,7 +2004,7 @@ function iaBestia(e, i, dt, d, nx, ny) {
       if (e.laser <= 0.35 && !e.disparado) { e.disparado = true; shake(10); Audio2.tone(140, 0.4, 'sawtooth', 0.25, 60); }
       if (e.disparado && p.alive && p.invuln <= 0) { // ¿estás dentro del rayo?
         const ux = Math.cos(e.laserAng), uy = Math.sin(e.laserAng), px = p.x - e.x, py = p.y - e.y, t = px * ux + py * uy;
-        if (t > 0 && t < 1500 && Math.abs(px * uy - py * ux) < 18 + p.r) damagePlayer(e.dmg); }
+        if (t > 0 && t < rayoHasta(e.x, e.y, e.laserAng, 1500) && Math.abs(px * uy - py * ux) < 18 + p.r) damagePlayer(e.dmg); }
       if (e.laser <= 0) { e.fireCd = e.fireRate; e.disparado = false; }
     } else if (e.fireCd <= 0 && d < 800) { e.laser = 1.45; e.laserAng = Math.atan2(p.y - e.y, p.x - e.x); } // 1,1 s de aviso + 0,35 s de rayo
   }
@@ -2061,7 +2048,7 @@ function dibujarBestia(e, col, flash) {
     ctx.fillStyle = '#20001a'; ctx.beginPath(); ctx.arc(e.r * 0.5, -e.r * 0.45, 1.8, 0, TAU); ctx.arc(e.r * 0.5, e.r * 0.45, 1.8, 0, TAU); ctx.fill();
   } else if (e.type === 'ojo') {
     // rayo: aviso fino y luego disparo grueso
-    if (e.laser > 0) { const L = 1500, ux = Math.cos(e.laserAng), uy = Math.sin(e.laserAng);
+    if (e.laser > 0) { const L = rayoHasta(e.x, e.y, e.laserAng, 1500), ux = Math.cos(e.laserAng), uy = Math.sin(e.laserAng);
       ctx.save(); ctx.lineCap = 'round';
       if (!e.disparado) { ctx.strokeStyle = 'rgba(255,51,85,' + (0.25 + Math.random() * 0.35) + ')'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); }
       else { ctx.strokeStyle = '#ff5c7a'; ctx.lineWidth = 30; ctx.shadowBlur = 40; ctx.shadowColor = '#ff3355'; }
@@ -2085,4 +2072,192 @@ function dibujarBestia(e, col, flash) {
   ctx.restore();
   if (e.hp < e.maxHp && e.type !== 'larva') { const bw = e.r * 2.2; ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x - bw / 2, e.y - e.r - 12, bw, 4);
     ctx.fillStyle = e.color; ctx.fillRect(e.x - bw / 2, e.y - e.r - 12, bw * (e.hp / e.maxHp), 4); }
+}
+
+/* ============================================================
+   JEFES POR PLANETA — cada 5 oleadas sale el jefe de un planeta rival
+   ============================================================ */
+const JEFES = {
+  jupiter: { nombre: 'FORTALEZA COLOSO',  color: '#ffaa78', r: 62, vida: 1.30 },
+  marte:   { nombre: 'NODRIZA ENJAMBRE',  color: '#ff6e46', r: 50, vida: 0.90 },
+  venus:   { nombre: 'REINA AVISPA',      color: '#ffc46e', r: 54, vida: 1.00 },
+  saturno: { nombre: 'SEÑOR DEL ANILLO',  color: '#f0dca0', r: 50, vida: 1.00 },
+  neptuno: { nombre: 'ESPECTRO ABISAL',   color: '#5a96ff', r: 52, vida: 0.85 }
+};
+function elegirJefe() {
+  const mio = (typeof bandoElegido !== 'undefined' && bandoElegido) ? bandoElegido : null;
+  const rivales = Object.keys(JEFES).filter(k => k !== mio);
+  return rivales[(Math.max(1, Math.floor(G.wave / 5)) - 1) % rivales.length];
+}
+function bala(x, y, a, v, r, dmg, color, life, extra) {
+  const b = { x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r, dmg, life: life || 3.5, color };
+  if (extra) Object.assign(b, extra); eBullets.push(b); return b;
+}
+// mantener al jefe a cierta distancia del jugador, orbitando
+function orbitar(e, dt, dist, vel, giro) {
+  const p = player, dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy) || 1, nx = dx / d, ny = dy / d;
+  dist = Math.min(dist, Math.min(W, H) * 0.36); // el jefe siempre a la vista, también en el teléfono
+  const radial = (d - dist) / dist;
+  e.vx = lerp(e.vx, (nx * radial * 1.6 - ny * giro) * vel, dt * 2); e.vy = lerp(e.vy, (ny * radial * 1.6 + nx * giro) * vel, dt * 2);
+}
+function cuantosHijos(e) { let n = 0; for (const x of enemies) if (x.padre === e) n++; return n; }
+
+function iaJefe(e, dt) {
+  const p = player, T = e.t, mitad = e.hp < e.maxHp * 0.5;
+  for (const k in T) T[k] -= dt;
+  const ap = Math.atan2(p.y - e.y, p.x - e.x);
+  if (e.jefe === 'jupiter') {
+    // FORTALEZA COLOSO: lenta, 4 torretas que disparan ráfagas y una onda de balas en anillo
+    orbitar(e, dt, 330, 55, 0.25); e.rot = (e.rot || 0) + dt * 0.4;
+    if (!(T.torretas > 0)) { T.torretas = mitad ? 1.0 : 1.6;
+      for (let k = 0; k < 4; k++) { const ta = e.rot + k * TAU / 4, tx = e.x + Math.cos(ta) * e.r * 0.9, ty = e.y + Math.sin(ta) * e.r * 0.9, a = Math.atan2(p.y - ty, p.x - tx);
+        for (let i = -1; i <= 1; i++) bala(tx, ty, a + i * 0.1, 300, 5, 9, '#ffaa78'); } }
+    if (!(T.onda > 0)) { T.onda = mitad ? 4.5 : 7; for (let k = 0; k < 26; k++) bala(e.x, e.y, k / 26 * TAU + e.rot, 190, 7, 11, '#ffd0a8', 5); spawnRing(e.x, e.y, '#ffaa78', 150, 500, 5); shake(6); }
+  } else if (e.jefe === 'marte') {
+    // NODRIZA ENJAMBRE: rápida, suelta drones Filo y embiste en línea recta con aviso
+    if (e.carga > 0) { e.carga -= dt; e.vx *= 0.85; e.vy *= 0.85; if (e.carga <= 0) { e.embiste = 0.7; const v = 950; e.vx = Math.cos(e.cargaAng) * v; e.vy = Math.sin(e.cargaAng) * v; } }
+    else if (e.embiste > 0) { e.embiste -= dt; }
+    else { orbitar(e, dt, 380, 260, 0.9);
+      if (!(T.embestida > 0)) { T.embestida = mitad ? 4 : 6; e.carga = 0.8; e.cargaAng = ap; }
+      if (!(T.abanico > 0)) { T.abanico = mitad ? 0.8 : 1.2; for (let i = -2; i <= 2; i++) bala(e.x, e.y, ap + i * 0.14, 340, 5, 9, '#ff6e46'); } }
+    if (!(T.drones > 0)) { T.drones = 4; if (cuantosHijos(e) < 6) for (let k = 0; k < 2; k++) { const d = spawnEnemy('marte', e.x + rand(-30, 30), e.y + rand(-30, 30)); d.padre = e; } }
+  } else if (e.jefe === 'venus') {
+    // REINA AVISPA: avisa con una línea y embiste dejando minas que explotan; trae avispas escolta
+    if (e.carga > 0) { e.carga -= dt; e.vx *= 0.85; e.vy *= 0.85; if (e.carga <= 0) { e.embiste = 1.1; e.vx = Math.cos(e.cargaAng) * 650; e.vy = Math.sin(e.cargaAng) * 650; } }
+    else if (e.embiste > 0) { e.embiste -= dt; if (!(T.mina > 0)) { T.mina = mitad ? 0.09 : 0.13; bala(e.x, e.y, 0, 0, 8, 12, '#ffc46e', 4, { mina: 2.2 }); } }
+    else { orbitar(e, dt, 300, 120, 0.4); if (!(T.embestida > 0)) { T.embestida = mitad ? 3.2 : 4.5; e.carga = 0.75; e.cargaAng = ap; } }
+    if (!(T.escolta > 0)) { T.escolta = 8; if (cuantosHijos(e) < 4) for (let k = 0; k < 2; k++) { const d = spawnEnemy('venus', e.x + rand(-40, 40), e.y + rand(-40, 40)); d.padre = e; } }
+  } else if (e.jefe === 'saturno') {
+    // SEÑOR DEL ANILLO: te orbita con un anillo de orbes que paran tus balas y dispara en espiral
+    orbitar(e, dt, 420, 150, 0.8); e.anillo = (e.anillo || 0) + dt * (mitad ? 1.4 : 0.9);
+    const n = 12; e.orbes = []; for (let k = 0; k < n; k++) { if (k % 4 === 0) continue; // huecos para colarse
+      const a = e.anillo + k * TAU / n; e.orbes.push({ x: e.x + Math.cos(a) * 95, y: e.y + Math.sin(a) * 95 }); }
+    if (!(T.espiral > 0)) { T.espiral = 0.11; e.espiral = (e.espiral || 0) + 0.37; if (Math.sin(e.phase * 0.8) > -0.3) for (let k = 0; k < (mitad ? 3 : 2); k++) bala(e.x, e.y, e.espiral + k * TAU / (mitad ? 3 : 2), 210, 5, 8, '#f0dca0', 4); }
+  } else if (e.jefe === 'neptuno') {
+    // ESPECTRO ABISAL: se teletransporta, lanza orbes que te persiguen y barre con un rayo
+    if (e.fase === 'fuera') { e.alfa = Math.max(0, (e.alfa || 1) - dt * 3); if (e.alfa <= 0) { const a = Math.random() * TAU, d = rand(300, 440); e.x = p.x + Math.cos(a) * d; e.y = p.y + Math.sin(a) * d; e.fase = 'dentro'; } }
+    else if (e.fase === 'dentro') { e.alfa = Math.min(1, e.alfa + dt * 3); if (e.alfa >= 1) e.fase = null; }
+    else { orbitar(e, dt, 360, 90, 0.5); if (!(T.salto > 0)) { T.salto = mitad ? 3.5 : 5; e.fase = 'fuera'; e.barrido = 0; } }
+    if (!e.fase && !(T.orbes > 0)) { T.orbes = mitad ? 1.3 : 1.8; for (let k = -1; k <= 1; k++) bala(e.x, e.y, ap + k * 0.5, 170, 8, 12, '#8fb8ff', 5, { guiaJ: 2.2 }); }
+    if (!e.fase && !(T.barridoCd > 0) && !(e.barrido > 0)) { T.barridoCd = mitad ? 7 : 9; e.barrido = 2.8; e.barridoIni = ap - 1.05; }
+    if (e.barrido > 0) { e.barrido -= dt; const prog = Math.max(0, (2.0 - Math.max(0, e.barrido - 0)) / 2.0);
+      e.barridoAng = e.barrido > 2.0 ? e.barridoIni : e.barridoIni + 2.1 * (1 - e.barrido / 2.0);
+      if (e.barrido <= 2.0 && p.alive && p.invuln <= 0) { const ux = Math.cos(e.barridoAng), uy = Math.sin(e.barridoAng), px = p.x - e.x, py = p.y - e.y, t = px * ux + py * uy;
+        if (t > 0 && t < rayoHasta(e.x, e.y, e.barridoAng, 1300) && Math.abs(px * uy - py * ux) < 16 + p.r) damagePlayer(14); } }
+  }
+  e.x += e.vx * dt; e.y += e.vy * dt;
+  if (e.jefe !== 'neptuno' || !e.fase) empujarFuera(e);
+  if (p.alive && p.invuln <= 0 && dist2(e, p) < (e.r + p.r) * (e.r + p.r)) damagePlayer(e.dmg);
+}
+
+function dibujarJefe(e, col, flash) {
+  const R = e.r, falso = Object.assign({}, e, { r: R, ringSpin: e.ringSpin || 0 });
+  ctx.save();
+  if (e.jefe === 'neptuno') ctx.globalAlpha = e.alfa == null ? 1 : e.alfa;
+  // avisos de embestida (Marte y Venus) y rayo de barrido (Neptuno)
+  if (e.carga > 0) { const L = 900; ctx.save(); ctx.strokeStyle = 'rgba(255,90,90,' + (0.3 + Math.random() * 0.4) + ')'; ctx.lineWidth = R * 1.4; ctx.globalAlpha = 0.25;
+    ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + Math.cos(e.cargaAng) * L, e.y + Math.sin(e.cargaAng) * L); ctx.stroke(); ctx.restore(); }
+  if (e.barrido > 0) { const L = rayoHasta(e.x, e.y, e.barridoAng, 1300); ctx.save(); ctx.lineCap = 'round';
+    if (e.barrido > 2.0) { ctx.strokeStyle = 'rgba(120,170,255,.5)'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); } else { ctx.strokeStyle = '#6fa8ff'; ctx.lineWidth = 26; ctx.shadowBlur = 30; ctx.shadowColor = '#5a96ff'; }
+    ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + Math.cos(e.barridoAng) * L, e.y + Math.sin(e.barridoAng) * L); ctx.stroke();
+    if (e.barrido <= 2.0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 8; ctx.stroke(); } ctx.restore(); }
+  // aura del jefe
+  ctx.save(); ctx.translate(e.x, e.y);
+  const g = ctx.createRadialGradient(0, 0, R * 0.4, 0, 0, R * 2.1); g.addColorStop(0, e.color + '55'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, R * 2.1, 0, TAU); ctx.fill(); ctx.restore();
+  // cuerpo: la nave de su planeta en grande, con piezas propias
+  ctx.save(); ctx.translate(e.x, e.y);
+  if (e.jefe === 'jupiter') { ctx.rotate(e.rot || 0);
+    ctx.shadowBlur = 24; ctx.shadowColor = col; ctx.fillStyle = col; dibujarColoso(falso, col, flash);
+    for (let k = 0; k < 4; k++) { const a = k * TAU / 4; ctx.save(); ctx.translate(Math.cos(a) * R * 0.9, Math.sin(a) * R * 0.9);
+      ctx.fillStyle = flash ? '#fff' : '#3a2416'; ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 11, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.rotate(Math.atan2(player.y - e.y, player.x - e.x) - (e.rot || 0) - a + a); ctx.fillStyle = col; ctx.fillRect(0, -3, 18, 6); ctx.restore(); }
+  } else {
+    ctx.rotate(e.jefe === 'saturno' ? e.phase * 0.3 : Math.atan2(player.y - e.y, player.x - e.x) + (e.embiste > 0 ? 0 : 0));
+    if (e.embiste > 0) ctx.rotate(Math.atan2(e.vy, e.vx) - Math.atan2(player.y - e.y, player.x - e.x));
+    ctx.shadowBlur = 26; ctx.shadowColor = col; ctx.fillStyle = col;
+    const f = { venus: dibujarAvispa, marte: dibujarFilo, saturno: dibujarAnillada, neptuno: dibujarEspectral }[e.jefe];
+    f(falso, col, flash);
+    if (e.jefe === 'venus') { ctx.fillStyle = '#fff2c8'; for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(-R * 0.2, k * R * 0.18); ctx.lineTo(-R * 0.75, k * R * 0.26 - 6); ctx.lineTo(-R * 0.6, k * R * 0.22); ctx.fill(); } } // corona
+    if (e.jefe === 'marte') { ctx.fillStyle = '#ffd0b8'; for (const s of [-1, 1]) ctx.fillRect(-R * 0.4, s * R * 0.75 - 4, R * 0.7, 8); ctx.fillStyle = '#ffeb7a'; for (let k = 0; k < 4; k++) ctx.fillRect(-R * 0.5 + k * 9, -2, 4, 4); }
+  }
+  ctx.restore();
+  // escudo de orbes de Saturno
+  if (e.orbes) { ctx.save(); ctx.strokeStyle = 'rgba(240,220,160,.25)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(e.x, e.y, 95, 0, TAU); ctx.stroke();
+    ctx.shadowBlur = 14; ctx.shadowColor = '#f0dca0'; ctx.fillStyle = '#fff1c4'; for (const o of e.orbes) { ctx.beginPath(); ctx.arc(o.x, o.y, 10, 0, TAU); ctx.fill(); } ctx.restore(); }
+  ctx.restore();
+}
+
+function barraJefe(e) {
+  const bw = Math.min(360, W * 0.6), bh = 10, bx = vistaX0() + W / 2 - bw / 2, by = vistaY0() + 70;
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = e.color; ctx.shadowBlur = 16; ctx.shadowColor = e.color; ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), bh);
+  ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bw, bh);
+  ctx.font = '800 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = e.color; ctx.fillText('JEFE · ' + e.nombre, bx + bw / 2, by - 6);
+  ctx.restore();
+}
+
+/* ============================================================
+   ASTEROIDES Y ESCOMBROS — el espacio tiene cobertura.
+   Se generan por zonas con una semilla fija: todos los jugadores ven los mismos en el mismo sitio.
+   Los pequeños se rompen a tiros.
+   ============================================================ */
+const AST_CELDA = 900, astCache = new Map(), astRotos = new Set();
+function semilla(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function asteroidesCelda(cx, cy) {
+  const k = cx + ',' + cy; let l = astCache.get(k); if (l) return l;
+  if (astCache.size > 600) astCache.clear();
+  const rnd = semilla((cx * 73856093) ^ (cy * 19349663) ^ 0x5bd1e995), n = rnd() < 0.3 ? 0 : rnd() < 0.7 ? 1 : rnd() < 0.9 ? 2 : 3;
+  l = [];
+  for (let i = 0; i < n; i++) {
+    const r = 26 + Math.pow(rnd(), 1.6) * 100, x = cx * AST_CELDA + 80 + rnd() * (AST_CELDA - 160), y = cy * AST_CELDA + 80 + rnd() * (AST_CELDA - 160);
+    const forma = []; for (let v = 0; v < 12; v++) forma.push(0.78 + rnd() * 0.3);
+    const crateres = []; for (let c = 0; c < 2 + Math.floor(rnd() * 3); c++) crateres.push([rnd() * 6.28, rnd() * 0.55, 0.12 + rnd() * 0.16]);
+    const a = { id: k + ':' + i, x, y, r, rot: rnd() * 6.28, giro: (rnd() - 0.5) * 0.25, forma, crateres, peq: r < 46, hp: r * 2.2, golpe: 0 };
+    if (!astRotos.has(a.id)) l.push(a);
+  }
+  astCache.set(k, l); return l;
+}
+function asteroidesCerca(x, y, rad) {
+  const out = [], c0x = Math.floor((x - rad) / AST_CELDA), c1x = Math.floor((x + rad) / AST_CELDA), c0y = Math.floor((y - rad) / AST_CELDA), c1y = Math.floor((y + rad) / AST_CELDA);
+  for (let cx = c0x; cx <= c1x; cx++) for (let cy = c0y; cy <= c1y; cy++) for (const a of asteroidesCelda(cx, cy)) if (!a.roto) out.push(a);
+  return out;
+}
+function chocaAsteroide(x, y, r) { for (const a of asteroidesCerca(x, y, 120)) if ((x - a.x) ** 2 + (y - a.y) ** 2 < (a.r * 0.92 + r) ** 2) return a; return null; }
+function empujarFuera(o) {
+  for (const a of asteroidesCerca(o.x, o.y, 140)) { const dx = o.x - a.x, dy = o.y - a.y, d = Math.hypot(dx, dy) || 1, min = a.r * 0.92 + (o.r || 12);
+    if (d < min) { const nx = dx / d, ny = dy / d; o.x = a.x + nx * min; o.y = a.y + ny * min; const vn = o.vx * nx + o.vy * ny; if (vn < 0) { o.vx -= vn * nx; o.vy -= vn * ny; } } }
+}
+function golpearAsteroide(a, dmg, x, y) {
+  spawnParticles(x, y, 4, { color: '#a8b3c7', speed: 140, life: 0.3, size: 2.5 });
+  if (!a.peq) return;
+  a.hp -= dmg; a.golpe = 0.1;
+  if (a.hp <= 0) { a.roto = true; astRotos.add(a.id); spawnParticles(a.x, a.y, 26, { color: '#c4cede', speed: 260, life: 0.7, size: 4 }); spawnRing(a.x, a.y, '#8fa0bb', a.r * 2, 400, 3);
+    G.score += 30; if (Math.random() < 0.2) dropPowerup(a.x, a.y); }
+}
+// distancia hasta donde llega un rayo antes de chocar con un asteroide
+function rayoHasta(x, y, ang, L) {
+  const ux = Math.cos(ang), uy = Math.sin(ang); let mejor = L;
+  for (const a of asteroidesCerca(x + ux * L / 2, y + uy * L / 2, L / 2 + 120)) {
+    const ox = a.x - x, oy = a.y - y, t = ox * ux + oy * uy; if (t < 0) continue;
+    const d2 = ox * ox + oy * oy - t * t, rr = (a.r * 0.9) ** 2; if (d2 > rr) continue;
+    const dentro = t - Math.sqrt(rr - d2); if (dentro > 0 && dentro < mejor) mejor = dentro;
+  }
+  return mejor;
+}
+function despejarZona(x, y, rad) { for (const a of asteroidesCerca(x, y, rad + 120)) if (Math.hypot(a.x - x, a.y - y) < rad + a.r) { a.roto = true; astRotos.add(a.id); } }
+function drawAsteroides() {
+  const lista = asteroidesCerca(CAM.x, CAM.y, Math.max(W, H) * 0.75 + 120);
+  for (const a of lista) {
+    a.rot += a.giro / 60; a.golpe -= 1 / 60;
+    ctx.save(); ctx.translate(a.x, a.y); ctx.rotate(a.rot);
+    ctx.beginPath(); for (let v = 0; v < a.forma.length; v++) { const ang = v / a.forma.length * TAU, rr = a.r * a.forma[v]; v ? ctx.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr) : ctx.moveTo(Math.cos(ang) * rr, Math.sin(ang) * rr); } ctx.closePath();
+    const g = ctx.createRadialGradient(-a.r * 0.35, -a.r * 0.35, a.r * 0.1, 0, 0, a.r);
+    g.addColorStop(0, a.golpe > 0 ? '#fff' : (a.peq ? '#5d6476' : '#4a4f5e')); g.addColorStop(1, '#16182a');
+    ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = a.peq ? 'rgba(0,240,255,.35)' : 'rgba(140,160,200,.28)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; for (const c of a.crateres) { ctx.beginPath(); ctx.arc(Math.cos(c[0]) * a.r * c[1], Math.sin(c[0]) * a.r * c[1], a.r * c[2], 0, TAU); ctx.fill(); }
+    ctx.restore();
+  }
 }

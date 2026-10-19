@@ -37,7 +37,7 @@ const RED = (function () {
     if (m.t === 'hola') {
       conectado = true; miId = m.id; remotos.clear();
       for (const j of m.j || []) remotos.set(j.id, nuevoRemoto(j));
-      if (G.running && player && (m.x || m.y)) { player.x = m.x; player.y = m.y; CAM.x = m.x; CAM.y = m.y; }
+      if (G.running && player && (m.x || m.y)) { player.x = m.x; player.y = m.y; CAM.x = m.x; CAM.y = m.y; if (typeof despejarZona === 'function') despejarZona(m.x, m.y, 200); }
     } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); avisoFeed(m.nombre + ' entró al espacio', '#8fb4d0'); }
     else if (m.t === 'sale') { remotos.delete(m.id); }
     else if (m.t === 's') {
@@ -95,6 +95,7 @@ const RED = (function () {
     for (let i = rBalas.length - 1; i >= 0; i--) {
       const b = rBalas[i]; b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
       if (b.life <= 0 || (p && Math.hypot(b.x - p.x, b.y - p.y) > 2600)) { rBalas.splice(i, 1); continue; } // pueden venir de fuera de la pantalla
+      if (typeof chocaAsteroide === 'function' && chocaAsteroide(b.x, b.y, b.r)) { spawnParticles(b.x, b.y, 3, { color: '#9aa6b8', speed: 90, life: 0.25, size: 2 }); rBalas.splice(i, 1); continue; }
       if (p && p.alive && p.invuln <= 0 && dist2(b, p) < (b.r + p.r) * (b.r + p.r)) {
         enviar({ t: 'g', de: b.de, dmg: b.dmg });
         damagePlayer(b.dmg);
@@ -157,7 +158,7 @@ const RED = (function () {
     if (!conectado) { cerrandoAdrede = false; conectar(); return; }
     const vivos = [...remotos.values()].filter(r => r.v && r.visto);
     if (vivos.length && player) { const o = vivos[Math.floor(Math.random() * vivos.length)], a = Math.random() * TAU;
-      player.x = o.x + Math.cos(a) * 900; player.y = o.y + Math.sin(a) * 900; CAM.x = player.x; CAM.y = player.y; }
+      player.x = o.x + Math.cos(a) * 900; player.y = o.y + Math.sin(a) * 900; CAM.x = player.x; CAM.y = player.y; if (typeof despejarZona === 'function') despejarZona(player.x, player.y, 200); }
   }
   function disparo(k) { if (conectado && player) enviar({ t: 'd', a: Math.round(player.angle * 100) / 100, k }); }
   function muerte() { if (conectado) { enviar({ t: 'e', x: Math.round(player.x), y: Math.round(player.y), a: 0, hp: 0, od: 0, v: 0 }); enviar({ t: 'm' }); } }
