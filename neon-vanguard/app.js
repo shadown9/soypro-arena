@@ -1183,6 +1183,17 @@ const NAVE_ANCHO = { marte: 2.0 }; // la de Marte era muy fina (parecía un cohe
   };
   im.src = 'naves/' + k + '.png?v=1';
 });
+// NAVES INSIGNIA (jefes): naves/jefe-<planeta>.png, del diseño «Flagship» del Jefe
+const JEFE_IMG = {};
+['venus', 'marte', 'jupiter', 'saturno', 'neptuno'].forEach(k => {
+  const im = new Image();
+  im.onload = () => {
+    const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+    const g = c.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    JEFE_IMG[k] = { im, blanco: c };
+  };
+  im.src = 'naves/jefe-' + k + '.png?v=1';
+});
 function naveSprite(k, e, flash) {
   const N = NAVE_IMG[k]; if (!N) return false;
   const L = e.r * NAVE_LARGO[k], h = N.im.height * L / N.im.width * (NAVE_ANCHO[k] || 1);
@@ -2115,9 +2126,18 @@ function dibujarJefe(e, col, flash) {
   ctx.save(); ctx.translate(e.x, e.y);
   const g = ctx.createRadialGradient(0, 0, R * 0.4, 0, 0, R * 2.1); g.addColorStop(0, e.color + '55'); g.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, R * 2.1, 0, TAU); ctx.fill(); ctx.restore();
-  // cuerpo: la nave de su planeta en grande, con piezas propias
+  // cuerpo: la nave insignia de su planeta, mirando hacia ti (o hacia donde embiste)
   ctx.save(); ctx.translate(e.x, e.y);
-  if (e.jefe === 'jupiter') { ctx.rotate(e.rot || 0);
+  const J = JEFE_IMG[e.jefe];
+  if (J) {
+    ctx.rotate(e.embiste > 0 ? Math.atan2(e.vy, e.vx) : Math.atan2(player.y - e.y, player.x - e.x));
+    const L = R * 3.1, h = J.im.height * L / J.im.width;
+    ctx.shadowBlur = 30; ctx.shadowColor = col;
+    const brillo = { saturno: 1.9, neptuno: 1.35, marte: 1.15 }[e.jefe]; // las más oscuras resaltan sobre el espacio
+    if (brillo && !flash) ctx.filter = 'brightness(' + brillo + ')';
+    ctx.drawImage(flash ? J.blanco : J.im, -L * 0.55, -h / 2, L, h);
+    ctx.filter = 'none';
+  } else if (e.jefe === 'jupiter') { ctx.rotate(e.rot || 0);
     ctx.shadowBlur = 24; ctx.shadowColor = col; ctx.fillStyle = col; dibujarColoso(falso, col, flash);
     for (let k = 0; k < 4; k++) { const a = k * TAU / 4; ctx.save(); ctx.translate(Math.cos(a) * R * 0.9, Math.sin(a) * R * 0.9);
       ctx.fillStyle = flash ? '#fff' : '#3a2416'; ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 11, 0, TAU); ctx.fill(); ctx.stroke();
