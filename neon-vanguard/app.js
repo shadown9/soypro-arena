@@ -455,7 +455,7 @@ const ENEMY_TYPES = {
   medusa:    { hp: 75,  r: 22, speed: 55,  color: '#c48cff', score: 320, dmg: 14, fireRate: 3.0, contact: true, bando: 'bestia' },
   larva:     { hp: 14,  r: 9,  speed: 235, color: '#b6ff4d', score: 70,  dmg: 8,  fireRate: 0,   contact: true, bando: 'bestia' },
   serpiente: { hp: 130, r: 15, speed: 175, color: '#ff4fd8', score: 560, dmg: 18, fireRate: 0,   contact: true, bando: 'bestia' },
-  ojo:       { hp: 150, r: 24, speed: 45,  color: '#ff3355', score: 500, dmg: 30, fireRate: 4.2, contact: true, bando: 'bestia' },
+  ojo:       { hp: 150, r: 24, speed: 45,  color: '#6dffa8', score: 500, dmg: 30, fireRate: 4.2, contact: true, bando: 'bestia' },
   // BESTIAS QUE APRENDEN (llegan según tu forma de jugar)
   coraza:    { hp: 170, r: 22, speed: 62,  color: '#4dd2ff', score: 520, dmg: 18, fireRate: 3.0, contact: true, bando: 'bestia' }, // contra el que se queda quieto
   acechador: { hp: 60,  r: 15, speed: 240, color: '#d9c2ff', score: 460, dmg: 16, fireRate: 3.2, contact: true, bando: 'bestia' }, // contra el que huye
@@ -1341,7 +1341,8 @@ const JEFE_IMG = {};
 // BESTIAS con el diseño del Jefe: naves/bestia-<tipo>.png (arte neón recortado por brillo, ya trae su resplandor)
 //   eje = hacia dónde mira la imagen (de la cola a la cabeza), ancho = ancho dibujado en radios, cx/cy = centro del cuerpo en la imagen
 //   tonos = variaciones de color (grados de tono) para que no salgan todas iguales; reina = el tono de la gigante del modo en línea
-const BESTIA_IMG = {}, BESTIA_ARTE = { medusa: { eje: -0.43, ancho: 4.7, cx: 0.69, cy: 0.36, tonos: [0, 35, -45], reina: 150 } };
+const BESTIA_IMG = {}, BESTIA_ARTE = { medusa: { eje: -0.43, ancho: 4.7, cx: 0.69, cy: 0.36, tonos: [0, 35, -45], reina: 150 },
+  ojo: { eje: 0, ancho: 7.6, cx: 0.494, cy: 0.432, tonos: [0, 40, -50], reina: 120 } };
 // misma figura con otro tono (rotación de tono como el filtro hue-rotate, hecha a mano para que funcione en todos los teléfonos)
 function girarTono(im, grados) {
   const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
@@ -1362,7 +1363,7 @@ Object.keys(BESTIA_ARTE).forEach(k => {
     const A = BESTIA_ARTE[k];
     BESTIA_IMG[k] = Object.assign({ im, blanco: c, variantes: (A.tonos || [0]).map(gr => girarTono(im, gr)), gigante: A.reina != null ? girarTono(im, A.reina) : null }, A);
   };
-  im.src = 'naves/bestia-' + k + '.png?v=2';
+  im.src = 'naves/bestia-' + k + '.webp?v=3';
 });
 // gira suave hacia donde avanza (si casi no se mueve, se queda como estaba)
 function rumboBestia(e, porDefecto) {
@@ -2308,15 +2309,26 @@ function dibujarBestia(e, col, flash) {
     ctx.fillStyle = '#fff'; ctx.shadowBlur = 0; ctx.beginPath(); ctx.arc(e.r * 0.4, -e.r * 0.45, 3.5, 0, TAU); ctx.arc(e.r * 0.4, e.r * 0.45, 3.5, 0, TAU); ctx.fill();
     ctx.fillStyle = '#20001a'; ctx.beginPath(); ctx.arc(e.r * 0.5, -e.r * 0.45, 1.8, 0, TAU); ctx.arc(e.r * 0.5, e.r * 0.45, 1.8, 0, TAU); ctx.fill();
   } else if (e.type === 'ojo') {
-    // rayo: aviso fino y luego disparo grueso
+    // rayo: aviso fino y luego disparo grueso (verde en los ojos normales, rojo en el Ojo del Vacío, a juego con su ojo)
+    const S = BESTIA_IMG.ojo, rojo = !S || e.r >= 40;
     if (e.laser > 0) { const L = rayoHasta(e.x, e.y, e.laserAng, 1500), ux = Math.cos(e.laserAng), uy = Math.sin(e.laserAng);
       ctx.save(); ctx.lineCap = 'round';
-      if (!e.disparado) { ctx.strokeStyle = 'rgba(255,51,85,' + (0.25 + Math.random() * 0.35) + ')'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); }
-      else { ctx.strokeStyle = '#ff5c7a'; ctx.lineWidth = 30; ctx.shadowBlur = 40; ctx.shadowColor = '#ff3355'; }
+      if (!e.disparado) { ctx.strokeStyle = (rojo ? 'rgba(255,51,85,' : 'rgba(110,255,170,') + (0.25 + Math.random() * 0.35) + ')'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]); }
+      else { ctx.strokeStyle = rojo ? '#ff5c7a' : '#6dffa8'; ctx.lineWidth = 30; ctx.shadowBlur = 40; ctx.shadowColor = rojo ? '#ff3355' : '#1fff7a'; }
       ctx.beginPath(); ctx.moveTo(e.x + ux * e.r, e.y + uy * e.r); ctx.lineTo(e.x + ux * L, e.y + uy * L); ctx.stroke();
       if (e.disparado) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(e.x + ux * e.r, e.y + uy * e.r); ctx.lineTo(e.x + ux * L, e.y + uy * L); ctx.stroke(); }
       ctx.restore(); }
     ctx.translate(e.x, e.y);
+    if (S) { // diseño del Jefe: el cuerpo gira despacio flotando; al cargar el rayo el ojo se enciende
+      if (e._tono == null) { e._tono = Math.floor(Math.random() * S.variantes.length); e._giro = Math.random() * TAU; }
+      const L = e.r * S.ancho, h = S.im.height * L / S.im.width;
+      ctx.save(); ctx.rotate(e._giro + G.time * 0.12);
+      dibujarConBrillo({ im: e.r >= 40 && S.gigante ? S.gigante : S.variantes[e._tono], blanco: S.blanco }, flash, -L * S.cx, -h * S.cy, L, h);
+      ctx.restore();
+      if (e.laser > 0) { const k = e.disparado ? 1 : 0.4 + 0.4 * Math.sin(G.time * 30); ctx.globalAlpha = k * 0.8; ctx.fillStyle = rojo ? '#ff3355' : '#6dffa8';
+        ctx.shadowBlur = 30; ctx.shadowColor = ctx.fillStyle; ctx.beginPath(); ctx.arc(0, 0, e.r * 0.5, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; ctx.shadowBlur = 0; }
+      ctx.restore(); barraVidaBestia(e); return;
+    }
     ctx.shadowBlur = 26; ctx.shadowColor = col;
     const g = ctx.createRadialGradient(-e.r * 0.3, -e.r * 0.3, 3, 0, 0, e.r);
     g.addColorStop(0, flash ? '#fff' : '#fff6f0'); g.addColorStop(0.75, '#f3c9c9'); g.addColorStop(1, '#a3203a');
@@ -2367,6 +2379,9 @@ function dibujarBestia(e, col, flash) {
     if (e.carga > 0) { ctx.strokeStyle = 'rgba(255,200,140,' + (0.4 + Math.random() * 0.5) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, e.r * 2.6 * larga, 0, TAU); ctx.stroke(); }
   }
   ctx.restore();
+  barraVidaBestia(e);
+}
+function barraVidaBestia(e) {
   if (e.hp < e.maxHp && e.type !== 'larva') { const bw = e.r * 2.2; ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x - bw / 2, e.y - e.r - 12, bw, 4);
     ctx.fillStyle = e.color; ctx.fillRect(e.x - bw / 2, e.y - e.r - 12, bw * (e.hp / e.maxHp), 4); }
 }
