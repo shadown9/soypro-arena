@@ -35,6 +35,7 @@ const Audio2 = {
       const b = c.createBuffer(1, c.sampleRate, c.sampleRate), ch = b.getChannelData(0);
       for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
       this.ruido = b;
+      this.cargarGritos();
     } catch (e) { this.enabled = false; }
   },
 
@@ -157,9 +158,30 @@ const Audio2 = {
     coraza:    { f: [92, 100, 62],  dur: 1.1,  formantes: [[380, 4, 1.4], [900, 5, 0.9]], gruñido: 0.9, gruñidoHz: 22, aliento: 0.12, alientoHz: 1200, vol: 0.65 },
     acechador: { f: [700, 1600, 520], dur: 0.55, formantes: [[1500, 5, 1.3], [2900, 6, 0.8]], gruñido: 0.7, gruñidoHz: 45, vib: 25, vibHz: 9, aliento: 0.12, alientoHz: 3200, vol: 0.55 }
   },
-  GRITOS_ON: false, // apagados: los sintetizados sonaban a caricatura; vuelven con gritos grabados (CC0)
+  // GRITOS GRABADOS (CC0, sonidos/bestias/*.mp3): los sintetizados sonaban a caricatura y quedan de reserva (GRITOS_ON)
+  GRABADOS: { serpiente: [2, 2], coraza: [2, 1], ojo: [2, 1], medusa: [2, 1], larva: [2, 2], espino: [2, 1], acechador: [2, 1] }, // [gritos, muertes]
+  buf: {}, GRITOS_ON: false,
+  cargarGritos() {
+    if (this._cargando || !this.ctx) return; this._cargando = true;
+    for (const [tipo, [n, m]] of Object.entries(this.GRABADOS)) {
+      const nombres = []; for (let i = 1; i <= n; i++) nombres.push(tipo + '-' + i); for (let i = 1; i <= m; i++) nombres.push(tipo + '-muere-' + i);
+      for (const nm of nombres) fetch('sonidos/bestias/' + nm + '.mp3?v=2').then(r => r.ok ? r.arrayBuffer() : null)
+        .then(ab => ab && new Promise((ok, no) => this.ctx.decodeAudioData(ab, ok, no))).then(b => { if (b) this.buf[nm] = b; }).catch(() => {});
+    }
+  },
+  sonarGrabado(nombre, D, k, vol) {
+    const b = this.buf[nombre]; if (!b) return false;
+    const c = this.ctx, s = c.createBufferSource(), g = c.createGain();
+    s.buffer = b; s.playbackRate.value = (k < 1 ? 0.7 : 1) * (0.92 + Math.random() * 0.16); // gigante: más grave; cada vez un poco distinto
+    g.gain.value = vol; s.connect(g); g.connect(D); s.start();
+    return true;
+  },
   gritar(tipo, D, k, muerte) {
-    const v = this.VOCES[tipo]; if (!this.GRITOS_ON || !v || !this.libre('grito', 420)) return; // nunca varios gritos encima: sería ruido
+    if (!this.libre('grito', 420)) return; // nunca varios gritos encima: sería ruido
+    const G = this.GRABADOS[tipo];
+    if (G) { const n = muerte ? G[1] : G[0], nm = tipo + (muerte ? '-muere-' : '-') + (1 + Math.floor(Math.random() * n));
+      if (this.sonarGrabado(nm, D, k, tipo === 'larva' ? 0.75 : 1.1)) return; }
+    const v = this.VOCES[tipo]; if (!this.GRITOS_ON || !v) return; // nunca varios gritos encima: sería ruido
     const f = muerte ? [v.f[0] * 1.15, v.f[0] * 1.3, v.f[v.f.length - 1] * 0.5] : v.f; // al morir: grito que se apaga hacia abajo
     this.grito(D, Object.assign({}, v, { f: f.map(x => x * k), dur: v.dur * (k < 1 ? 1.6 : 1) * (muerte ? 1.15 : 1),
       formantes: v.formantes.map(([a, q, g]) => [a * (k < 1 ? 0.75 : 1), q, g]), vol: v.vol * (k < 1 ? 1.25 : 1) }));
