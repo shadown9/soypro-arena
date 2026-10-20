@@ -35,6 +35,10 @@ const RED = (function () {
   function miBando() { const p = piloto() || {}; return (typeof bandoElegido !== 'undefined' && bandoElegido) || p.bando; }
   // cambiar de sala: se cierra la conexión y se abre otra pidiendo la sala privada (o la pública)
   function reconectar() { cerrandoAdrede = true; const viejo = ws; ws = null; conectado = false; remotos.clear(); rBalas = []; try { viejo && viejo.close(); } catch (e) {} cerrandoAdrede = false; conectar(); }
+  // SALIR DE VERDAD: se cierra la conexión al momento (al volver a ProArena, cerrar la pestaña o la app)
+  function cerrar() { cerrandoAdrede = true; conectado = false; remotos.clear(); rBalas = []; const v = ws; ws = null; try { v && v.close(1000); } catch (e) {} }
+  window.addEventListener('pagehide', cerrar);
+  window.addEventListener('pageshow', e => { if (e.persisted) { cerrandoAdrede = false; conectar(); } }); // volvió de la memoria del navegador
   function privada(op) { pedido = op; sala = null; marc = null; reconectar(); }
   function publica() { pedido = null; sala = null; marc = null; reconectar(); }
   const aliado = id => { const r = remotos.get(id); return !!(sala && sala.modo === 'equipos' && r && r.bando === miBando()); };
@@ -293,6 +297,6 @@ const RED = (function () {
 
   window.addEventListener('pagehide', () => { cerrandoAdrede = true; try { ws && ws.close(); } catch (e) {} });
   function revancha() { enviar({ t: 'revancha' }); }
-  return { tick, dibujar, dibujarPantalla, inicio, reales, disparo, muerte, regreso, privada, publica, revancha, get sala() { return sala; }, get miId() { return miId; },
+  return { tick, dibujar, dibujarPantalla, inicio, reales, cerrar, disparo, muerte, regreso, privada, publica, revancha, get sala() { return sala; }, get miId() { return miId; },
     get activo() { return activo; }, get bestia() { return bestia; }, get conectado() { return conectado; }, get remotos() { return remotos; } };
 })();
