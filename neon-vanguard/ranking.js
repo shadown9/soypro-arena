@@ -77,7 +77,8 @@ async function subirRecord(score, wave, kills, victorias) {
         wave: wave,
         kills: kills,
         victorias: victorias || 0,
-        logros: (typeof Misiones !== 'undefined') ? Misiones.logros() : []
+        logros: (typeof Misiones !== 'undefined') ? Misiones.logros() : [],
+        golpes: (typeof G !== 'undefined' && G.golpes) ? G.golpes.slice(-8) : [] // últimos golpes antes de terminar
       })
     });
     if (!r.ok) { if (r.status === 403) { const e = await r.json().catch(() => ({})); if (e.error === CODIGO_RETIRADO_SV) {

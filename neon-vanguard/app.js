@@ -727,6 +727,8 @@ function damagePlayer(amount, src) {
   if (!p.alive || p.invuln > 0) return;
   amount *= durezaOleada();
   amount = Math.min(amount, p.maxHp * 0.55); // ningún golpe quita más de la mitad y algo: con la vida llena nada te mata de un golpe
+  // registro de los últimos golpes (se manda al servidor al terminar: si algo raro pasa, se sabe qué fue)
+  G.golpes = (G.golpes || []).slice(-7); G.golpes.push({ n: src ? (src.n || nombreEnemigo(src)) : '?', d: Math.round(amount), hp: Math.round(p.hp), max: p.maxHp, ola: G.wave, t: Math.round(G.time) });
   if (src) { G.golpe = { n: src.n || nombreEnemigo(src), t: G.time }; if (src.x != null) G.golpeDir = { a: Math.atan2(src.y - p.y, src.x - p.x), t: G.time }; }
   if (p.mut && p.mut.jupiter) amount *= 0.65; // CORAZA COLOSAL
   p.desdeGolpe = 0;
@@ -740,7 +742,19 @@ function damagePlayer(amount, src) {
   Audio2.hurt();
   spawnParticles(p.x, p.y, 18, { color: '#ff4d6d', speed: 260, life: 0.6, size: 4 });
   if (p.hp <= 0) { p.hp = 0; p.alive = false; if (typeof RED !== 'undefined') RED.muerte();
-    if (G.privada && typeof caidoEnPrivada === 'function') caidoEnPrivada(); else gameOver(); }
+    if (G.privada && typeof caidoEnPrivada === 'function') caidoEnPrivada(); else explotarNave(); }
+}
+
+// TU NAVE EXPLOTA: estallido, temblor y cámara lenta; la batalla sigue un momento y luego sale la pantalla final
+function explotarNave() {
+  const p = player, col = COLOR_NAVE[p.bando] || '#00f0ff';
+  spawnParticles(p.x, p.y, 90, { color: col, speed: 520, life: 1.4, size: 6 });
+  spawnParticles(p.x, p.y, 40, { color: '#ffffff', speed: 340, life: 0.8, size: 4 });
+  spawnParticles(p.x, p.y, 30, { color: '#ffb020', speed: 260, life: 1.1, size: 5 });
+  spawnRing(p.x, p.y, col, 320, 700, 7); spawnRing(p.x, p.y, '#ffffff', 180, 520, 4);
+  shake(30); G.flash = 0.8; G.flashColor = '255,255,255'; Audio2.explode(true);
+  G.slowmo = 0.35; setTimeout(() => { G.slowmo = 1; }, 900);
+  clearTimeout(G.finT); G.finT = setTimeout(() => { if (G.running && !player.alive) gameOver(); }, 1900);
 }
 
 // avisos para las misiones y logros (misiones.js)
@@ -1953,7 +1967,8 @@ function startGame() {
   el.gameover.classList.add('hidden');
   nvEvento('inicio');
   // presentación: tu nave despega de tu planeta hasta el centro de la galaxia (intro.js); la demo va directa
-  if (!NV_DEMO && typeof empezarIntro === 'function') { try { empezarIntro(); return; } catch (e) { G.intro = null; } }
+  clearTimeout(G.finT); G.golpes = [];
+  if (!NV_DEMO && !G.introVista && typeof empezarIntro === 'function') { G.introVista = true; try { empezarIntro(); return; } catch (e) { G.intro = null; } } // solo la primera vez
   if (typeof RED !== 'undefined') RED.inicio();
   startWave(1);
   if (typeof Misiones !== 'undefined') Misiones.aplicarPremios();
