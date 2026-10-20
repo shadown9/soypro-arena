@@ -895,7 +895,9 @@ function startWave(n) {
       if (G.running && G.wave === n) spawnBoss();
     }, 900);
   } else {
-    const count = 3 + Math.floor(n * 1.4);
+    // los enemigos de la máquina son relleno: con más personas reales en tu batalla salen menos (nunca menos del 45 %)
+    const gente = typeof RED !== 'undefined' && RED.reales ? RED.reales() : 0;
+    const count = Math.max(3, Math.round((3 + Math.floor(n * 1.4)) * Math.max(0.45, 1 - 0.15 * gente)));
     let spawned = 0;
     const spawnNext = () => {
       if (!G.running || spawned >= count) return;

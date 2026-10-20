@@ -100,7 +100,7 @@ const I18N = {
     pf_victoria: '¡VICTORIA!', pf_derrota: 'DERROTA', pf_ganaste: 'GANASTE EL DUELO', pf_gano_planeta: 'GANÓ TU PLANETA', pf_gano: 'GANÓ {n}', pf_pedida: 'Revancha pedida…',
     inv_duelo: '⚔ Te reto a un duelo', inv_eq: '🪐 Únete a mi guerra por equipos', inv_txt: '{m} en NEON VANGUARD. Sala {c}: {u}', t_copiada: '🔗 INVITACIÓN COPIADA',
     // en línea
-    rd_entro: '{n} entró al espacio', rd_espacio: 'El espacio', rd_derribo: '{a} derribó a {b}', rd_derribaste: '+{p} ¡DERRIBASTE A {n}!', rd_linea: '● EN LÍNEA: {n}', rd_combate: '⚔ EN COMBATE: {n}',
+    rd_entro: '{n} entró al espacio', rd_entro_arena: '⚔ {n} entró a la arena', rd_espacio: 'El espacio', rd_derribo: '{a} derribó a {b}', rd_derribaste: '+{p} ¡DERRIBASTE A {n}!', rd_linea: '● EN LÍNEA: {n}', rd_combate: '⚔ EN COMBATE: {n}',
     rd_esperando_rival: 'ESPERANDO RIVAL…', rd_esperando_pilotos: 'ESPERANDO PILOTOS…', rd_pasale: 'Pásale el código {c} o toca INVITAR',
     rd_duelo: 'DUELO', rd_equipos: 'EQUIPOS', rd_tu: 'TÚ', rd_gana: 'gana el primero a {n}', rd_sin_bajas: 'sin bajas',
     be_medusa: 'MEDUSA REINA', be_ojo: 'OJO DEL VACÍO', be_serpiente: 'LEVIATÁN', rd_aparecio: '👾 ¡APARECIÓ {n}! Todos los pilotos contra ella',
@@ -189,7 +189,7 @@ const I18N = {
     t_sala: '{m} · ROOM {c}', t_duelo: '⚔ DUEL', t_eq: '🪐 TEAMS', t_derribado: '💥 SHOT DOWN · respawning in 2 s', t_revancha: '🔁 REMATCH · requested by {n}',
     pf_victoria: 'VICTORY!', pf_derrota: 'DEFEAT', pf_ganaste: 'YOU WON THE DUEL', pf_gano_planeta: 'YOUR PLANET WON', pf_gano: '{n} WON', pf_pedida: 'Rematch requested…',
     inv_duelo: '⚔ I challenge you to a duel', inv_eq: '🪐 Join my team war', inv_txt: '{m} in NEON VANGUARD. Room {c}: {u}', t_copiada: '🔗 INVITE COPIED',
-    rd_entro: '{n} entered space', rd_espacio: 'Space', rd_derribo: '{a} shot down {b}', rd_derribaste: '+{p} YOU SHOT DOWN {n}!', rd_linea: '● ONLINE: {n}', rd_combate: '⚔ IN BATTLE: {n}',
+    rd_entro: '{n} entered space', rd_entro_arena: '⚔ {n} joined the arena', rd_espacio: 'Space', rd_derribo: '{a} shot down {b}', rd_derribaste: '+{p} YOU SHOT DOWN {n}!', rd_linea: '● ONLINE: {n}', rd_combate: '⚔ IN BATTLE: {n}',
     rd_esperando_rival: 'WAITING FOR RIVAL…', rd_esperando_pilotos: 'WAITING FOR PILOTS…', rd_pasale: 'Share the code {c} or tap INVITE',
     rd_duelo: 'DUEL', rd_equipos: 'TEAMS', rd_tu: 'YOU', rd_gana: 'first to {n} wins', rd_sin_bajas: 'no kills yet',
     be_medusa: 'QUEEN JELLYFISH', be_ojo: 'VOID EYE', be_serpiente: 'LEVIATHAN', rd_aparecio: '👾 {n} APPEARED! All pilots against it',

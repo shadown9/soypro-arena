@@ -27,7 +27,7 @@ const RED = (function () {
     let este; try { este = ws = new WebSocket(URL_WS); } catch (e) { return; }
     este.onopen = () => enviar(Object.assign({ t: 'hola', nombre: p.nombre, codigo: p.codigo, bando: miBando() }, pedido || {}));
     este.onmessage = ev => { if (ws !== este) return; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
-    este.onclose = () => { if (ws !== este) return; conectado = false; remotos.clear(); rBalas = []; if (!cerrandoAdrede) setTimeout(conectar, 4000); };
+    este.onclose = ev => { if (ws !== este) return; conectado = false; remotos.clear(); rBalas = []; if (!cerrandoAdrede) setTimeout(conectar, ev && ev.code === 4003 ? 300 : 4000); }; // 4003: el servidor se actualizó, al nuevo enseguida
     ws.onerror = () => {};
   }
   function miBando() { const p = piloto() || {}; return (typeof bandoElegido !== 'undefined' && bandoElegido) || p.bando; }
@@ -49,8 +49,9 @@ const RED = (function () {
       for (const j of m.j || []) remotos.set(j.id, nuevoRemoto(j));
       sala = m.sala || null; pedido = null; bestia = null;
       if (sala && typeof empezarPrivada === 'function') empezarPrivada(sala, m.x, m.y);
-      if (G.running && player && (m.x || m.y)) { player.x = m.x; player.y = m.y; CAM.x = m.x; CAM.y = m.y; if (typeof despejarZona === 'function') despejarZona(m.x, m.y, 200); }
-    } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); avisoFeed(t('rd_entro', { n: m.nombre }), '#8fb4d0'); }
+      if (G.running && player && (m.x || m.y) && performance.now() - inicioT < 4000) { player.x = m.x; player.y = m.y; CAM.x = m.x; CAM.y = m.y; if (typeof despejarZona === 'function') despejarZona(m.x, m.y, 200); }
+    } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); avisoFeed(t('rd_entro', { n: m.nombre }), '#8fb4d0');
+      if (!sala && typeof Toast !== 'undefined') Toast.mostrar(t('rd_entro_arena', { n: m.nombre }), nuevoRemoto(m).color); }
     else if (m.t === 'sale') { remotos.delete(m.id); }
     else if (m.t === 's') {
       const ahora = performance.now();
@@ -272,20 +273,24 @@ const RED = (function () {
 
 
   // al empezar partida: conectar (o reaparecer cerca de alguien si ya estamos dentro)
+  let inicioT = 0; // cuándo empezó la partida: solo al principio se coloca la nave cerca de otro piloto
   function inicio() {
+    inicioT = performance.now();
     if (!activo) return;
     if (sala) return; // en una sala privada no se busca a nadie: ya estamos todos
     if (!conectado) { cerrandoAdrede = false; conectar(); return; }
     const vivos = [...remotos.values()].filter(r => r.v && r.visto);
     if (vivos.length && player) { const o = vivos[Math.floor(Math.random() * vivos.length)], a = Math.random() * TAU;
-      player.x = o.x + Math.cos(a) * 900; player.y = o.y + Math.sin(a) * 900; CAM.x = player.x; CAM.y = player.y; if (typeof despejarZona === 'function') despejarZona(player.x, player.y, 200); }
+      player.x = o.x + Math.cos(a) * 420; player.y = o.y + Math.sin(a) * 420; CAM.x = player.x; CAM.y = player.y; if (typeof despejarZona === 'function') despejarZona(player.x, player.y, 200); }
   }
+  // pilotos reales vivos en tu batalla pública (para que los enemigos de la máquina sean solo relleno)
+  function reales() { if (!conectado || sala) return 0; let n = 0; for (const r of remotos.values()) if (r.v) n++; return n; }
   function disparo(k) { if (conectado && player) enviar({ t: 'd', a: Math.round(player.angle * 100) / 100, k }); }
   function regreso() { if (conectado && player) enviar({ t: 'e', x: Math.round(player.x), y: Math.round(player.y), a: 0, hp: Math.round(player.hp), od: 0, v: 0 }); }
   function muerte() { if (conectado) { enviar({ t: 'e', x: Math.round(player.x), y: Math.round(player.y), a: 0, hp: 0, od: 0, v: 0 }); enviar({ t: 'm' }); } }
 
   window.addEventListener('pagehide', () => { cerrandoAdrede = true; try { ws && ws.close(); } catch (e) {} });
   function revancha() { enviar({ t: 'revancha' }); }
-  return { tick, dibujar, dibujarPantalla, inicio, disparo, muerte, regreso, privada, publica, revancha, get sala() { return sala; }, get miId() { return miId; },
+  return { tick, dibujar, dibujarPantalla, inicio, reales, disparo, muerte, regreso, privada, publica, revancha, get sala() { return sala; }, get miId() { return miId; },
     get activo() { return activo; }, get bestia() { return bestia; }, get conectado() { return conectado; }, get remotos() { return remotos; } };
 })();
