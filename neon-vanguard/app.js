@@ -731,7 +731,7 @@ function damagePlayer(amount, src) {
   G.golpes = (G.golpes || []).slice(-7); G.golpes.push({ n: src ? (src.n || nombreEnemigo(src)) : '?', d: Math.round(amount), hp: Math.round(p.hp), max: p.maxHp, ola: G.wave, t: Math.round(G.time) });
   if (src) { G.golpe = { n: src.n || nombreEnemigo(src), t: G.time }; if (src.x != null) G.golpeDir = { a: Math.atan2(src.y - p.y, src.x - p.x), t: G.time }; }
   if (p.mut && p.mut.jupiter) amount *= 0.65; // CORAZA COLOSAL
-  p.desdeGolpe = 0;
+  p.desdeGolpe = 0; p._golpeT = G.time;
   p.hp -= amount;
   p.invuln = 0.9;
   if (p.mej && p.mej.jupiter >= 3) ondaMetralla(p);
@@ -1124,8 +1124,9 @@ function drawPlayer() {
   }
   ctx.globalAlpha = 1;
 
-  const flicker = p.invuln > 0 && Math.floor(p.invuln * 20) % 2 === 0;
-  if (flicker) ctx.globalAlpha = 0.4;
+  // tras un golpe la nave late suave un momento (antes parpadeaba en seco 10 veces por segundo y parecía una falla)
+  const tras = G.time - (p._golpeT == null ? -9 : p._golpeT);
+  if (tras < 0.9) ctx.globalAlpha = 0.72 + 0.28 * Math.cos(tras * 22);
 
   ctx.save();
   ctx.translate(p.x, p.y);
@@ -1804,7 +1805,7 @@ function updateHUD(dt) {
   if (hm && player.mej) {
     const arma = player.weapon > 1 && ARMAS[player.weapon] ? '<span style="--c:' + ARMAS[player.weapon][1] + '">' + t('a_' + player.weapon) + '<b>' + Math.ceil(player.weaponTimer) + 's</b></span>' : '';
     const html = arma + PLANETAS_MEJORA.filter(k => player.mej[k] > 0).map(k => '<span style="--c:' + MEJORAS[k].color + '"' + (player.mut && player.mut[k] ? ' class="mut"' : '') + '>' + MEJORAS[k].icono + '<b>' + (player.mut && player.mut[k] ? '★' : player.mej[k]) + '</b></span>').join('');
-    if (hm.innerHTML !== html) hm.innerHTML = html;
+    if (hm._html !== html) { hm._html = html; hm.innerHTML = html; } // solo si cambió (comparar con innerHTML nunca coincidía: se repintaba 12 veces por segundo)
   }
   el.shieldFill.style.width = (player.hp / player.maxHp * 100) + '%';
   el.odFill.style.width = player.overdrive + '%';
