@@ -753,7 +753,7 @@ function killEnemy(index, byPlayer = true) {
     G.comboTimer = 2.2;
     G.combo = Math.min(G.combo + 1, 20);
     nvEvento('combo', G.combo); nvEvento('baja', { e });
-    const pts = Math.round(e.score * G.combo);
+    const pts = Math.round(e.score * G.combo * durezaOleada()); // más difícil = más puntos (+5 % por oleada, igual que el daño)
     G.score += pts;
     addFloater(e.x, e.y, '+' + pts, G.combo > 3 ? '#ffb020' : '#00f0ff', 14 + Math.min(G.combo, 8));
     player.overdrive = Math.min(100, player.overdrive + (isBoss ? 60 : 7) * (player.odMult || 1));
