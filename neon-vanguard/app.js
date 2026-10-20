@@ -548,7 +548,7 @@ function updateEnemies(dt) {
     if (e.type === 'boss') {
       updateBoss(e, dt);
       if (p.alive && p.invuln <= 0 && dist2(e, p) < (e.r + p.r) * (e.r + p.r)) {
-        damagePlayer(e.dmg);
+        damagePlayer(e.dmg, e);
       }
       continue;
     }
@@ -610,7 +610,7 @@ function updateEnemies(dt) {
 
     // colisión con jugador
     if (p.alive && p.invuln <= 0 && dist2(e, p) < (e.r + p.r) * (e.r + p.r)) {
-      damagePlayer(e.dmg);
+      damagePlayer(e.dmg, e);
       // empuje
       { const qx = p.x - e.x, qy = p.y - e.y, q = Math.hypot(qx, qy) || 1; e.vx -= qx / q * 260; e.vy -= qy / q * 260; }
       // Las naves ligeras (Marte y Venus) se destruyen al embestir
@@ -706,7 +706,7 @@ function updateBoss(e, dt) {
   e.fireCd -= dt;
 
   if (p.alive && p.invuln <= 0 && dist2(e, p) < (e.r + p.r) * (e.r + p.r)) {
-    damagePlayer(e.dmg);
+    damagePlayer(e.dmg, e);
   }
 }
 
@@ -714,10 +714,20 @@ function updateBoss(e, dt) {
 // DUREZA: los enemigos pegan más fuerte en cada oleada (+5 % por oleada; en salas privadas no hay oleadas)
 // sin esto, una nave al máximo se volvía invencible en las oleadas altas
 const durezaOleada = () => G.privada ? 1 : 1 + (Math.max(1, G.wave) - 1) * 0.05;
-function damagePlayer(amount) {
+// quién te golpeó: para el borde rojo que señala de dónde vino y para «DERRIBADO POR» en la pantalla final
+function nombreEnemigo(e) {
+  if (!e) return '';
+  if (e.nombre) return e.nombre;                                   // jefe, piloto o bestia gigante
+  if (ENEMY_TYPES[e.type] && ENEMY_TYPES[e.type].bando === 'bestia') return t('en_' + e.type);
+  if (BANDOS_ENEMIGOS.includes(e.type)) return t('en_nave', { p: nombrePlaneta(e.type) });
+  return '';
+}
+function damagePlayer(amount, src) {
   const p = player;
   if (!p.alive || p.invuln > 0) return;
   amount *= durezaOleada();
+  amount = Math.min(amount, p.maxHp * 0.55); // ningún golpe quita más de la mitad y algo: con la vida llena nada te mata de un golpe
+  if (src) { G.golpe = { n: src.n || nombreEnemigo(src), t: G.time }; if (src.x != null) G.golpeDir = { a: Math.atan2(src.y - p.y, src.x - p.x), t: G.time }; }
   if (p.mut && p.mut.jupiter) amount *= 0.65; // CORAZA COLOSAL
   p.desdeGolpe = 0;
   p.hp -= amount;
@@ -1000,7 +1010,7 @@ function updateBullets(dt) {
       eBullets.splice(i, 1); continue;
     }
     if (p.alive && p.invuln <= 0 && dist2(b, p) < (b.r + p.r) * (b.r + p.r)) {
-      damagePlayer(b.dmg);
+      damagePlayer(b.dmg, { x: b.x - b.vx * 0.3, y: b.y - b.vy * 0.3, n: b.src || t('en_disparo') });
       spawnParticles(b.x, b.y, 8, { color: b.color, speed: 180, life: 0.4, size: 3 });
       eBullets.splice(i, 1); continue;
     }
@@ -1873,6 +1883,12 @@ function loop(now) {
   vg.addColorStop(1, 'rgba(0,0,0,0.55)');
   ctx.fillStyle = vg;
   ctx.fillRect(0, 0, W, H);
+  // de dónde vino el último golpe: un arco rojo en el borde de la pantalla (también si te pegan desde fuera de la vista)
+  if (G.golpeDir && G.time - G.golpeDir.t < 0.7) {
+    const k = 1 - (G.time - G.golpeDir.t) / 0.7, a = G.golpeDir.a, R = Math.min(W, H) * 0.46;
+    ctx.save(); ctx.translate(W / 2, H / 2); ctx.globalAlpha = k * 0.85; ctx.strokeStyle = '#ff2e4d'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    ctx.shadowBlur = 18; ctx.shadowColor = '#ff2e4d'; ctx.beginPath(); ctx.arc(0, 0, R, a - 0.35, a + 0.35); ctx.stroke(); ctx.restore();
+  }
   // poca vida (menos del 30 %): los bordes laten en rojo al ritmo del corazón
   const vida = player && player.alive && G.running ? player.hp / player.maxHp : 1;
   if (vida < 0.3) {
@@ -1949,7 +1965,9 @@ function gameOver() {
   { const t1 = document.querySelector('#gameover .title b'), t2 = document.querySelector('#gameover .title span'); // retirada voluntaria o derribado
     if (t1 && t2) { t1.dataset.i18n = G.retirada ? 'go_ret1' : 'go_t1'; t2.dataset.i18n = G.retirada ? 'go_ret2' : 'go_t2'; t1.textContent = t(t1.dataset.i18n); t2.textContent = t(t2.dataset.i18n);
       document.querySelector('#gameover .title').classList.toggle('dead', !G.retirada); } }
-  G.retirada = false;
+  { const d = document.getElementById('derribado-por'); // quién te derribó (si no fue una retirada)
+    if (d) { const g = !G.retirada && G.golpe && G.golpe.n; d.textContent = g ? t('go_derribado', { n: G.golpe.n }) : ''; d.classList.toggle('hidden', !g); } }
+  G.retirada = false; G.golpe = null;
   Audio2.musica(0); Audio2.ajustar(false, 1); // vuelve la música tranquila del menú
   el.finalScore.textContent = fmt(G.score);
   el.finalWave.textContent = G.wave;
@@ -2247,7 +2265,7 @@ function iaBestia(e, i, dt, d, nx, ny) {
     e.vy = lerp(e.vy, (ny + nx * meceo) * e.speed, dt * 1.5);
     if (e.carga > 0) { e.carga -= dt; e.vx *= 0.9; e.vy *= 0.9;
       if (e.carga <= 0) { spawnRing(e.x, e.y, '#c48cff', 210, 520, 6); spawnParticles(e.x, e.y, 24, { color: '#e6ccff', speed: 300, life: 0.4, size: 2.5 });
-        if (p.alive && d < 210 + p.r) damagePlayer(e.dmg); e.fireCd = e.fireRate; Audio2.bestia('medusa', 'ataque', e.x, e.y); } }
+        if (p.alive && d < 210 + p.r) damagePlayer(e.dmg, e); e.fireCd = e.fireRate; Audio2.bestia('medusa', 'ataque', e.x, e.y); } }
     else if (e.fireCd <= 0 && d < 240) { e.carga = 0.7; Audio2.bestia('medusa', 'carga', e.x, e.y); } // aviso: se ilumina antes de descargar
     // ENJAMBRE: como en el diseño del Jefe, la medusa suelta larvas (2 cada 6–9 s, máximo 6 en su vida y 10 en pantalla)
     if (e.nido == null) { e.nido = rand(3, 5); e.crias = 0; }
@@ -2272,18 +2290,19 @@ function iaBestia(e, i, dt, d, nx, ny) {
     let prev = { x: e.x, y: e.y };
     for (const c of e.cuerpo) { const dx = c.x - prev.x, dy = c.y - prev.y, dd = Math.hypot(dx, dy) || 1;
       if (dd > 13) { c.x = prev.x + dx / dd * 13; c.y = prev.y + dy / dd * 13; } prev = c;
-      if (p.alive && p.invuln <= 0 && (c.x - p.x) ** 2 + (c.y - p.y) ** 2 < (c.r + p.r) ** 2) damagePlayer(10); }
+      if (p.alive && p.invuln <= 0 && (c.x - p.x) ** 2 + (c.y - p.y) ** 2 < (c.r + p.r) ** 2) damagePlayer(10, e); }
   } else if (e.type === 'ojo') {
     // se mantiene a distancia, te mira, carga un rayo y lo dispara en línea recta
-    const quiere = d > 430 ? 1 : d < 330 ? -1 : 0;
+    // si está fuera de tu pantalla se acerca: nunca dispara desde donde no lo ves
+    const visible = !fueraDeVista(e.x, e.y, -e.r), quiere = !visible ? 1 : d > 430 ? 1 : d < 330 ? -1 : 0;
     e.vx = lerp(e.vx, nx * quiere * e.speed, dt * 2); e.vy = lerp(e.vy, ny * quiere * e.speed, dt * 2);
     if (e.laser > 0) { e.laser -= dt;
       if (e.laser <= 0.35 && !e.disparado) { e.disparado = true; shake(10); Audio2.bestia('ojo', 'ataque', e.x, e.y); }
       if (e.disparado && p.alive && p.invuln <= 0) { // ¿estás dentro del rayo?
         const ux = Math.cos(e.laserAng), uy = Math.sin(e.laserAng), px = p.x - e.x, py = p.y - e.y, t = px * ux + py * uy;
-        if (t > 0 && t < rayoHasta(e.x, e.y, e.laserAng, 1500) && Math.abs(px * uy - py * ux) < 18 + p.r) damagePlayer(e.dmg); }
+        if (t > 0 && t < rayoHasta(e.x, e.y, e.laserAng, 1500) && Math.abs(px * uy - py * ux) < 18 + p.r) damagePlayer(e.dmg, { x: e.x, y: e.y, n: traducir('en_rayo', { n: nombreEnemigo(e) }) }); }
       if (e.laser <= 0) { e.fireCd = e.fireRate; e.disparado = false; }
-    } else if (e.fireCd <= 0 && d < 800) { e.laser = 1.45; e.laserAng = Math.atan2(p.y - e.y, p.x - e.x); Audio2.bestia('ojo', 'carga', e.x, e.y); } // 1,1 s de aviso + 0,35 s de rayo
+    } else if (e.fireCd <= 0 && d < 800 && visible) { e.laser = 1.45; e.laserAng = Math.atan2(p.y - e.y, p.x - e.x); Audio2.bestia('ojo', 'carga', e.x, e.y); } // 1,1 s de aviso + 0,35 s de rayo
   }
   else if (e.type === 'coraza') {
     // avanza firme y gira despacio: su escudo frontal mira hacia ti, pero se le puede rodear
@@ -2537,11 +2556,11 @@ function iaJefe(e, dt) {
     if (e.barrido > 0) { e.barrido -= dt; const prog = Math.max(0, (2.0 - Math.max(0, e.barrido - 0)) / 2.0);
       e.barridoAng = e.barrido > 2.0 ? e.barridoIni : e.barridoIni + 2.1 * (1 - e.barrido / 2.0);
       if (e.barrido <= 2.0 && p.alive && p.invuln <= 0) { const ux = Math.cos(e.barridoAng), uy = Math.sin(e.barridoAng), px = p.x - e.x, py = p.y - e.y, t = px * ux + py * uy;
-        if (t > 0 && t < rayoHasta(e.x, e.y, e.barridoAng, 1300) && Math.abs(px * uy - py * ux) < 16 + p.r) damagePlayer(14); } }
+        if (t > 0 && t < rayoHasta(e.x, e.y, e.barridoAng, 1300) && Math.abs(px * uy - py * ux) < 16 + p.r) damagePlayer(14, e); } }
   }
   e.x += e.vx * dt; e.y += e.vy * dt;
   if (e.jefe !== 'neptuno' || !e.fase) empujarFuera(e);
-  if (p.alive && p.invuln <= 0 && dist2(e, p) < (e.r + p.r) * (e.r + p.r)) damagePlayer(e.dmg);
+  if (p.alive && p.invuln <= 0 && dist2(e, p) < (e.r + p.r) * (e.r + p.r)) damagePlayer(e.dmg, e);
 }
 
 function dibujarJefe(e, col, flash) {

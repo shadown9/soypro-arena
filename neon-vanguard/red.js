@@ -157,7 +157,7 @@ const RED = (function () {
           if (b.pierce > 0 && !b.hitBestia) { b.hitBestia = true; b.pierce--; } else bullets.splice(i2, 1); } }
       golpeT += dt;
       if (golpeT >= 0.125 && golpeAcum > 0) { golpeT = 0; let d = golpeAcum; golpeAcum = 0; while (d > 0) { enviar({ t: 'gb', dmg: Math.min(40, d) }); d -= 40; } }
-      if (p && p.alive && p.invuln <= 0 && dist2(p, B) < (p.r + B.r * 0.85) ** 2) damagePlayer(22);
+      if (p && p.alive && p.invuln <= 0 && dist2(p, B) < (p.r + B.r * 0.85) ** 2) damagePlayer(22, { x: B.x, y: B.y, n: B.nombre });
     }
     // balas de otros: si me dan, lo digo yo (el servidor comprueba que es posible)
     for (let i = rBalas.length - 1; i >= 0; i--) {
@@ -166,7 +166,7 @@ const RED = (function () {
       if (typeof chocaAsteroide === 'function' && chocaAsteroide(b.x, b.y, b.r)) { spawnParticles(b.x, b.y, 3, { color: '#9aa6b8', speed: 90, life: 0.25, size: 2 }); rBalas.splice(i, 1); continue; }
       if (p && p.alive && p.invuln <= 0 && !aliado(b.de) && dist2(b, p) < (b.r + p.r) * (b.r + p.r)) {
         enviar({ t: 'g', de: b.de, dmg: b.dmg });
-        damagePlayer(b.dmg);
+        damagePlayer(b.dmg, { x: b.x - b.vx * 0.3, y: b.y - b.vy * 0.3, n: (remotos.get(b.de) || {}).nombre || '' });
         spawnParticles(b.x, b.y, 8, { color: b.color, speed: 180, life: 0.4, size: 3 });
         rBalas.splice(i, 1);
       }

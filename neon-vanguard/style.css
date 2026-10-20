@@ -606,11 +606,12 @@ button:active { transform:scale(.98); }
   #overlay .fila-botones { grid-area:f; margin-top:6px; }
 
   #gameover .panel { grid-template-columns:auto auto;
-    grid-template-areas:"t k" "e k" "r k" "p k" "b k" "f k"; }
+    grid-template-areas:"t k" "e k" "d k" "r k" "p k" "b k" "f k"; }
   #gameover .title { grid-area:t; font-size:28px; }
   #gameover .final-stats { grid-area:e; margin:2px 0; }
   #gameover .final-stats strong { font-size:22px; }
   #gameover .record-nuevo { grid-area:r; margin:0; }
+  #gameover .derribado-por { grid-area:d; margin:0; }
   #gameover .puesto-mundial { grid-area:p; margin:0; }
   #gameover #restart-btn { grid-area:b; justify-self:center; margin:6px 0 0; }
   #gameover .fila-botones { grid-area:f; margin-top:4px; max-width:min(46vw, 420px); justify-self:center; }
@@ -893,3 +894,6 @@ html.nv-intro #hud .hud-sonido { pointer-events:none; }
 
 /* cambiar de bando fuera del lunes: candado, apagado (sigue tocable para explicar cuándo abre) */
 .btn-sec.bloqueado { opacity:.7; }
+
+/* pantalla final: quién te derribó */
+.derribado-por { margin:4px 0 0; font-size:12px; font-weight:800; letter-spacing:2px; color:#ff6b8a; text-shadow:0 0 10px rgba(255,46,77,.45); text-align:center; }
