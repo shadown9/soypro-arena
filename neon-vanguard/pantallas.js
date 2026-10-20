@@ -284,15 +284,24 @@ function cambiarDeBando() {
     if (typeof cargarGuerra === 'function') cargarGuerra();
     return;
   }
+  // el bando actual NO se borra: solo cambia si eliges otro planeta; «← VOLVER» lo deja como estaba
   const p = leerPiloto();
-  if (p) { delete p.bando; guardarPiloto(p); }
-  bandoElegido = null;
+  bandoAntes = (p && p.bando) || bandoElegido || null;
   document.getElementById('overlay').classList.add('hidden');
   document.getElementById('gameover').classList.add('hidden');
   document.getElementById('screen-bandos').classList.remove('hidden');
   dibujarPlanetas();
-  document.querySelectorAll('.planeta').forEach(el => el.classList.remove('sel'));
+  document.querySelectorAll('.planeta').forEach(el => el.classList.toggle('sel', el.dataset.id === bandoAntes));
   document.getElementById('bando-continuar').classList.add('hidden');
+  document.getElementById('bando-volver').classList.toggle('hidden', !bandoAntes);
+}
+let bandoAntes = null;
+function cancelarCambioBando() {
+  if (bandoAntes) { const p = leerPiloto() || {}; p.bando = bandoAntes; guardarPiloto(p); bandoElegido = bandoAntes; }
+  document.getElementById('bando-volver').classList.add('hidden');
+  document.getElementById('screen-bandos').classList.add('hidden');
+  document.getElementById('overlay').classList.remove('hidden');
+  mostrarControles();
 }
 
 /* ---------- PANTALLA 2: PLANETAS ---------- */
@@ -332,6 +341,7 @@ function elegirBando(id, el) {
 }
 
 function irAControles() {
+  const bv = document.getElementById('bando-volver'); if (bv) bv.classList.add('hidden');
   document.getElementById('screen-bandos').classList.add('hidden');
   document.getElementById('overlay').classList.remove('hidden');
   mostrarControles();
