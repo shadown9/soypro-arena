@@ -27,7 +27,9 @@ const RED = (function () {
     let este; try { este = ws = new WebSocket(URL_WS); } catch (e) { return; }
     este.onopen = () => enviar(Object.assign({ t: 'hola', nombre: p.nombre, codigo: p.codigo, bando: miBando() }, pedido || {}));
     este.onmessage = ev => { if (ws !== este) return; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
-    este.onclose = ev => { if (ws !== este) return; conectado = false; remotos.clear(); rBalas = []; if (!cerrandoAdrede) setTimeout(conectar, ev && ev.code === 4003 ? 300 : 4000); }; // 4003: el servidor se actualizó, al nuevo enseguida
+    este.onclose = ev => { if (ws !== este) return; conectado = false; remotos.clear(); rBalas = [];
+      if (ev && ev.code === 4004) return; // este piloto entró desde otro lugar: esta copia vieja no vuelve (si no, se echarían una a la otra)
+      if (!cerrandoAdrede) setTimeout(conectar, ev && ev.code === 4003 ? 300 : 4000); }; // 4003: el servidor se actualizó, al nuevo enseguida
     ws.onerror = () => {};
   }
   function miBando() { const p = piloto() || {}; return (typeof bandoElegido !== 'undefined' && bandoElegido) || p.bando; }
