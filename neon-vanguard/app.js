@@ -2247,6 +2247,13 @@ function iaBestia(e, i, dt, d, nx, ny) {
       if (e.carga <= 0) { spawnRing(e.x, e.y, '#c48cff', 210, 520, 6); spawnParticles(e.x, e.y, 24, { color: '#e6ccff', speed: 300, life: 0.4, size: 2.5 });
         if (p.alive && d < 210 + p.r) damagePlayer(e.dmg); e.fireCd = e.fireRate; Audio2.bestia('medusa', 'ataque', e.x, e.y); } }
     else if (e.fireCd <= 0 && d < 240) { e.carga = 0.7; Audio2.bestia('medusa', 'carga', e.x, e.y); } // aviso: se ilumina antes de descargar
+    // ENJAMBRE: como en el diseño del Jefe, la medusa suelta larvas (2 cada 6–9 s, máximo 6 en su vida y 10 en pantalla)
+    if (e.nido == null) { e.nido = rand(3, 5); e.crias = 0; }
+    e.nido -= dt;
+    if (e.nido <= 0 && !G.privada) { e.nido = rand(6, 9);
+      if (e.crias < 6 && enemies.filter(x => x.type === 'larva').length < 10) {
+        for (let k = 0; k < 2; k++) { const a = rand(0, TAU), l = spawnEnemy('larva', e.x + Math.cos(a) * e.r, e.y + Math.sin(a) * e.r); l.vx = Math.cos(a) * 160; l.vy = Math.sin(a) * 160; }
+        e.crias += 2; spawnRing(e.x, e.y, '#c48cff', 90, 380, 3); } }
   } else if (e.type === 'larva') {
     // enjambre: corren hacia ti con temblor, rodeándote
     const giro = Math.sin(e.wobble * 2.3 + e.orbitR) * 1.1;
