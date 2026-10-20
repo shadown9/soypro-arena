@@ -2188,8 +2188,30 @@ function ondaMetralla(p) {
 }
 
 // dibujo de las piezas (dentro del sistema de la nave: x hacia delante)
+// con el diseño del Jefe las mejoras se ven como LUCES de neón integradas en la nave (las piezas dibujadas de antes,
+// encima del diseño, parecían una segunda nave metida dentro de la tuya)
+function lucesMejora(p, capa) {
+  const m = p.mej, late = 0.75 + 0.25 * Math.sin(G.time * 5);
+  ctx.save();
+  if (capa === 'detras') {
+    if (m.jupiter > 0) { // JÚPITER: halo naranja suave alrededor del casco
+      const g = ctx.createRadialGradient(0, 0, 6, 0, 0, 30);
+      g.addColorStop(0, 'rgba(255,138,30,' + (0.05 + m.jupiter * 0.035) + ')'); g.addColorStop(1, 'rgba(255,138,30,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 30, 0, TAU); ctx.fill();
+    }
+  } else {
+    ctx.globalAlpha *= late;
+    if (m.venus > 0) dibujarPunto(19, 0, m.venus >= 3 ? 3 : 2, '#ffd23f', 10);                                   // VENUS: brillo dorado en la punta
+    for (let i = 0; i < m.marte; i++) dibujarPunto(5 - Math.floor(i / 2) * 6, (i % 2 ? 1 : -1) * 8, 1.5, '#ff2e4d', 8); // MARTE: luces rojas a los costados
+    if (m.neptuno > 0) for (const lado of [-1, 1]) {                                                               // NEPTUNO: luces en las puntas de las alas
+      dibujarPunto(-11, lado * 18, 2, '#4d8bff', 9); if (m.neptuno >= 3) dibujarPunto(-5, lado * 13, 1.5, '#4d8bff', 8); }
+  }
+  ctx.restore();
+}
+
 function dibujarModulos(p, capa) {
   const m = p.mej; if (!m) return;
+  if (NAVE_IMG[p.bando || bandoElegido]) return lucesMejora(p, capa);
   ctx.save(); ctx.shadowBlur = 10;
   if (capa === 'detras') {
     // JÚPITER: placas de blindaje a los lados del casco
