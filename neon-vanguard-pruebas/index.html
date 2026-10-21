@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#05060d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Neon Vanguard · Shooter arcade de naves gratis | ProArena</title>
+<meta name="description" content="Juega gratis a Neon Vanguard en el navegador: elige tu planeta, sobrevive a las oleadas de naves, activa el overdrive y sube en el ranking mundial. Sin cuenta y sin descargar.">
+<link rel="canonical" href="https://soyproarena.com/neon-vanguard/">
+<meta property="og:type" content="website"><meta property="og:url" content="https://soyproarena.com/neon-vanguard/">
+<meta property="og:title" content="Neon Vanguard · Shooter arcade gratis"><meta property="og:description" content="Elige tu planeta, sobrevive a las oleadas y sube en el ranking mundial. Gratis en el navegador.">
+<meta property="og:image" content="https://soyproarena.com/neon-vanguard/portada-v2.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Neon Vanguard: batalla de naves de los planetas"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://soyproarena.com/neon-vanguard/portada-v2.jpg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icono-192.png">
+<link rel="apple-touch-icon" href="icono-180.png">
+<meta name="apple-mobile-web-app-title" content="Neon Vanguard">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="style.css?v=124">
+</head>
+<body>
+<div id="game-wrap">
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-left">
+      <div class="stat"><span class="lbl" data-i18n="hud_score">PUNTAJE</span><span id="score" class="val">0</span></div>
+      <div class="stat-par">
+        <div class="stat"><span class="lbl" data-i18n="hud_wave">OLEADA</span><span id="wave" class="val">1</span></div>
+        <div class="stat stat-bajas"><span class="lbl" data-i18n="hud_kills">BAJAS</span><span id="hud-kills" class="val">0</span></div>
+      </div>
+      <div class="stat"><span class="lbl" data-i18n="hud_bando">BANDO</span><span id="hud-bando" class="val bando">—</span></div>
+      <div id="hud-mejoras" class="hud-mejoras"></div>
+    </div>
+    <div class="hud-center">
+      <div id="combo" class="combo hidden">x1</div>
+    </div>
+    <div class="hud-right">
+      <div class="stat"><span class="lbl" data-i18n="hud_shield">ESCUDO</span>
+        <div class="bar"><div id="shield-fill" class="bar-fill shield"></div></div>
+      </div>
+      <div class="stat"><span class="lbl" data-i18n="hud_od">OVERDRIVE</span>
+        <div class="bar"><div id="od-fill" class="bar-fill od"></div></div>
+      </div>
+      <div class="hud-sonido">
+        <button id="btn-base" class="btn-son btn-base" aria-label="Regresar a la base" data-i18n-aria="aria_base" onclick="pedirRegreso()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></button>
+        <button id="btn-musica" class="btn-son" aria-label="Quitar música" onclick="Audio2.alternarMusica()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></button>
+        <button id="btn-efectos" class="btn-son" aria-label="Quitar efectos" onclick="Audio2.alternarEfectos()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 1: REGISTRO -->
+  <div id="screen-registro" class="overlay">
+    <button class="btn-idioma" onclick="alternarIdioma()">🌐 EN</button>
+    <div class="panel">
+      <h1 class="title">NEON<span>VANGUARD</span></h1>
+      <p class="subtitle" id="reg-sub" data-i18n="reg_sub">Identificate, piloto.</p>
+
+      <!-- PASO 1: elegir camino -->
+      <div id="reg-paso1" class="reg-paso">
+        <button class="btn-camino" onclick="elegirCamino('nuevo')">
+          <span class="camino-t" data-i18n="reg_nuevo_t">SOY NUEVO</span>
+          <span class="camino-s" data-i18n="reg_nuevo_s">Generá tu código de piloto</span>
+        </button>
+        <button class="btn-camino" onclick="elegirCamino('codigo')">
+          <span class="camino-t" data-i18n="reg_codigo_t">YA TENGO CÓDIGO</span>
+          <span class="camino-s" data-i18n="reg_codigo_s">Entrá con tu nombre y código</span>
+        </button>
+      </div>
+
+      <!-- PASO 2A: nuevo piloto -->
+      <div id="reg-paso-nuevo" class="reg-paso hidden">
+        <div class="reg-form">
+          <input id="reg-nombre" type="text" maxlength="16" placeholder="TU NOMBRE" data-i18n-ph="reg_ph_nombre" autocomplete="off" spellcheck="false">
+          <button id="reg-btn" onclick="registrarPiloto()" data-i18n="reg_generar">GENERAR CÓDIGO</button>
+        </div>
+        <div id="reg-codigo-box" class="codigo-box hidden">
+          <span class="codigo-lbl" data-i18n="reg_tu_codigo">TU CÓDIGO DE PILOTO</span>
+          <strong id="reg-codigo">—</strong>
+          <button id="reg-copiar" class="btn-copiar" onclick="copiarCodigo()" data-i18n="copiar">COPIAR</button>
+          <span class="codigo-hint" data-i18n="reg_guardalo">Guardalo. Lo vas a necesitar para volver.</span>
+        </div>
+        <button id="reg-continuar" class="hidden" onclick="irABandos()" data-i18n="continuar">CONTINUAR →</button>
+      </div>
+
+      <!-- PASO 2B: ya tengo código -->
+      <div id="reg-paso-codigo" class="reg-paso hidden">
+        <div class="reg-form">
+          <input id="reg-nombre-entrar" type="text" name="username" maxlength="16" placeholder="TU NOMBRE DE PILOTO" data-i18n-ph="reg_ph_nombre_entrar" autocomplete="username" autocapitalize="characters" spellcheck="false">
+          <div class="campo-clave">
+            <input id="reg-codigo-input" type="password" maxlength="8" placeholder="TU CÓDIGO (EJ: ABC-1234)" data-i18n-ph="reg_ph_codigo" autocomplete="current-password" autocapitalize="characters" spellcheck="false">
+            <button type="button" id="ver-clave" class="ver-clave" aria-label="Mostrar código" data-i18n-aria="aria_ver_codigo" onclick="verClave()">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path id="ojo-abierto" d="M12 5C6.5 5 2.7 9.4 1.5 12c1.2 2.6 5 7 10.5 7s9.3-4.4 10.5-7C21.3 9.4 17.5 5 12 5zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7A2.5 2.5 0 1 0 12 14.5 2.5 2.5 0 0 0 12 9.5z" fill="currentColor"/><path id="ojo-tachado" d="M3 3l18 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <button id="reg-entrar-btn" onclick="entrarConCodigo()" data-i18n="entrar">ENTRAR</button>
+        </div>
+      </div>
+
+      <button id="reg-volver" class="btn-volver hidden" onclick="volverPaso1()" data-i18n="volver_min">← volver</button>
+      <p class="hint" id="reg-hint" data-i18n="reg_hint">Sin nombre no hay código. Sin código no hay misión.</p>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: ELEGIR BANDO -->
+  <div id="screen-bandos" class="overlay hidden">
+    <div class="panel panel-wide">
+      <h1 class="title"><b data-i18n="bandos_t1">ELEGÍ TU</b><span data-i18n="bandos_t2">BANDO</span></h1>
+      <p class="subtitle" data-i18n="bandos_sub">Cada planeta pelea distinto. Elegí bien.</p>
+      <div id="planetas" class="planetas"></div>
+      <button id="bando-continuar" class="hidden" onclick="irAControles()" data-i18n="continuar">CONTINUAR →</button>
+      <button id="bando-volver" class="btn-sec hidden" onclick="cancelarCambioBando()" data-i18n="volver">← VOLVER</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 3: CONTROLES (según dispositivo) -->
+  <div id="overlay" class="overlay hidden">
+    <button class="btn-idioma" onclick="alternarIdioma()">🌐 EN</button>
+    <div class="panel">
+      <h1 class="title">NEON<span>VANGUARD</span></h1>
+      <p class="subtitle" data-i18n="inicio_sub">Sobrevive a las oleadas. Encadená kills. Activá el OVERDRIVE.</p>
+      <div id="ctrl-desktop" class="controls hidden">
+        <div class="accion" data-i18n="c_mover">mover</div><div class="lado"><kbd>W A S D</kbd><kbd>← ↑ ↓ →</kbd></div>
+        <div class="accion" data-i18n="c_apuntar">apuntar</div><div class="lado"><kbd>MOUSE</kbd></div>
+        <div class="accion" data-i18n="c_disparar">disparar</div><div class="lado"><kbd>CLICK</kbd></div>
+        <div class="accion" data-i18n="c_dash">dash</div><div class="lado"><kbd>SPACE</kbd></div>
+        <div class="accion" data-i18n="c_od">overdrive</div><div class="lado"><kbd>SHIFT</kbd></div>
+      </div>
+      <div id="ctrl-movil" class="controls hidden">
+        <div class="accion" data-i18n="c_mover">mover</div><div class="lado"><kbd data-i18n="k_dedo_izq">DEDO IZQ.</kbd></div>
+        <div class="accion" data-i18n="c_apuntar_disparar">apuntar y disparar</div><div class="lado"><kbd data-i18n="k_dedo_der">DEDO DER.</kbd></div>
+        <div class="accion" data-i18n="c_dash">dash</div><div class="lado"><kbd data-i18n="k_2izq">2 TOQUES IZQ.</kbd></div>
+        <div class="accion" data-i18n="c_od">overdrive</div><div class="lado"><kbd data-i18n="k_2der">2 TOQUES DER.</kbd></div>
+      </div>
+      <button id="start-btn" onclick="startGame()" data-i18n="start">INICIAR MISIÓN</button>
+      <p class="hint" data-i18n="hint_dash">Consejo: el dash te da invulnerabilidad por un instante.</p>
+      <div id="guerra-mini" class="guerra-mini"></div>
+      <div class="fila-botones">
+        <button class="btn-sec btn-amigos" onclick="abrirAmigos()" data-i18n="b_amigos">⚔ AMIGOS</button>
+        <button class="btn-sec btn-misiones" onclick="abrirMisiones()" data-i18n="b_misiones">🎯 MISIONES</button>
+        <button class="btn-sec" onclick="abrirPizarra()" data-i18n="b_pizarra">🏆 PIZARRA MUNDIAL</button>
+        <button class="btn-sec" onclick="cambiarDeBando()" data-i18n="b_bando">🔄 CAMBIAR DE BANDO</button>
+        <button class="btn-sec btn-instalar hidden" onclick="instalarApp()" data-i18n="b_instalar">📲 INSTALAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA: PIZARRA MUNDIAL -->
+  <div id="screen-pizarra" class="overlay hidden">
+    <div class="panel panel-wide">
+      <h1 class="title"><b data-i18n="pz_t1">PIZARRA</b><span data-i18n="pz_t2">MUNDIAL</span></h1>
+      <p class="subtitle" id="pizarra-estado" data-i18n="pz_sub">Los mejores pilotos de la galaxia.</p>
+      <p class="pz-tu" id="pizarra-yo"></p>
+      <div class="pz-busca"><input id="pz-buscar" type="text" maxlength="8" placeholder="BUSCAR POR CÓDIGO" data-i18n-ph="pz_ph" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')buscarEnPizarra()"><button class="btn-sec" onclick="buscarEnPizarra()" data-i18n="buscar">BUSCAR</button></div>
+      <div id="pz-resultado" class="pz-resultado"></div>
+      <div class="pz-tabs" role="tablist"><button data-p="hoy" onclick="cambiarPeriodo('hoy')" data-i18n="pz_hoy">HOY</button><button data-p="semana" onclick="cambiarPeriodo('semana')" data-i18n="pz_semana">SEMANA</button><button data-p="siempre" onclick="cambiarPeriodo('siempre')" data-i18n="pz_siempre">SIEMPRE</button></div>
+      <div id="pizarra-lista" class="pizarra-lista"></div>
+      <button class="btn-sec" onclick="cerrarPizarra()" data-i18n="volver">← VOLVER</button>
+    </div>
+  </div>
+
+  <!-- JUGAR CON AMIGOS: salas privadas por código -->
+  <div id="screen-amigos" class="overlay hidden">
+    <div class="panel">
+      <h1 class="title"><b data-i18n="am_t1">JUGAR CON</b><span data-i18n="am_t2">AMIGOS</span></h1>
+      <p class="subtitle" data-i18n="am_sub">Crea una sala y pásales el código, o entra con el código que te dieron.</p>
+      <div class="am-crear">
+        <button class="btn-camino" onclick="crearSala('duelo')"><span class="camino-t" data-i18n="am_duelo_t">⚔ DUELO 1 VS 1</span><span class="camino-s" data-i18n="am_duelo_s">Gana el primero en derribar 5 veces al otro</span></button>
+        <button class="btn-camino" onclick="crearSala('equipos')"><span class="camino-t" data-i18n="am_eq_t">🪐 GUERRA POR EQUIPOS</span><span class="camino-s" data-i18n="am_eq_s">Planeta contra planeta, hasta 10 pilotos · primero a 15</span></button>
+      </div>
+      <div class="am-unir"><input id="am-codigo" type="text" maxlength="4" placeholder="CÓDIGO" data-i18n-ph="am_ph" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')unirseSala()"><button class="btn-sec" onclick="unirseSala()" data-i18n="am_entrar">ENTRAR A LA SALA</button></div>
+      <p id="am-msg" class="am-msg"></p>
+      <button class="btn-sec" onclick="cerrarAmigos()" data-i18n="volver">← VOLVER</button>
+    </div>
+  </div>
+
+  <!-- RESULTADO DE LA SALA PRIVADA -->
+  <div id="screen-privada-fin" class="overlay hidden">
+    <div class="panel">
+      <h1 id="pf-titulo" class="title">¡VICTORIA!<span>GANASTE EL DUELO</span></h1>
+      <div id="pf-marcador" class="pf-marcador"></div>
+      <p id="pf-msg" class="am-msg"></p>
+      <div class="fila-botones">
+        <button id="pf-revancha" onclick="pedirRevancha()" data-i18n="revancha">🔁 REVANCHA</button>
+        <button class="btn-sec" onclick="salirPrivada()" data-i18n="salir_sala">✕ SALIR DE LA SALA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MISIONES DIARIAS · GUERRA DE PLANETAS · LOGROS -->
+  <div id="screen-misiones" class="overlay hidden">
+    <div class="panel panel-wide">
+      <h1 class="title"><b data-i18n="ms_t1">MISIONES</b><span data-i18n="ms_t2">Y LOGROS</span></h1>
+      <div id="misiones-lista" class="pizarra-lista misiones-lista"></div>
+      <button class="btn-sec" onclick="cerrarMisiones()" data-i18n="volver">← VOLVER</button>
+    </div>
+  </div>
+
+  <div id="gameover" class="overlay hidden">
+    <div class="panel">
+      <h1 class="title dead"><b data-i18n="go_t1">SISTEMA</b><span data-i18n="go_t2">CAÍDO</span></h1>
+      <div class="final-stats">
+        <div><span data-i18n="go_puntaje">PUNTAJE</span><strong id="final-score">0</strong></div>
+        <div><span data-i18n="go_oleada">OLEADA</span><strong id="final-wave">1</strong></div>
+        <div><span data-i18n="go_bajas">BAJAS</span><strong id="final-kills">0</strong></div>
+      </div>
+      <p id="derribado-por" class="derribado-por hidden"></p>
+      <p id="record-nuevo" class="record-nuevo hidden" data-i18n="go_record">¡NUEVO RÉCORD PERSONAL!</p>
+      <p id="puesto-mundial" class="puesto-mundial hidden"></p>
+
+      <div id="tarjeta-box" class="tarjeta-box hidden">
+        <div id="tarjeta-modo" class="tarjeta-modo hidden"><button data-m="record" onclick="elegirTarjeta('record')" data-i18n="tj_b_record">MI RÉCORD</button><button data-m="partida" onclick="elegirTarjeta('partida')" data-i18n="tj_b_partida">ESTA PARTIDA</button></div>
+        <img id="tarjeta-img" alt="Tarjeta de récord" data-i18n-alt="tj_alt">
+        <div class="tarjeta-botones">
+          <button id="tarjeta-compartir" class="btn-sec" onclick="compartirTarjeta()" data-i18n="compartir">📤 COMPARTIR</button>
+          <button class="btn-sec" onclick="descargarTarjeta()" data-i18n="descargar">⬇ DESCARGAR</button>
+        </div>
+      </div>
+
+      <button id="restart-btn" onclick="startGame()" data-i18n="reintentar">REINTENTAR</button>
+      <div class="fila-botones">
+        <button class="btn-sec btn-misiones" onclick="abrirMisiones()" data-i18n="b_misiones">🎯 MISIONES</button>
+        <button class="btn-sec" onclick="abrirPizarra()" data-i18n="b_pizarra">🏆 PIZARRA MUNDIAL</button>
+        <button class="btn-sec" onclick="cambiarDeBando()" data-i18n="b_bando">🔄 CAMBIAR DE BANDO</button>
+        <button class="btn-sec btn-instalar hidden" onclick="instalarApp()" data-i18n="b_instalar">📲 INSTALAR</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fps" class="fps">60</div>
+</div>
+
+<!-- Regresar a la base: aviso pequeño; la batalla sigue mientras decides -->
+<div id="confirmar-base" class="hidden">
+  <div class="cb-t">¿REGRESAR A LA BASE?</div>
+  <div class="cb-s"></div>
+  <div class="cb-botones">
+    <button class="cb-si" onclick="regresarBase()" data-i18n="base_si">🏠 REGRESAR</button>
+    <button class="cb-no" onclick="cancelarRegreso()" data-i18n="base_no">⚔ SEGUIR PELEANDO</button>
+  </div>
+</div>
+
+<!-- Aviso de la sala privada (abajo, entre los dos joysticks) -->
+<div id="sala-banner" class="hidden">
+  <span class="sb-txt"><span data-i18n="sala">SALA</span> <b class="sb-cod">----</b> · <span class="sb-modo">DUELO</span></span>
+  <button class="sb-btn" onclick="invitarSala()" data-i18n="invitar">📤 INVITAR</button>
+  <button class="sb-btn sb-salir" onclick="salirPrivada()" data-i18n="salir">✕ SALIR</button>
+</div>
+
+<!-- Cómo instalar en iPhone/iPad (Safari no tiene botón automático) -->
+<div id="instalar-ios" class="hidden" onclick="if(event.target===this)cerrarInstalarIOS()">
+  <div class="caja-ios">
+    <h3 data-i18n="ios_t">INSTALAR NEON VANGUARD</h3>
+    <ol>
+      <li data-i18n-html="ios_1">Toca <b>Compartir</b> <span class="ico-ios">⬆︎</span> abajo en Safari.</li>
+      <li data-i18n-html="ios_2">Elige <b>«Añadir a pantalla de inicio»</b>.</li>
+      <li data-i18n-html="ios_3">Toca <b>Añadir</b>. Se abre a pantalla completa, como una app.</li>
+    </ol>
+    <button class="btn-sec" onclick="cerrarInstalarIOS()" data-i18n="entendido">ENTENDIDO</button>
+  </div>
+</div>
+
+<!-- Aviso de rotar en celular vertical -->
+<div id="rotar">
+  <span class="icono">📱</span>
+  <span data-i18n-html="rotar"><strong>Mejor de lado</strong> · se juega más cómodo en horizontal</span>
+  <button id="rotar-cerrar" aria-label="Cerrar aviso" data-i18n-aria="aria_cerrar" onclick="cerrarAvisoRotar()">✕</button>
+</div>
+
+<script src="i18n.js?v=132" charset="utf-8"></script>
+<script src="sonido.js?v=120" charset="utf-8"></script>
+<script src="instalar.js?v=89" charset="utf-8"></script>
+<script src="pantallas.js?v=131" charset="utf-8"></script>
+<script src="ranking.js?v=134" charset="utf-8"></script>
+<script src="mundo.js?v=4" charset="utf-8"></script>
+<script src="app.js?v=136" charset="utf-8"></script>
+<script src="intro.js?v=89" charset="utf-8"></script>
+<script src="misiones.js?v=106" charset="utf-8"></script>
+<script src="amigos.js?v=89" charset="utf-8"></script>
+<script src="compartido.js?v=6" charset="utf-8"></script>
+<script src="red.js?v=134" charset="utf-8"></script>
+<div style="position:fixed;left:50%;bottom:calc(6px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:99999;pointer-events:none;font:800 10px system-ui,sans-serif;letter-spacing:.12em;color:#ffd23f;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:6px;white-space:nowrap">VERSIÓN DE PRUEBA</div>
+</body>
+</html>
