@@ -48,6 +48,7 @@ function empezarPrivada(sala, x, y) {
   b.classList.remove('hidden');
   Audio2.musica(1);
   Toast.mostrar(t('t_sala', { m: t(sala.modo === 'duelo' ? 't_duelo' : 't_eq'), c: sala.codigo }), '#00f0ff');
+  if (typeof BASE !== 'undefined') BASE.salaLista(sala); // invitaste a un amigo desde tu base: le llega la invitación
 }
 
 function tickPrivada(dt) {

@@ -897,3 +897,47 @@ html.nv-intro #hud .hud-sonido { pointer-events:none; }
 
 /* pantalla final: quién te derribó */
 .derribado-por { margin:4px 0 0; font-size:12px; font-weight:800; letter-spacing:2px; color:#ff6b8a; text-shadow:0 0 10px rgba(255,46,77,.45); text-align:center; }
+
+/* ---------- MI BASE (nave de la semana, cargas y amigos) ---------- */
+.base-cont { text-align:left; }
+.base-nave { display:flex; align-items:center; gap:18px; padding:6px 2px 4px; }
+.base-img { flex:0 0 auto; width:116px; height:116px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle, color-mix(in srgb, var(--c) 22%, transparent), transparent 70%); }
+.base-img img { width:96px; height:96px; object-fit:contain; transform:rotate(-90deg); filter:drop-shadow(0 0 10px var(--c)); }
+.base-datos { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.base-nombre { font-size:20px; letter-spacing:2px; color:#fff; }
+.base-planeta { font-size:12px; font-weight:800; letter-spacing:2px; }
+.base-ckpt { font-size:13px; color:#dcefff; } .base-ckpt b { color:#00ffa8; }
+.base-nota { font-size:11px; color:#5f7f9f; }
+.base-niveles { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:6px 14px; }
+.base-nivel { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; font-weight:700; padding:4px 0; }
+.base-pips { display:flex; gap:4px; } .base-pips i { width:12px; height:6px; border-radius:2px; background:rgba(255,255,255,.1); }
+.base-muts { margin:6px 0 0; font-size:12px; color:#ffd23f; font-weight:700; letter-spacing:.5px; }
+.base-records { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; }
+.base-records span { display:flex; flex-direction:column; font-size:11px; color:#8fb4d0; } .base-records b { font-size:17px; color:#fff; font-variant-numeric:tabular-nums; }
+.base-carga, .base-amigo { display:flex; align-items:center; gap:10px; padding:7px 4px; border-bottom:1px solid rgba(0,240,255,.08); }
+.base-eq { background:rgba(0,255,168,.06); border-radius:8px; }
+.base-ic { width:18px; text-align:center; font-size:15px; }
+.base-ct { flex:1; min-width:0; font-size:13px; color:#dcefff; }
+.base-bts { display:flex; gap:6px; }
+.btn-mini { font:800 11px system-ui, sans-serif; letter-spacing:1px; color:#00f0ff; background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.35);
+  border-radius:8px; padding:6px 10px; cursor:pointer; white-space:nowrap; }
+.btn-mini:disabled { opacity:.35; cursor:default; }
+.base-regalo { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:6px 4px 10px 32px; font-size:12px; color:#8fb4d0; }
+.base-dot { width:8px; height:8px; border-radius:50%; background:#3a4a5c; flex:0 0 auto; } .base-dot.on { background:#00ffa8; box-shadow:0 0 6px #00ffa8; }
+.base-vacio { font-size:12px; color:#5f7f9f; margin:6px 2px; }
+.base-fin { margin-top:16px; text-align:center; } .base-cero { color:#ff8aa0; border-color:rgba(255,110,138,.4); background:rgba(255,110,138,.06); }
+.base-msg { min-height:16px; margin:8px 0 0; text-align:center; font-size:12px; font-weight:700; }
+@media (max-width: 520px) { .base-nave { gap:12px; } .base-img { width:84px; height:84px; } .base-img img { width:70px; height:70px; } }
+/* la base va por encima de las demás pantallas (como la pizarra): título fijo y solo se desliza el contenido */
+#screen-base { z-index:30; overflow:hidden; }
+#screen-base .panel { display:flex; flex-direction:column; max-height:calc(100dvh - 24px); overflow:hidden; margin:auto; width:min(96vw, 760px); }
+#screen-base .panel > * { flex:0 0 auto; }
+#screen-base .base-cont { flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; scrollbar-width:none; }
+#screen-base .base-cont::-webkit-scrollbar { display:none; }
+#screen-base .panel > .btn-sec { align-self:center; width:auto; margin-top:10px; }
+@media (max-height: 500px) { #screen-base .title { font-size:22px; } #screen-base .title span { display:inline; margin-left:8px; } }
+#screen-base { background:rgba(4,5,12,.93); }
+@media (max-width: 520px) { .base-niveles { grid-template-columns:1fr; gap:2px; } .base-records { grid-template-columns:1fr 1fr; } }
+#screen-base.overlay { background:rgba(4,5,12,.94); backdrop-filter:blur(6px); }
+#screen-base .panel { background:linear-gradient(160deg, rgba(11,16,48,.97), rgba(5,6,13,.97)); }

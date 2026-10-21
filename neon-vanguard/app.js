@@ -351,7 +351,7 @@ function updatePlayer(dt) {
     }
     if (p.mut.jupiter && p.desdeGolpe > 2 && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + 4 * dt); // CORAZA COLOSAL
   }
-  if (p.weaponTimer > 0) { p.weaponTimer -= dt; if (p.weaponTimer <= 0) p.weapon = 1; }
+  if (p.weaponTimer > 0) { p.weaponTimer -= dt; if (p.weaponTimer <= 0) { p.weapon = 1; p.armaNivel = 0; } }
   if (p.odActive > 0) {
     p.odActive -= dt;
     if (Math.random() < 0.5) spawnParticles(p.x, p.y, 1, { color: '#ff2bd6', speed: 60, life: 0.4, size: 3 });
@@ -398,7 +398,7 @@ function firePlayer() {
     const b = {
       x: muzzleX, y: muzzleY,
       vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
-      r: size, dmg: dmg * (p.dmgMult || 1), life: 1.6, color, pierce: od ? 1 : 0, hitSet: new Set()
+      r: size, dmg: dmg * (p.dmgMult || 1) * armaFuerza(p), life: 1.6, color, pierce: od ? 1 : 0, hitSet: new Set()
     };
     bullets.push(b); p._fog = { x: muzzleX, y: muzzleY, t: G.time, c: color }; // destello en la boca del cañón
     return b;
@@ -673,6 +673,17 @@ function activarMutacion(p, planeta) {
   Audio2.powerup(); setTimeout(() => Audio2.powerup(), 160);
 }
 
+// un arma equipada desde la base es tan fuerte como la oleada donde se recogió: +2 % de daño por nivel
+const armaFuerza = p => (p.weapon !== 1 && p.armaNivel > 0 ? 1 + p.armaNivel * 0.02 : 1);
+// lo que te equipaste en la base sale contigo al empezar: un arma (más tiempo y más fuerte cuanto más nivel) o un escudo
+function aplicarEquipo(lista) {
+  const p = player; if (!p || !lista || !lista.length) return;
+  for (const k of lista) {
+    if (k.t === 'arma' && ARMAS[k.n]) { p.weapon = k.n; p.weaponTimer = 20 + k.lv * 0.5; p.armaNivel = k.lv; }
+    else if (k.t === 'escudo') p.invuln = Math.max(p.invuln, 6 + k.lv * 0.15);
+    if (typeof Toast !== 'undefined') Toast.mostrar('🎒 ' + t('equipado') + ' · ' + (k.t === 'arma' ? ARMAS[k.n][0] : t('f_escudo')) + ' · ' + t('nivel_n', { n: k.lv }), '#00ffa8');
+  }
+}
 // tu NAVE DE LA SEMANA al empezar la partida: sus niveles, sin efectos de pantalla (las supermutaciones ya vienen puestas)
 function aplicarNave(mej) {
   const p = player; if (!p || !mej) return;
@@ -699,6 +710,8 @@ function collectPowerup(pu) {
     if (p.mej[pu.planeta] < MEJORA_MAX) {
       p.mej[pu.planeta]++; aplicarMejora(p, pu.planeta); if (G.mundo) COMP.nucleo(pu.planeta); // también sube tu nave de la semana
       addFloater(p.x, p.y - 34, m.icono + ' ' + t('m_' + pu.planeta) + ' ' + t('f_nv') + p.mej[pu.planeta], m.color, 20);
+    } else if (G.mundo && typeof BASE !== 'undefined' && BASE.puedeGuardar('nivel')) { // ya al máximo: se guarda en tu base como NIVEL para regalar o equipar
+      COMP.carga('nivel', { pl: pu.planeta }); addFloater(p.x, p.y - 34, '🎒 ' + m.icono + ' ' + t('f_a_base'), m.color, 18);
     } else { // ya al máximo: se convierte en vida y puntos
       p.hp = Math.min(p.maxHp, p.hp + 15); G.score += 150; if (G.mundo) COMP.nucleoMax();
       addFloater(p.x, p.y - 34, m.icono + ' ' + t('f_maximo'), m.color, 18);
@@ -715,11 +728,14 @@ function collectPowerup(pu) {
     p.overdrive = Math.min(100, p.overdrive + 45 * (p.odMult || 1));
     addFloater(p.x, p.y - 30, '+OVERDRIVE', '#ff2bd6', 18);
   } else if (/^weapon[2-6]$/.test(pu.type)) {
-    const n = +pu.type.slice(6); p.weapon = n; p.weaponTimer = 16;
-    addFloater(p.x, p.y - 30, t('a_' + n), ARMAS[n][1], 20);
+    const n = +pu.type.slice(6);
+    if (G.mundo && p.weapon !== 1 && p.weaponTimer > 0 && typeof BASE !== 'undefined' && BASE.puedeGuardar('arma')) { // ya llevas un arma: esta se guarda en tu base
+      COMP.carga('arma', { n }); addFloater(p.x, p.y - 30, '🎒 ' + t('a_' + n) + ' · ' + t('f_a_base'), ARMAS[n][1], 18);
+    } else { p.weapon = n; p.weaponTimer = 16; p.armaNivel = 0; addFloater(p.x, p.y - 30, t('a_' + n), ARMAS[n][1], 20); }
   } else if (pu.type === 'escudo') {
-    p.invuln = Math.max(p.invuln, 6);
-    addFloater(p.x, p.y - 30, t('f_escudo6'), '#00ffa8', 20);
+    if (G.mundo && p.invuln > 1.5 && typeof BASE !== 'undefined' && BASE.puedeGuardar('escudo')) { // ya tienes el escudo puesto: este se guarda en tu base
+      COMP.carga('escudo', {}); addFloater(p.x, p.y - 30, '🎒 ' + t('f_escudo_base'), '#00ffa8', 18);
+    } else { p.invuln = Math.max(p.invuln, 6); addFloater(p.x, p.y - 30, t('f_escudo6'), '#00ffa8', 20); }
   }
   Audio2.powerup();
   spawnRing(pu.x, pu.y, '#00ffa8', 70, 400, 3);
@@ -1808,6 +1824,7 @@ function startGame() {
   if (typeof RED !== 'undefined') RED.inicio();
   startWave(1);
   if (typeof Misiones !== 'undefined') Misiones.aplicarPremios();
+  if (typeof BASE !== 'undefined') BASE.cargar(); // qué cargas se pueden guardar hoy
 }
 
 function gameOver() {
@@ -1981,7 +1998,7 @@ function escalaNave(p) { return 1 + Math.min(0.5, nivelesTotales(p) * 0.022); }
 
 function balaDesde(x, y, ang, dmg, vel, tam, color) {
   const p = player;
-  const b = { x, y, vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel, r: tam, dmg: dmg * (p.dmgMult || 1), life: 1.6, color, pierce: 0, hitSet: new Set() };
+  const b = { x, y, vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel, r: tam, dmg: dmg * (p.dmgMult || 1) * armaFuerza(p), life: 1.6, color, pierce: 0, hitSet: new Set() };
   bullets.push(b); return b;
 }
 // punto de la nave (en coordenadas locales de la nave) pasado al mundo

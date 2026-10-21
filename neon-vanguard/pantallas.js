@@ -163,6 +163,7 @@ function registrarPiloto() {
     guardarUsuarios(db);
     try { localStorage.setItem('nv_piloto', JSON.stringify({ nombre: final, codigo, fecha: Date.now() })); } catch (e) {}
     mostrarCodigo(codigo, final);
+    if (typeof BASE !== 'undefined') { BASE.avisarApp(); BASE.cargar(); }
     avisar(t('msg_codigo_generado'), true);
   });
 }
@@ -231,6 +232,7 @@ function entrarConCodigo() {
       }));
     } catch (e) {}
     avisar(t('msg_bienvenido', { n: piloto.nombre }), true);
+    if (typeof BASE !== 'undefined') { BASE.avisarApp(); BASE.cargar(); } // dentro de ProArena: el piloto se une a tu cuenta
     codigoRetirado.hecho = false;
     if (typeof enviarPendiente === 'function') setTimeout(enviarPendiente, 1500); // la partida que se quedó sin subir
     setTimeout(() => irABandos(), 700);

@@ -63,7 +63,7 @@ const I18N = {
     tj_alt: 'Tarjeta de récord', tj_record: 'RÉCORD DE PILOTO', tj_bando: 'BANDO {b}', tj_puntos: 'PUNTOS', tj_oleada: 'OLEADA {n}', tj_bajas: '{n} BAJAS', tj_puesto: '#{p} DEL MUNDO', tj_de_partida: 'PARTIDA DE PILOTO', tj_b_record: 'MI RÉCORD', tj_b_partida: 'ESTA PARTIDA', tj_reto: '¿ME SUPERÁS? ESCANEÁ Y JUGÁ',
     sh_piloto: 'Piloto', sh_bando: 'Bando', sh_record: 'Récord', sh_oleada: 'oleada {n}', sh_puesto: '🏆 Puesto #{p} del mundo', sh_partida: 'Partida', sh_reto: '¿Me superás?', piloto: 'PILOTO',
     // en partida
-    nave_inicio: '🚀 TU NAVE DE LA SEMANA · OLEADA {n}', nave_ckpt: '🏁 PUNTO DE CONTROL · OLEADA {n}', nave_castigo: 'Tu nave perdió la mitad de sus niveles · vuelves en la oleada {n}', f_jefe: 'JEFE', f_oleada: 'OLEADA {n}', f_nv: 'NV.', f_maximo: 'MÁXIMO · +15 HP', f_escudo6: '◈ ESCUDO 6 s',
+    f_a_base: 'A TU BASE', f_escudo_base: 'ESCUDO · A TU BASE', f_escudo: 'ESCUDO', equipado: 'EQUIPADO', nivel_n: 'nivel {n}', b_base: '🏠 MI BASE', bs_t1: 'MI', bs_t2: 'BASE', nave_inicio: '🚀 TU NAVE DE LA SEMANA · OLEADA {n}', nave_ckpt: '🏁 PUNTO DE CONTROL · OLEADA {n}', nave_castigo: 'Tu nave perdió la mitad de sus niveles · vuelves en la oleada {n}', f_jefe: 'JEFE', f_oleada: 'OLEADA {n}', f_nv: 'NV.', f_maximo: 'MÁXIMO · +15 HP', f_escudo6: '◈ ESCUDO 6 s',
     m_venus: 'DAÑO', m_marte: 'CADENCIA', m_jupiter: 'BLINDAJE', m_saturno: 'ANILLO', m_neptuno: 'MULTIDISPARO',
     a_2: 'ESCOPETA', a_3: 'LÁSER x3', a_4: 'RAYO', a_5: 'MISILES', a_6: 'PLASMA',
     mu_venus: 'LANZA SOLAR', mu_marte: 'FURIA ROJA', mu_jupiter: 'CORAZA COLOSAL', mu_saturno: 'ANILLO PLANETARIO', mu_neptuno: 'TORMENTA ABISAL',
@@ -156,7 +156,7 @@ const I18N = {
     go_puesto: 'WORLD RANK #{p} OF {t}', go_puesto_solo: 'WORLD RANK #{p}', compartir: '📤 SHARE', descargar: '⬇ DOWNLOAD', reintentar: 'RETRY',
     tj_alt: 'Record card', tj_record: 'PILOT RECORD', tj_bando: 'FACTION {b}', tj_puntos: 'POINTS', tj_oleada: 'WAVE {n}', tj_bajas: '{n} KILLS', tj_puesto: '#{p} IN THE WORLD', tj_de_partida: 'PILOT MATCH', tj_b_record: 'MY RECORD', tj_b_partida: 'THIS MATCH', tj_reto: 'CAN YOU BEAT ME? SCAN & PLAY',
     sh_piloto: 'Pilot', sh_bando: 'Faction', sh_record: 'Record', sh_oleada: 'wave {n}', sh_puesto: '🏆 World rank #{p}', sh_partida: 'Match', sh_reto: 'Can you beat me?', piloto: 'PILOT',
-    nave_inicio: '🚀 YOUR SHIP OF THE WEEK · WAVE {n}', nave_ckpt: '🏁 CHECKPOINT · WAVE {n}', nave_castigo: 'Your ship lost half its levels · you go back to wave {n}', f_jefe: 'BOSS', f_oleada: 'WAVE {n}', f_nv: 'LV.', f_maximo: 'MAX · +15 HP', f_escudo6: '◈ SHIELD 6 s',
+    f_a_base: 'TO YOUR BASE', f_escudo_base: 'SHIELD · TO YOUR BASE', f_escudo: 'SHIELD', equipado: 'EQUIPPED', nivel_n: 'level {n}', b_base: '🏠 MY BASE', bs_t1: 'MY', bs_t2: 'BASE', nave_inicio: '🚀 YOUR SHIP OF THE WEEK · WAVE {n}', nave_ckpt: '🏁 CHECKPOINT · WAVE {n}', nave_castigo: 'Your ship lost half its levels · you go back to wave {n}', f_jefe: 'BOSS', f_oleada: 'WAVE {n}', f_nv: 'LV.', f_maximo: 'MAX · +15 HP', f_escudo6: '◈ SHIELD 6 s',
     m_venus: 'DAMAGE', m_marte: 'FIRE RATE', m_jupiter: 'ARMOR', m_saturno: 'RING', m_neptuno: 'MULTISHOT',
     a_2: 'SHOTGUN', a_3: 'LASER x3', a_4: 'BEAM', a_5: 'MISSILES', a_6: 'PLASMA',
     mu_venus: 'SOLAR LANCE', mu_marte: 'RED FURY', mu_jupiter: 'COLOSSAL ARMOR', mu_saturno: 'PLANETARY RING', mu_neptuno: 'ABYSSAL STORM',

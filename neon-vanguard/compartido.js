@@ -71,6 +71,7 @@ const COMP = (function () {
     if (n === 1 && G.kills === 0 && !activo && nave) {
       if (typeof aplicarNave === 'function') aplicarNave(nave.mej);
       if (nave.ckpt > 1) n = nave.ckpt;
+      enviar({ t: 'equipo' }); // lo que te equipaste en la base sale contigo
       if ((nave.ckpt > 1 || Object.values(nave.mej).some(v => v > 0)) && typeof Toast !== 'undefined') Toast.mostrar(t('nave_inicio', { n }), '#00f0ff');
     }
     activo = true; G.mundo = true; G.waveActive = true; G.waveTimer = 0;
@@ -249,11 +250,13 @@ const COMP = (function () {
   // recogí un núcleo de planeta y subió ese nivel: el servidor lo apunta en mi nave de la semana
   function nucleo(pl) { if (activo) enviar({ t: 'nuc', pl }); }
   function reiniciarNave() { enviar({ t: 'cero' }); }
+  // guardar en tu base lo que recogiste (el servidor lo comprueba y responde con «carga»)
+  function carga(c, extra) { enviar(Object.assign({ t: 'carga', c }, extra || {})); }
   // para guardar el récord: el recibo del servidor y las oleadas jugadas sin conexión
   function paraRecord() { return { recibo, local: localDesde ? [localDesde, localHasta || G.wave] : null }; }
   // al reconectar en plena partida: el servidor nuevo sigue contando desde el recibo
   function reciboVivo() { return G.running && player && player.alive && recibo ? recibo : null; }
 
-  return { hola, corte, reiniciar, tomarOla, recibir, tick, pasoLocal, derribe, ay, nucleoMax, nucleo, reiniciarNave, asteroideRoto, paraRecord, reciboVivo,
+  return { hola, corte, reiniciar, tomarOla, recibir, tick, pasoLocal, derribe, ay, nucleoMax, nucleo, reiniciarNave, carga, asteroideRoto, paraRecord, reciboVivo,
     get activo() { return activo; }, get nave() { return nave; } };
 })();

@@ -58,11 +58,11 @@ const RED = (function () {
   function recibir(m) {
     if (m.t === 'hola') {
       conectado = true; miId = m.id; remotos.clear();
-      for (const j of m.j || []) remotos.set(j.id, nuevoRemoto(j));
+      for (const j of m.j || []) { remotos.set(j.id, nuevoRemoto(j)); if (!m.sala && typeof BASE !== 'undefined') BASE.vi(j.nombre, j.bando); }
       sala = m.sala || null; pedido = null; bestia = null; COMP.hola(m);
       if (sala && typeof empezarPrivada === 'function') empezarPrivada(sala, m.x, m.y);
       if (m.x || m.y) ponerEn(m.x, m.y);
-    } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); avisoFeed(t('rd_entro', { n: m.nombre }), '#8fb4d0');
+    } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); if (!sala && typeof BASE !== 'undefined') BASE.vi(m.nombre, m.bando); avisoFeed(t('rd_entro', { n: m.nombre }), '#8fb4d0');
       if (!sala && typeof Toast !== 'undefined') Toast.mostrar(t('rd_entro_arena', { n: m.nombre }), nuevoRemoto(m).color); }
     else if (m.t === 'sale') { remotos.delete(m.id); }
     else if (m.t === 's') {
@@ -82,6 +82,8 @@ const RED = (function () {
       const r = remotos.get(m.aId); if (r) spawnParticles(r.x, r.y, 30, { color: r.color, speed: 320, life: 0.8, size: 4 }); }
     else if (m.t === 'tuBaja') { G.score += m.pts; if (player) addFloater(player.x, player.y - 46, t('rd_derribaste', { p: m.pts, n: m.a }), '#00f0ff', 20); shake(8); }
     else if (m.t === 'sitio') ponerEn(m.x, m.y);
+    else if (m.t === 'carga') { if (typeof BASE !== 'undefined') BASE.guardada(m); }       // se guardó (o no) en tu base
+    else if (m.t === 'equipo') { if (typeof aplicarEquipo === 'function') aplicarEquipo(m.l); } // lo equipado en la base sale contigo
     else if (m.t === 'corr') { if (player) { player.x = m.x; player.y = m.y; } }
     else if (m.t === 'bestia') { // aparece una bestia errante gigante: todos contra ella
       bestia = { tipo: m.tipo, type: m.tipo, nombre: nomBestia(m), x: m.x, y: m.y, hp: m.hp, max: m.max, r: m.r, angle: 0, phase: 0, wobble: 0, vx: 0, vy: 0,
