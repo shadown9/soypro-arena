@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /neon-vanguard-pruebas/
 
 Sitemap: https://soyproarena.com/sitemap.xml

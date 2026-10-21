@@ -92,11 +92,23 @@
   }
 
   // ---------- a quién atacar ----------
-  // el piloto vivo más cercano (los pilotos «pesan» un poco más: son los más peligrosos)
+  // NIVELES (etapa 2): cada monstruo caza primero a los pilotos de SU nivel (su oleada, ±3) que tenga cerca;
+  // si no hay ninguno, va por el más cercano y su fuerza se iguala a la de ese piloto (ver igualar).
+  const NIVEL_CERCA = 3, CAZA = 1400;
+  const suNivel = (e, p) => p.ola == null || e.ola == null || Math.abs(p.ola - e.ola) <= NIVEL_CERCA;
   function pilotoCercano(W, e) {
-    let mejor = null, dm = Infinity;
-    for (const p of W.pilotos()) { if (!p.alive) continue; const d = Math.hypot(p.x - e.x, p.y - e.y); if (d < dm) { dm = d; mejor = p; } }
-    return mejor;
+    let mejor = null, dm = Infinity, igual = null, di = Infinity;
+    for (const p of W.pilotos()) { if (!p.alive) continue; const d = Math.hypot(p.x - e.x, p.y - e.y);
+      if (d < dm) { dm = d; mejor = p; }
+      if (d < di && d < CAZA && suNivel(e, p)) { di = d; igual = p; } }
+    return igual || mejor;
+  }
+  // el monstruo se pone al nivel del piloto que caza: vida (en la misma proporción que le quedaba) y velocidad
+  // (el daño que hace ya lo pone cada teléfono con la dificultad de su propia oleada)
+  function igualar(e, ola) {
+    const t = TIPOS[e.type]; if (!t || e.type === 'boss' || !(ola >= 1) || ola === e.ola) return;
+    const k = e.maxHp > 0 ? e.hp / e.maxHp : 1, sc = escalaVida(ola, t.bando === 'bestia');
+    e.maxHp = t.hp * sc; e.hp = e.maxHp * k; e.speed = t.speed * escalaVel(ola); e.ola = ola;
   }
   /* GUERRA DE TODOS CONTRA TODOS: cada planeta pelea contra los demás, no solo contra ti.
      Cada nave elige al enemigo más cercano (un piloto u otra nave de otro planeta) y lo revisa cada poco. */
@@ -144,6 +156,7 @@
       if (e.buscar <= 0 || !e.obj || e.obj.muerto || (esPiloto(e.obj) && !e.obj.alive)) { e.obj = elegirObjetivo(W, e); e.buscar = 0.9 + Math.random() * 0.6; }
     } else if (!e.obj || !e.obj.alive || (e.buscarB = (e.buscarB || 0) - dt) <= 0) { e.obj = pilotoCercano(W, e); e.buscarB = 1; }
     const T = e.obj; if (!T) { e.x += e.vx * dt; e.y += e.vy * dt; return false; }
+    if (esPiloto(T) && !suNivel(e, T)) igualar(e, T.ola); // caza a uno de otro nivel: se pone a su nivel
     const dx = T.x - e.x, dy = T.y - e.y, d = Math.hypot(dx, dy) || 1, nx = dx / d, ny = dy / d;
     e.angle = Math.atan2(dy, dx);
 
@@ -419,7 +432,7 @@
   function romperAsteroide(W, a) { a.roto = true; astDe(W).rotos.add(a.id); }
 
   const MUNDO = {
-    TAU, TIPOS, BANDOS, JEFES, escalaVida, escalaVel, dureza, vidaJefe, bandoDe, esBestia,
+    TAU, TIPOS, BANDOS, JEFES, escalaVida, escalaVel, dureza, vidaJefe, bandoDe, esBestia, igualar, NIVEL_CERCA,
     nuevoEnemigo, nuevoJefe, elegirObjetivo, pilotoCercano, golpearNave, paso, pasoJefe, pasoBala, cuerpoSerpiente,
     AST_CELDA, asteroidesCelda, asteroidesCerca, chocaAsteroide, empujarFuera, rayoHasta, romperAsteroide
   };

@@ -93,6 +93,7 @@ const COMP = (function () {
         e = crearLocal(id, cod, x, y, ola, st); if (!e) continue;
         if (nuevo && e.type !== 'boss') { spawnRing(x, y, e.color, 50, 300, 2); if (MUNDO.esBestia(e)) Audio2.bestia(e.type, 'aparece', x, y); }
       }
+      if (ola !== e.ola) { MUNDO.igualar(e, ola); e._hpRef = e.hp; } // el servidor lo puso al nivel de otro piloto: su vida máxima cambia (no es daño mío)
       e.mio = !!mio; e.visto = f.t;
       e.buf.push({ t: f.t, x, y, a, hp: pct / 100 * e.maxHp, st: st || null }); if (e.buf.length > 12) e.buf.shift();
     }

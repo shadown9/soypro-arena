@@ -57,7 +57,7 @@ const RED = (function () {
       for (const j of m.j || []) remotos.set(j.id, nuevoRemoto(j));
       sala = m.sala || null; pedido = null; bestia = null; COMP.hola(m);
       if (sala && typeof empezarPrivada === 'function') empezarPrivada(sala, m.x, m.y);
-      if (G.running && player && (m.x || m.y) && performance.now() - inicioT < 4000) { player.x = m.x; player.y = m.y; CAM.x = m.x; CAM.y = m.y; if (typeof despejarZona === 'function') despejarZona(m.x, m.y, 200); }
+      if (m.x || m.y) ponerEn(m.x, m.y);
     } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); avisoFeed(t('rd_entro', { n: m.nombre }), '#8fb4d0');
       if (!sala && typeof Toast !== 'undefined') Toast.mostrar(t('rd_entro_arena', { n: m.nombre }), nuevoRemoto(m).color); }
     else if (m.t === 'sale') { remotos.delete(m.id); }
@@ -76,6 +76,7 @@ const RED = (function () {
     else if (m.t === 'baja') { avisoFeed(t('rd_derribo', { a: m.de || t('rd_espacio'), b: m.a }), m.deId === miId ? '#00f0ff' : '#ff6e8a');
       const r = remotos.get(m.aId); if (r) spawnParticles(r.x, r.y, 30, { color: r.color, speed: 320, life: 0.8, size: 4 }); }
     else if (m.t === 'tuBaja') { G.score += m.pts; if (player) addFloater(player.x, player.y - 46, t('rd_derribaste', { p: m.pts, n: m.a }), '#00f0ff', 20); shake(8); }
+    else if (m.t === 'sitio') ponerEn(m.x, m.y);
     else if (m.t === 'corr') { if (player) { player.x = m.x; player.y = m.y; } }
     else if (m.t === 'bestia') { // aparece una bestia errante gigante: todos contra ella
       bestia = { tipo: m.tipo, type: m.tipo, nombre: nomBestia(m), x: m.x, y: m.y, hp: m.hp, max: m.max, r: m.r, angle: 0, phase: 0, wobble: 0, vx: 0, vy: 0,
@@ -289,9 +290,11 @@ const RED = (function () {
     if (!activo) return;
     if (sala) return; // en una sala privada no se busca a nadie: ya estamos todos
     if (!conectado) { cerrandoAdrede = false; conectar(); return; }
-    const vivos = [...remotos.values()].filter(r => r.v && r.visto);
-    if (vivos.length && player) { const o = vivos[Math.floor(Math.random() * vivos.length)], a = Math.random() * TAU;
-      player.x = o.x + Math.cos(a) * 420; player.y = o.y + Math.sin(a) * 420; CAM.x = player.x; CAM.y = player.y; if (typeof despejarZona === 'function') despejarZona(player.x, player.y, 200); }
+    enviar({ t: 'sitio' }); // el servidor dice dónde aparecer: cerca de los pilotos de tu nivel y lejos de los mucho más fuertes
+  }
+  function ponerEn(x, y) { // solo al principio de la partida (nunca te mueve en plena batalla)
+    if (!G.running || !player || sala || performance.now() - inicioT > 4000) return;
+    player.x = x; player.y = y; CAM.x = x; CAM.y = y; if (typeof despejarZona === 'function') despejarZona(x, y, 200);
   }
   // pilotos reales vivos en tu batalla pública (para que los enemigos de la máquina sean solo relleno)
   function reales() { if (!conectado || sala) return 0; let n = 0; for (const r of remotos.values()) if (r.v) n++; return n; }
