@@ -25,23 +25,25 @@ const RED = (function () {
     if (!activo || (ws && ws.readyState < 2)) return;
     const p = piloto(); if (!p || !p.codigo || !p.nombre) return;
     let este; try { este = ws = new WebSocket(URL_WS); } catch (e) { return; }
-    este.onopen = () => enviar(Object.assign({ t: 'hola', nombre: p.nombre, codigo: p.codigo, bando: miBando() }, pedido || {}));
+    // mundo: 1 → en el espacio público, los enemigos los pone el servidor (compartido.js)
+    este.onopen = () => enviar(Object.assign({ t: 'hola', nombre: p.nombre, codigo: p.codigo, bando: miBando(), mundo: 1, ancho: Math.round(W), alto: Math.round(H), recibo: COMP.reciboVivo() }, pedido || {}));
     este.onmessage = ev => { if (ws !== este) return; let m; try { m = JSON.parse(ev.data); } catch (e) { return; } recibir(m); };
-    este.onclose = ev => { if (ws !== este) return; conectado = false; remotos.clear(); rBalas = [];
+    este.onclose = ev => { if (ws !== este) return; conectado = false; remotos.clear(); rBalas = []; COMP.corte();
       if (ev && ev.code === 4004) return; // este piloto entró desde otro lugar: esta copia vieja no vuelve (si no, se echarían una a la otra)
       if (!cerrandoAdrede) setTimeout(conectar, ev && ev.code === 4003 ? 300 : 4000); }; // 4003: el servidor se actualizó, al nuevo enseguida
     ws.onerror = () => {};
   }
   function miBando() { const p = piloto() || {}; return (typeof bandoElegido !== 'undefined' && bandoElegido) || p.bando; }
   // cambiar de sala: se cierra la conexión y se abre otra pidiendo la sala privada (o la pública)
-  function reconectar() { cerrandoAdrede = true; const viejo = ws; ws = null; conectado = false; remotos.clear(); rBalas = []; try { viejo && viejo.close(); } catch (e) {} cerrandoAdrede = false; conectar(); }
+  function reconectar() { COMP.corte(); cerrandoAdrede = true; const viejo = ws; ws = null; conectado = false; remotos.clear(); rBalas = []; try { viejo && viejo.close(); } catch (e) {} cerrandoAdrede = false; conectar(); }
   // SALIR DE VERDAD: se cierra la conexión al momento (al volver a ProArena, cerrar la pestaña o la app)
-  function cerrar() { cerrandoAdrede = true; conectado = false; remotos.clear(); rBalas = []; const v = ws; ws = null; try { v && v.close(1000); } catch (e) {} }
+  function cerrar() { COMP.corte(); cerrandoAdrede = true; conectado = false; remotos.clear(); rBalas = []; const v = ws; ws = null; try { v && v.close(1000); } catch (e) {} }
   window.addEventListener('pagehide', cerrar);
   window.addEventListener('pageshow', e => { if (e.persisted) { cerrandoAdrede = false; conectar(); } }); // volvió de la memoria del navegador
   function privada(op) { pedido = op; sala = null; marc = null; reconectar(); }
   function publica() { pedido = null; sala = null; marc = null; reconectar(); }
-  const aliado = id => { const r = remotos.get(id); return !!(sala && sala.modo === 'equipos' && r && r.bando === miBando()); };
+  // aliados: los de tu planeta en el espacio público (cada planeta es un equipo) y tu equipo en las salas por equipos; en un duelo no hay
+  const aliado = id => { const r = remotos.get(id); if (!r || r.bando !== miBando()) return false; return sala ? sala.modo === 'equipos' : true; };
   function enviar(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
   function nuevoRemoto(j) {
@@ -53,7 +55,7 @@ const RED = (function () {
     if (m.t === 'hola') {
       conectado = true; miId = m.id; remotos.clear();
       for (const j of m.j || []) remotos.set(j.id, nuevoRemoto(j));
-      sala = m.sala || null; pedido = null; bestia = null;
+      sala = m.sala || null; pedido = null; bestia = null; COMP.hola(m);
       if (sala && typeof empezarPrivada === 'function') empezarPrivada(sala, m.x, m.y);
       if (G.running && player && (m.x || m.y) && performance.now() - inicioT < 4000) { player.x = m.x; player.y = m.y; CAM.x = m.x; CAM.y = m.y; if (typeof despejarZona === 'function') despejarZona(m.x, m.y, 200); }
     } else if (m.t === 'entra') { remotos.set(m.id, nuevoRemoto(m)); avisoFeed(t('rd_entro', { n: m.nombre }), '#8fb4d0');
@@ -62,6 +64,7 @@ const RED = (function () {
     else if (m.t === 's') {
       const ahora = performance.now();
       if (m.n) totalLinea = m.n;
+      if (m.m || m.ev) COMP.recibir(m); // mundo compartido: los enemigos que tengo cerca y lo que pasó
       if (m.b && bestia) { bestia.buf.push({ t: ahora, x: m.b[0], y: m.b[1], hp: m.b[2], a: m.b[3] }); if (bestia.buf.length > 12) bestia.buf.shift(); }
       for (const [id, x, y, a, hp, od, v] of m.j) {
         if (id === miId) continue;
@@ -130,6 +133,7 @@ const RED = (function () {
   // ---------- cada fotograma ----------
   function tick(dt) {
     for (let i = feed.length - 1; i >= 0; i--) { feed[i].vida -= dt; if (feed[i].vida <= 0) feed.splice(i, 1); }
+    COMP.tick(dt);
     if (!conectado) return;
     const p = player;
     envAcc += dt;
@@ -297,6 +301,6 @@ const RED = (function () {
 
   window.addEventListener('pagehide', () => { cerrandoAdrede = true; try { ws && ws.close(); } catch (e) {} });
   function revancha() { enviar({ t: 'revancha' }); }
-  return { tick, dibujar, dibujarPantalla, inicio, reales, cerrar, disparo, muerte, regreso, privada, publica, revancha, get sala() { return sala; }, get miId() { return miId; },
+  return { enviar, tick, dibujar, dibujarPantalla, inicio, reales, cerrar, disparo, muerte, regreso, privada, publica, revancha, get sala() { return sala; }, get miId() { return miId; },
     get activo() { return activo; }, get bestia() { return bestia; }, get conectado() { return conectado; }, get remotos() { return remotos; } };
 })();

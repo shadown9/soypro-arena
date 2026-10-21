@@ -15,6 +15,7 @@
 const ARENA_API = (function () {
   try {
     const h = location.hostname;
+    if (/^\/neon-vanguard-pruebas\//.test(location.pathname)) return 'https://pruebas.soyproarena.com/api/nv'; // copia para probar antes de publicar (servidor de pruebas)
     if (/(^|\.)soyproarena\.com$|\.github\.io$/.test(h)) return 'https://juego.soyproarena.com/api/nv';
     if (location.port === '7788') return location.origin + '/api/arena';
     if (h === 'localhost' || h === '127.0.0.1') return 'https://pruebas.soyproarena.com/api/nv';
@@ -78,7 +79,8 @@ async function subirRecord(score, wave, kills, victorias) {
         kills: kills,
         victorias: victorias || 0,
         logros: (typeof Misiones !== 'undefined') ? Misiones.logros() : [],
-        golpes: (typeof G !== 'undefined' && G.golpes) ? G.golpes.slice(-8) : [] // últimos golpes antes de terminar
+        golpes: (typeof G !== 'undefined' && G.golpes) ? G.golpes.slice(-8) : [], // últimos golpes antes de terminar
+        ...(typeof COMP !== 'undefined' ? COMP.paraRecord() : {}) // mundo compartido: el recibo con lo que contó el servidor
       })
     });
     if (!r.ok) { if (r.status === 403) { const e = await r.json().catch(() => ({})); if (e.error === CODIGO_RETIRADO_SV) {
