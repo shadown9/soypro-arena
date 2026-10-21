@@ -18,6 +18,10 @@ const RED = (function () {
   const remotos = new Map();   // id → piloto
   let rBalas = [];             // balas de otros jugadores
   const feed = [];             // "X derribó a Y"
+  // ENTRE PILOTOS (etapa 3): «mucho más fuerte» = 10 oleadas o más por encima
+  const MUCHO_MAS = 10;
+  const miNivel = () => (typeof G !== 'undefined' && G.wave) || 1;
+  let peligro = null, peligroAntes = false, peligroSonT = -1e9, zonaAntes = false, zonaT = -1e9;
 
   function piloto() { try { return JSON.parse(localStorage.getItem('nv_piloto') || 'null'); } catch (e) { return null; } }
 
@@ -66,9 +70,10 @@ const RED = (function () {
       if (m.n) totalLinea = m.n;
       if (m.m || m.ev) COMP.recibir(m); // mundo compartido: los enemigos que tengo cerca y lo que pasó
       if (m.b && bestia) { bestia.buf.push({ t: ahora, x: m.b[0], y: m.b[1], hp: m.b[2], a: m.b[3] }); if (bestia.buf.length > 12) bestia.buf.shift(); }
-      for (const [id, x, y, a, hp, od, v] of m.j) {
+      for (const [id, x, y, a, hp, od, v, lv] of m.j) {
         if (id === miId) continue;
         const r = remotos.get(id); if (!r) continue;
+        r.ola = lv || 0; // su nivel (oleada)
         r.buf.push({ t: ahora, x, y, a, hp, od, v }); if (r.buf.length > 12) r.buf.shift();
       }
     } else if (m.t === 'd') { balasDe(m); }
@@ -107,7 +112,8 @@ const RED = (function () {
   function balasDe(m) {
     const r = remotos.get(m.id); if (!r) return;
     const c = r.color, x = m.x, y = m.y, a = m.a;
-    const bala = (ang, dmg, vel, tam) => rBalas.push({ x: x + Math.cos(ang) * 20, y: y + Math.sin(ang) * 20, vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel, r: tam, dmg, de: m.id, color: c, life: 1.6 });
+    const f = m.m || 1; // DAÑO REAL: cada bala lleva la fuerza de la nave que la disparó (sus mejoras)
+    const bala = (ang, dmg, vel, tam) => rBalas.push({ x: x + Math.cos(ang) * 20, y: y + Math.sin(ang) * 20, vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel, r: tam, dmg: dmg * f, de: m.id, color: c, life: 1.6 });
     if (m.k === 2) for (let i = -2; i <= 2; i++) bala(a + i * 0.11, 5, 900, 3);
     else if (m.k === 3) { bala(a, 8, 1100, 4); bala(a - 0.16, 6, 1050, 3); bala(a + 0.16, 6, 1050, 3); }
     else if (m.k === 4) { bala(a, 10, 1000, 5); bala(a - 0.09, 6, 950, 3); bala(a + 0.09, 6, 950, 3); }
@@ -151,6 +157,20 @@ const RED = (function () {
       r.a = s0.a + Math.atan2(Math.sin(s1.a - s0.a), Math.cos(s1.a - s0.a)) * k;
       r.hp = s1.hp; r.v = !!s1.v; r.od = !!s1.od; r.visto = true;
     }
+    // ALERTA DE PELIGRO: se acerca un piloto mucho más fuerte de otro planeta → la pantalla entra en modo alerta (con sonido)
+    // AVISO DE ZONA: te metes hacia monstruos o pilotos mucho más altos que tú
+    peligro = null;
+    if (!sala && p && p.alive) {
+      const yo = miNivel(), ahora = performance.now(); let zona = false;
+      for (const r of remotos.values()) { if (!r.v || !r.visto || aliado(r.id) || !(r.ola >= yo + MUCHO_MAS)) continue;
+        const d = Math.hypot(r.x - p.x, r.y - p.y);
+        if (d < 1800) { if (!peligro || d < peligro.d) peligro = { r, d }; } else if (d < 3200) zona = true; }
+      if (!zona) for (const e of enemies) if (e.sid && e.ola >= yo + MUCHO_MAS && Math.hypot(e.x - p.x, e.y - p.y) < 1100) { zona = true; break; }
+      if (peligro && !peligroAntes && ahora - peligroSonT > 10000) { peligroSonT = ahora; if (Audio2.peligro) Audio2.peligro(); }
+      peligroAntes = !!peligro;
+      if (zona && !peligro && !zonaAntes && ahora - zonaT > 15000 && typeof Toast !== 'undefined') { zonaT = ahora; Toast.mostrar(traducir('rd_zona'), '#ff9f1c'); }
+      zonaAntes = zona;
+    } else peligroAntes = zonaAntes = false;
     // BESTIA ERRANTE: posición suavizada, mis golpes (sumados y enviados 8 veces por segundo) y su choque conmigo
     if (bestia) {
       const B = bestia, tb = performance.now() - 110, bb = B.buf;
@@ -177,7 +197,7 @@ const RED = (function () {
       if (typeof chocaAsteroide === 'function' && chocaAsteroide(b.x, b.y, b.r)) { spawnParticles(b.x, b.y, 3, { color: '#9aa6b8', speed: 90, life: 0.25, size: 2 }); rBalas.splice(i, 1); continue; }
       if (p && p.alive && p.invuln <= 0 && !aliado(b.de) && dist2(b, p) < (b.r + p.r) * (b.r + p.r)) {
         enviar({ t: 'g', de: b.de, dmg: b.dmg });
-        damagePlayer(b.dmg, { x: b.x - b.vx * 0.3, y: b.y - b.vy * 0.3, n: (remotos.get(b.de) || {}).nombre || '' });
+        damagePlayer(b.dmg, { x: b.x - b.vx * 0.3, y: b.y - b.vy * 0.3, n: (remotos.get(b.de) || {}).nombre || '', pvp: true }); // entre pilotos: su fuerza, no la dificultad de tu oleada
         spawnParticles(b.x, b.y, 8, { color: b.color, speed: 180, life: 0.4, size: 3 });
         rBalas.splice(i, 1);
       }
@@ -225,6 +245,7 @@ const RED = (function () {
     if (conectado) {
       for (const r of remotos.values()) {
         if (!r.v || !r.visto || !fueraDeVista(r.x, r.y, 0)) continue;
+        if (!sala && !aliado(r.id) && miNivel() >= r.ola + MUCHO_MAS && r.ola > 0) continue; // el mucho más débil es invisible en tu radar
         const dx = r.x - CAM.x, dy = r.y - CAM.y, m = 34;
         const k = Math.min((W / 2 - m) / Math.abs(dx || 1e-6), (H / 2 - m) / Math.abs(dy || 1e-6));
         const x = W / 2 + dx * k, y = H / 2 + dy * k;
@@ -253,6 +274,13 @@ const RED = (function () {
         ctx.font = '900 18px system-ui, sans-serif'; ctx.fillText(t(sala.modo === 'duelo' ? 'rd_esperando_rival' : 'rd_esperando_pilotos'), W / 2, H * 0.28);
         ctx.font = '700 12px system-ui, sans-serif'; ctx.fillStyle = '#9fe8ff'; ctx.fillText(t('rd_pasale', { c: sala.codigo }), W / 2, H * 0.28 + 20); ctx.restore();
       }
+    }
+    if (peligro) { // modo alerta: borde rojo que late y el aviso arriba
+      const k = 0.5 + 0.5 * Math.sin(performance.now() / 150);
+      ctx.save(); ctx.strokeStyle = 'rgba(255,40,70,' + (0.3 + 0.45 * k).toFixed(3) + ')'; ctx.lineWidth = 10; ctx.shadowBlur = 26; ctx.shadowColor = '#ff2846';
+      ctx.strokeRect(5, 5, W - 10, H - 10);
+      ctx.font = '900 15px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ff5a74'; ctx.shadowBlur = 10; ctx.shadowColor = '#000';
+      ctx.fillText(t('rd_peligro', { n: peligro.r.nombre }), W / 2, franjaTope() + 26 + feed.length * 17); ctx.restore();
     }
     feed.forEach((f, i) => { ctx.save(); ctx.globalAlpha = Math.min(1, f.vida); ctx.font = '800 12px system-ui, sans-serif'; ctx.textAlign = 'center';
       ctx.fillStyle = f.color; ctx.shadowBlur = 8; ctx.shadowColor = '#000'; ctx.fillText(f.txt, W / 2, franjaTope() + 20 + i * 17); ctx.restore(); });
@@ -298,7 +326,7 @@ const RED = (function () {
   }
   // pilotos reales vivos en tu batalla pública (para que los enemigos de la máquina sean solo relleno)
   function reales() { if (!conectado || sala) return 0; let n = 0; for (const r of remotos.values()) if (r.v) n++; return n; }
-  function disparo(k) { if (conectado && player) enviar({ t: 'd', a: Math.round(player.angle * 100) / 100, k }); }
+  function disparo(k) { if (conectado && player) enviar({ t: 'd', a: Math.round(player.angle * 100) / 100, k, m: Math.round((player.dmgMult || 1) * 100) / 100 }); }
   function regreso() { if (conectado && player) enviar({ t: 'e', x: Math.round(player.x), y: Math.round(player.y), a: 0, hp: Math.round(player.hp), od: 0, v: 0 }); }
   function muerte() { if (conectado) { enviar({ t: 'e', x: Math.round(player.x), y: Math.round(player.y), a: 0, hp: 0, od: 0, v: 0 }); enviar({ t: 'm' }); } }
 

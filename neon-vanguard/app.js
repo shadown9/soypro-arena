@@ -553,7 +553,7 @@ function damagePlayer(amount, src) {
   const p = player;
   if (!p.alive || p.invuln > 0) return;
   if (G.mundo) COMP.ay(); // el servidor también te quita el combo
-  amount *= durezaOleada();
+  if (!(src && src.pvp)) amount *= durezaOleada(); // los monstruos pegan según tu oleada; otro piloto pega con su propia fuerza
   amount = Math.min(amount, p.maxHp * 0.55); // ningún golpe quita más de la mitad y algo: con la vida llena nada te mata de un golpe
   // registro de los últimos golpes (se manda al servidor al terminar: si algo raro pasa, se sabe qué fue)
   G.golpes = (G.golpes || []).slice(-7); G.golpes.push({ n: src ? (src.n || nombreEnemigo(src)) : '?', d: Math.round(amount), hp: Math.round(p.hp), max: p.maxHp, ola: G.wave, t: Math.round(G.time) });
@@ -673,6 +673,16 @@ function activarMutacion(p, planeta) {
   Audio2.powerup(); setTimeout(() => Audio2.powerup(), 160);
 }
 
+// tu NAVE DE LA SEMANA al empezar la partida: sus niveles, sin efectos de pantalla (las supermutaciones ya vienen puestas)
+function aplicarNave(mej) {
+  const p = player; if (!p || !mej) return;
+  for (const pl of PLANETAS_MEJORA) {
+    const L = Math.min(MEJORA_MAX, mej[pl] | 0);
+    if (L >= MEJORA_MAX) { p.mut = p.mut || {}; p.mut[pl] = true; p.mutT = p.mutT || {}; }
+    for (let k = 1; k <= L; k++) { p.mej[pl] = k; aplicarMejora(p, pl); }
+  }
+  p.hp = p.maxHp;
+}
 function aplicarMejora(p, planeta) {
   const lv = p.mej[planeta];
   if (lv >= MEJORA_MAX) activarMutacion(p, planeta);
@@ -687,7 +697,7 @@ function collectPowerup(pu) {
   if (pu.type === 'nucleo') {
     const m = MEJORAS[pu.planeta];
     if (p.mej[pu.planeta] < MEJORA_MAX) {
-      p.mej[pu.planeta]++; aplicarMejora(p, pu.planeta);
+      p.mej[pu.planeta]++; aplicarMejora(p, pu.planeta); if (G.mundo) COMP.nucleo(pu.planeta); // también sube tu nave de la semana
       addFloater(p.x, p.y - 34, m.icono + ' ' + t('m_' + pu.planeta) + ' ' + t('f_nv') + p.mej[pu.planeta], m.color, 20);
     } else { // ya al máximo: se convierte en vida y puntos
       p.hp = Math.min(p.maxHp, p.hp + 15); G.score += 150; if (G.mundo) COMP.nucleoMax();

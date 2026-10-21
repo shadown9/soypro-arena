@@ -253,6 +253,11 @@ const Audio2 = {
     this.osc('sine', 90, 30, 0.9, 0.5, null, t + 1.25);
     this.ruidoF(0.9, 0.35, 'lowpass', 2600, 120, null, t + 1.25);
   },
+  peligro() { // alerta: se acerca un piloto mucho más fuerte (dos pitidos agudos, dos veces)
+    if (!this.listo()) return;
+    const t = this.ctx.currentTime;
+    for (let i = 0; i < 4; i++) this.osc('square', i % 2 ? 660 : 880, i % 2 ? 640 : 860, 0.11, 0.07, null, t + i * 0.16 + (i > 1 ? 0.25 : 0));
+  },
   boss() { // alarma: tres bocinazos graves que bajan
     if (!this.listo()) return;
     const t = this.ctx.currentTime;

@@ -23,12 +23,21 @@ const COMP = (function () {
   // LA CUENTA DEL SERVIDOR: un recibo firmado con los puntos, bajas y oleada que te contó el servidor (el récord se guarda con él).
   // Si se corta un rato, lo jugado sin conexión se apunta aparte (oleadas desde/hasta) y vale con el límite de siempre.
   let recibo = null, localDesde = 0, localHasta = 0;
+  // NAVE DE LA SEMANA (etapa 4): la guarda el servidor (niveles de los 5 planetas y punto de control)
+  let nave = null;
+  function ponerNave(n) {
+    if (!n || !n.mej) return;
+    const antes = nave; nave = n;
+    // te derribaron: tu nave perdió la mitad y vuelves más atrás
+    if (antes && player && !player.alive && n.ckpt <= antes.ckpt && Object.keys(n.mej).some(k => n.mej[k] < antes.mej[k]) && typeof Toast !== 'undefined')
+      Toast.mostrar(t('nave_castigo', { n: n.ckpt }), '#ff6e8a');
+  }
 
   const enviar = o => { if (typeof RED !== 'undefined' && RED.enviar) RED.enviar(o); };
   const puede = () => listo && typeof RED !== 'undefined' && RED.conectado && !RED.sala && !G.privada && !NV_DEMO;
 
   // ---------- conexión ----------
-  function hola(m) { listo = !!m.mundo; enviarAst(); }
+  function hola(m) { listo = !!m.mundo; if (m.nave) ponerNave(m.nave); enviarAst(); }
   // se cortó: los enemigos que tengo pasan a mi teléfono y la oleada sigue aquí (sin que se note)
   function corte() {
     listo = false;
@@ -58,6 +67,12 @@ const COMP = (function () {
   }
   function pedir(n) {
     if (localDesde && !localHasta) localHasta = n - 1; // vuelve el servidor: hasta aquí fue sin conexión
+    // empieza la partida: con tu nave de la semana y desde tu punto de control
+    if (n === 1 && G.kills === 0 && !activo && nave) {
+      if (typeof aplicarNave === 'function') aplicarNave(nave.mej);
+      if (nave.ckpt > 1) n = nave.ckpt;
+      if ((nave.ckpt > 1 || Object.values(nave.mej).some(v => v > 0)) && typeof Toast !== 'undefined') Toast.mostrar(t('nave_inicio', { n }), '#00f0ff');
+    }
     activo = true; G.mundo = true; G.waveActive = true; G.waveTimer = 0;
     enviarVista(); enviarAst();
     enviar({ t: 'ola', n });
@@ -71,6 +86,7 @@ const COMP = (function () {
   function recibir(m) {
     const ahora = performance.now();
     if (m.rc) recibo = m.rc; // mi cuenta al día
+    if (m.nave) ponerNave(m.nave);
     if (m.m) fotos.push({ t: ahora, m: m.m });
     if (m.ev && m.ev.length) avisos.push({ t: ahora, ev: m.ev });
   }
@@ -215,6 +231,7 @@ const COMP = (function () {
       anunciarOla(ev[1]);
       enviar({ t: 'estilo', e: typeof estiloDominante === 'function' ? estiloDominante() : null }); // para la bestia que aprende
     } else if (tipo === 'limpia') { G.victorias = (G.victorias || 0) + 1; }
+    else if (tipo === 'ckpt') { if (nave) nave.ckpt = ev[1]; if (typeof Toast !== 'undefined') Toast.mostrar(t('nave_ckpt', { n: ev[1] }), '#00ffa8'); }
     else if (tipo === 'jefe') { G.bossActive = true; Audio2.boss(); shake(20); G.flash = 0.5; G.flashColor = '255,43,214'; addFloater(CAM.x, CAM.y, t('f_jefe'), '#ff2bd6', 40); }
     else if (tipo === 'se') { quitarLocal(ev[1], false); if (!enemies.some(e => e.type === 'boss')) G.bossActive = false; }
     else if (tipo === 'aprende') { if (typeof Toast !== 'undefined') Toast.mostrar(t('ad_aviso', { e: t('ad_' + ev[1]), n: t('ad_n_' + ev[2]) }), MUNDO.TIPOS[ev[2]].color); }
@@ -229,10 +246,14 @@ const COMP = (function () {
   function ay() { if (activo) enviar({ t: 'ay' }); }
   // recogí un núcleo de una mejora que ya tenía al máximo (vale 150)
   function nucleoMax() { if (activo) enviar({ t: 'nm' }); }
+  // recogí un núcleo de planeta y subió ese nivel: el servidor lo apunta en mi nave de la semana
+  function nucleo(pl) { if (activo) enviar({ t: 'nuc', pl }); }
+  function reiniciarNave() { enviar({ t: 'cero' }); }
   // para guardar el récord: el recibo del servidor y las oleadas jugadas sin conexión
   function paraRecord() { return { recibo, local: localDesde ? [localDesde, localHasta || G.wave] : null }; }
   // al reconectar en plena partida: el servidor nuevo sigue contando desde el recibo
   function reciboVivo() { return G.running && player && player.alive && recibo ? recibo : null; }
 
-  return { hola, corte, reiniciar, tomarOla, recibir, tick, pasoLocal, derribe, ay, nucleoMax, asteroideRoto, paraRecord, reciboVivo, get activo() { return activo; } };
+  return { hola, corte, reiniciar, tomarOla, recibir, tick, pasoLocal, derribe, ay, nucleoMax, nucleo, reiniciarNave, asteroideRoto, paraRecord, reciboVivo,
+    get activo() { return activo; }, get nave() { return nave; } };
 })();
